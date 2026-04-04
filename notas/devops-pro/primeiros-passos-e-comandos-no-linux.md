@@ -34,7 +34,9 @@ ls -lha - listagem,human,ocultos
 /etc/os-release - configuração da sitro instalada da distro instalada
 tar -czf nome.arquivo / c- create | z - gzip | f - nome do arquivo criado
 tar -xzf nome.arquivo / e - extract | z - gzip | f - nome do arquivo extrair
-find /var/log -type f -name  "*.log"
+find /var/log -type f -name  "*.log" 
+mkdir -p projeto-devops/{app/{src,config},infra/{terraform,ansible},logs,docs}
+
 
 
   
