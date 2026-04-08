@@ -1,6 +1,6 @@
 # Primeiros passos e comandos no Linux
 
-_Exportado em 03/04/2026_
+_Exportado em 08/04/2026_
 
 Tipos de arquibo: 
 - - arquivo comum 
