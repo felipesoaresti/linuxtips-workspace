@@ -1,0 +1,57 @@
+name: Validação do Relatório - Módulo 1
+
+on:
+  push:
+    branches: [ main, master ]
+  pull_request:
+    branches: [ main, master ]
+
+jobs:
+  check-report:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: cursos/devops-pro/desafios/o-resgate-do-servidor-legacy
+    steps:
+      - name: Checkout do código
+        uses: actions/checkout@v4
+
+      - name: 1. Verificar existência do arquivo
+        run: |
+          if [ ! -f notas-DLCN-modulo-1.txt ]; then
+            echo "❌ ERRO: O arquivo 'notas-DLCN-modulo-1.txt' não foi encontrado na raiz do repositório."
+            exit 1
+          fi
+          echo "✅ Arquivo encontrado!"
+
+      - name: 2. Validar conteúdo técnico (Checklist de Aprendizado)
+        run: |
+          # Lista de termos que devem aparecer no resumo para garantir que o conteúdo foi estudado
+          TERMOS=("FHS" "mkdir" "ls" "cd" "rm" "alias" "history" "Ctrl+R" "/etc" "/var/log")
+          
+          MISSING=()
+          for termo in "${TERMOS[@]}"; do
+            if ! grep -qi "$termo" notas-DLCN-modulo-1.txt; then
+              MISSING+=("$termo")
+            fi
+          done
+
+          if [ ${#MISSING[@]} -ne 0 ]; then
+            echo "⚠️ O seu resumo parece incompleto. Para nota máxima, explique: ${MISSING[*]}"
+            # Não vamos dar 'exit 1' aqui para permitir que o aluno envie, 
+            # mas o log avisará o que falta. 
+          else
+            echo "✅ Todos os conceitos fundamentais foram mencionados no relatório!"
+          fi
+
+      - name: 3. Verificar reflexão pessoal
+        run: |
+          # Verifica se o aluno escreveu sobre como se sentiu (procurando palavras de sentimento/conforto)
+          if ! grep -qiE "senti|confortavel|dificuldade|aprendi" notas-DLCN-modulo-1.txt; then
+            echo "❌ ERRO: Não esqueça de adicionar a parte sobre como você se sentiu com o desafio!"
+            exit 1
+          fi
+          echo "✅ Reflexão pessoal identificada."
+
+      - name: 🎉 Resultado Final
+        run: echo "Relatório enviado com sucesso! Aguarde a revisão do instrutor para a nota final."
