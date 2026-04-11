@@ -1,4 +1,4 @@
-O desafio foi tranquilo, estou confortável até aqui com o conteúdo. 
+O desafio foi tranquilo, estou confortável até aqui com o conteúdo. Estou me sentido muito confortável com o conteúdo, o desafio não foi muito complexo, foi tranquilo. \ / sentimento / conforto = OK
 Alguns comandos não funcionam corretamente no shell da plataforma devido ao bash, mas nada que impeça de aplicar em um shell no meu localhost.
 Revisando varios comandos linux, isso é muito bom. 
 Cada comando foi comentado explicando o que cada um faz para maior fixação.
