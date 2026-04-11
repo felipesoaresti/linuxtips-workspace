@@ -1,4 +1,9 @@
-Parte-1
+O desafio foi tranquilo, estou confortável até aqui com o conteúdo. 
+Alguns comandos não funcionam corretamente no shell da plataforma devido ao bash, mas nada que impeça de aplicar em um shell no meu localhost.
+Revisando varios comandos linux, isso é muito bom. 
+Cada comando foi comentado explicando o que cada um faz para maior fixação.
+
+# Parte-1
 
 pwd                #- Verifica em qual diretório você esta 
 ls -lhaS           #- lista o diretorio atual separando por tamanho de arquivo. |l em lista | h formato humano | a arquivos ocultos | S tamanho de arquivo  
@@ -7,7 +12,7 @@ cat /etc/os-release && cat /proc/version  #- cat mostra o conteúdo do arquivo
 /etc/os-release  #- informaçãoes da distribuição 
 /proc/version #- informações do kernel
 
-Parte-2
+# Parte-2
 
 mkdir -p   backups/{config/ssh,logs/old}   #- criação dos diretórios usando chave 
 mkdir -p   backups/config/ssh ~/backups/logs/old  #- criação dos diretórios sem usar chave, usando apenas a sintaxe 
@@ -21,7 +26,7 @@ cd ~     #- diretório home
 tree backups    #- lista o conteudo em árvore do diretorio
 cd -    #- volta ao diretório anterior 
 
-Parte-3
+# Parte-3
 cp /etc/ssh/sshd-config /tmp #- copia o arquivo para a pasta /tmp 
 alias cadê='pwd'  #- cria um alias "atalho" para o comando pwd
 mkdir PERIGO   #- cria o diretório Perigo 
