@@ -1,0 +1,51 @@
+# Notas — Descomplicando Linux para Cloud Native — Módulo 1
+
+> Preencha cada seção com suas respostas do desafio "O Resgate do Servidor Legacy".
+> O pipeline de validação só passa se o arquivo contiver os termos da trilha e
+> uma reflexão pessoal (senti / aprendi / dificuldade / confortavel).
+
+## 1. O que eu fiz no desafio
+
+Descreva aqui, na ordem, os comandos que você executou em cada parte:
+
+### Parte 1: Investigação e Diagnóstico
+- Como você explorou o FHS em /etc e /var/log
+- Como identificou a distribuição Linux e a versão do kernel
+-
+
+### Parte 2: Faxina e Organização
+- mkdir -p para criar a estrutura (backups/config/ssh, backups/logs/old)
+- cp de /etc/ssh/sshd_config
+- cd - e cd ~ que você usou
+-
+
+### Parte 3: Produtividade e Segurança
+- Ctrl+R para achar um comando no history
+- alias cadê="pwd"
+- rm de diretório vs rm -r
+-
+
+## 2. O que eu aprendi (explique com suas palavras)
+
+- FHS:
+- mkdir:
+- ls:
+- cd:
+- rm:
+- alias:
+- history:
+- Ctrl+R:
+- /etc:
+- /var/log:
+
+## 3. Como eu me senti com o desafio
+
+- Senti-me confortavel com:
+- Tive dificuldade em:
+- Aprendi principalmente que:
+
+## 4. Respostas de Reflexão (Teoria)
+
+1. Se o banco encher o disco, onde eu procuraria primeiro no FHS?
+2. Diferença entre `cd ..` e `cd /`:
+3. Por que o Tab é uma medida de segurança?
