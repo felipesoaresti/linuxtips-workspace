@@ -1,38 +1,51 @@
-O desafio foi tranquilo, estou confortável até aqui com o conteúdo. Estou me sentido muito confortável com o conteúdo, o desafio não foi muito complexo, foi tranquilo. \ / sentimento / conforto = OK
-Alguns comandos não funcionam corretamente no shell da plataforma devido ao bash, mas nada que impeça de aplicar em um shell no meu localhost.
-Revisando varios comandos linux, isso é muito bom. 
-Cada comando foi comentado explicando o que cada um faz para maior fixação.
+# Notas — Descomplicando Linux para Cloud Native — Módulo 1
 
-# Parte-1
+> Preencha cada seção com suas respostas do desafio "O Resgate do Servidor Legacy".
+> O pipeline de validação só passa se o arquivo contiver os termos da trilha e
+> uma reflexão pessoal (senti / aprendi / dificuldade / confortavel).
 
-pwd                #- Verifica em qual diretório você esta 
-ls -lhaS           #- lista o diretorio atual separando por tamanho de arquivo. |l em lista | h formato humano | a arquivos ocultos | S tamanho de arquivo  
-ls -lhaS /var/log  #- lista o diretorio /var/log  -  separando por tamanho de arquivo. lista tudo |l em lista | h formato humano | a arquivos ocultos | S tamanho de arquivo
-cat /etc/os-release && cat /proc/version  #- cat mostra o conteúdo do arquivo 
-/etc/os-release  #- informaçãoes da distribuição 
-/proc/version #- informações do kernel
+## 1. O que eu fiz no desafio
 
-# Parte-2
+Descreva aqui, na ordem, os comandos que você executou em cada parte:
 
-mkdir -p   backups/{config/ssh,logs/old}   #- criação dos diretórios usando chave 
-mkdir -p   backups/config/ssh ~/backups/logs/old  #- criação dos diretórios sem usar chave, usando apenas a sintaxe 
-cp /etc/ssh/sshd_config backups/config/ssh #- copiando o arquivo sshd_config
-touch /etc/ssh/sshd-config && echo "#Se não tem, eu crio rs.." >> /etc/ssh/sshd-config && cp /etc/ssh/sshd-config backups/config/ssh/ 
-    #-  o arquivo não existia.
-    #-  cria o arquivo se não tiver, escreve dentro do arquivo no final uma linha comentada e depois copia o arquivo.
-cd backups/logs/old    #- vai para a pasta 
-touch ../../config/ placeholder.txt   #- cria o arquivo placeholder.txt dois diretórios anteriores, dentro de config.
-cd ~     #- diretório home 
-tree backups    #- lista o conteudo em árvore do diretorio
-cd -    #- volta ao diretório anterior 
+### Parte 1: Investigação e Diagnóstico
+- Como você explorou o FHS em /etc e /var/log
+- Como identificou a distribuição Linux e a versão do kernel
+-
 
-# Parte-3
-cp /etc/ssh/sshd-config /tmp #- copia o arquivo para a pasta /tmp 
-alias cadê='pwd'  #- cria um alias "atalho" para o comando pwd
-mkdir PERIGO   #- cria o diretório Perigo 
-rm PERIGO    #- tenta remover o diretório perigo, mas como ele não é um arquivo e sim um diretório, o mesmo não é excluído. 
-rm -r PERIGO #- para remover corretamente um diretorio deve-se usar a opção -r de recursivo 
+### Parte 2: Faxina e Organização
+- mkdir -p para criar a estrutura (backups/config/ssh, backups/logs/old)
+- cp de /etc/ssh/sshd_config
+- cd - e cd ~ que você usou
+-
 
+### Parte 3: Produtividade e Segurança
+- Ctrl+R para achar um comando no history
+- alias cadê="pwd"
+- rm de diretório vs rm -r
+-
 
+## 2. O que eu aprendi (explique com suas palavras)
 
+- FHS:
+- mkdir:
+- ls:
+- cd:
+- rm:
+- alias:
+- history:
+- Ctrl+R:
+- /etc:
+- /var/log:
 
+## 3. Como eu me senti com o desafio
+
+- Senti-me confortavel com:
+- Tive dificuldade em:
+- Aprendi principalmente que:
+
+## 4. Respostas de Reflexão (Teoria)
+
+1. Se o banco encher o disco, onde eu procuraria primeiro no FHS?
+2. Diferença entre `cd ..` e `cd /`:
+3. Por que o Tab é uma medida de segurança?
