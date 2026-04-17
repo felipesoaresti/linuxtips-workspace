@@ -1,6 +1,6 @@
 # Instalando o Ubuntu com LVM
 
-_Exportado em 15/04/2026_
+_Exportado em 17/04/2026_
 
 LVM - Logical volume manager --> Uma partição que aumenta e diminui o espaço
 - Adicionar discos sem desligar
