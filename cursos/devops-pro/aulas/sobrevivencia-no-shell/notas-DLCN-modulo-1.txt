@@ -1,0 +1,68 @@
+# Notas — Descomplicando Linux para Cloud Native — Módulo 1
+
+> Preencha cada seção com suas respostas do desafio "O Resgate do Servidor Legacy".
+> O pipeline de validação só passa se o arquivo contiver os termos da trilha e
+> uma reflexão pessoal (senti / aprendi / dificuldade / confortavel).
+
+## 1. O que eu fiz no desafio
+
+### Parte 1: Investigação e Diagnóstico
+
+- pwd                #- Verifica em qual diretório você esta.
+- ls -lhaS           #- lista o diretorio atual separando por tamanho de arquivo. |l em lista | h formato humano | a arquivos ocultos | S tamanho de arquivo  
+- ls -lhaS /var/log  #- lista o diretorio /var/log  -  separando por tamanho de arquivo. lista tudo |l em lista | h formato humano | a arquivos ocultos | S tamanho de arquivo
+- cat /etc/os-release && cat /proc/version  #- cat mostra o conteúdo do arquivo 
+- /etc/os-release  #- informaçãoes da distribuição 
+- /proc/version #- informações do kernel
+
+### Parte 2: Faxina e Organização
+
+- mkdir -p   backups/{config/ssh,logs/old}   #- criação dos diretórios usando chave 
+- mkdir -p   backups/config/ssh ~/backups/logs/old  #- criação dos diretórios sem usar chave, usando apenas a sintaxe 
+- cp /etc/ssh/sshd_config backups/config/ssh #- copiando o arquivo sshd_config
+- touch /etc/ssh/sshd-config && echo "#Se não tem, eu crio rs.." >> /etc/ssh/sshd-config && cp /etc/ssh/sshd-config backups/config/ssh/ 
+ #-  o arquivo não existia.
+ #-  cria o arquivo se não tiver, escreve dentro do arquivo no final uma linha comentada e depois copia o arquivo.
+- cd backups/logs/old    #- vai para a pasta 
+- touch ../../config/ placeholder.txt   #- cria o arquivo placeholder.txt dois diretórios anteriores, dentro de config.
+- cd ~     #- diretório home 
+- tree backups    #- lista o conteudo em árvore do diretorio
+- cd -    #- volta ao diretório anterior 
+
+### Parte 3: Produtividade e Segurança
+
+cp /etc/ssh/sshd-config /tmp #- copia o arquivo para a pasta /tmp 
+alias cadê='pwd'  #- cria um alias "atalho" para o comando pwd
+mkdir PERIGO   #- cria o diretório Perigo 
+rm PERIGO    #- tenta remover o diretório perigo, mas como ele não é um arquivo e sim um diretório, o mesmo não é excluído. 
+rm -r PERIGO #- para remover corretamente um diretorio deve-se usar a opção -r de recursivo 
+
+## 2. O que eu aprendi (explique com suas palavras)
+
+- FHS: Estrutura de arquivos no Linux
+- mkdir: Comando para criar diretório 
+- ls: Comando para listar o conteudo de um diretório
+- cd: Comando para mudar de diretório 
+- rm: Comando para remover arquivo, serve também para remover diretórios (não vazios sem arumento) ou -r recursivo para remover diretorios
+- alias: " atalho ou apelido " configurado geralmente no bashrc / arquivo de configuração do terminal do usuário 
+- history: Comando que lê o arquivo bash_history do usuário onde esta a listagem dos últimos comandos executados
+- Ctrl+R: Buscar comando no historico - crtl + r vai buscando o mais antigo.  
+- /etc: diretorio de configuração do linux, onde geralmente ficam a maioria das configurações.  
+- /var/log: Arquivos de log do sistema. 
+
+## 3. Como eu me senti com o desafio
+
+- O desafio foi tranquilo, me senti muito confortável até aqui com o conteúdo.  
+- Não tive dificultade, foi bom para relembrar comando no terminal. 
+- Relembrei vários comandos 
+
+## 4. Respostas de Reflexão (Teoria)
+
+1. Se o banco encher o disco, onde eu procuraria primeiro no FHS?
+  Verificaria no /var/pasta do banco - geralmente é onde fica os dados do banco.
+
+2. Diferença entre `cd ..` e `cd /`: 
+  cd .. vai para o diretório anterior , cd / vai para a raiz do sistema 
+
+3. Por que o Tab é uma medida de segurança?
+  Não vejo como segurança, vejo apenas como um auxiliar para poupar tempo na procura do comando ou diretório correto e também de não errar comandos.
