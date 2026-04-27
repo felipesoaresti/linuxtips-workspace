@@ -1,0 +1,32 @@
+docker run -d \
+--name tipsbank-api-transacoes \
+--network tipsbank \
+-e DB_URL="postgresql+psycopg://tipsbank:tipsbank@tipsbank-postgres:5432/tipsbank" \
+-e CONTAS_URL="http://tipsbank-api-contas:8080" \
+-e AUDITORIA_URL="http://tipsbank-auditoria:8080" \
+-e APP_VERSION="v1" \
+-e LOG_LEVEL="INFO" \
+-p 8082:8080 \
+tipsbank-api-transacoes:1.0
+
+curl -s http://localhost:8082/health/ready
+{"status":"ready"}%                                                                                                                                                                                    
+
+api-transacoes:
+    build:
+      context: ./apps/api-transacoes
+    image: tipsbank/api-transacoes:dev
+    container_name: tipsbank-api-transacoes
+    environment:
+      DB_URL: postgresql+psycopg://tipsbank:tipsbank@postgres:5432/tipsbank
+      CONTAS_URL: http://api-contas:8080
+      AUDITORIA_URL: http://auditoria:8080
+      APP_VERSION: v1
+      LOG_LEVEL: INFO
+    depends_on:
+      postgres:
+        condition: service_healthy
+      api-contas:
+        condition: service_started
+    ports:
+      - "8082:8080"

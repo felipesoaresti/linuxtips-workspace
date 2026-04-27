@@ -53,3 +53,9 @@ helm/*/Chart.lock
 
 # Locust output
 locust/reports/
+
+
+
+cosign.key
+cosign-tipsbank.key
+cosign.key

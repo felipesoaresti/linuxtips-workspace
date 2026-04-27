@@ -4,3 +4,7 @@ __pycache__
 .venv
 .env
 .git
+Dockerfile.bkp01
+Dockerfile.bkp-nochainguard
+requirements-bkp.txt
+trivy*

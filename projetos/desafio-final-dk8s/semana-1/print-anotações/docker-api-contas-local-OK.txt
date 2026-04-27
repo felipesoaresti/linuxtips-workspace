@@ -1,0 +1,25 @@
+#Criando a REDE QUE EU ESQECI dessa porra Afff e colocar o postgres nela isso pq era a primeira coisa no docker-compose
+
+docker network create tipsbank
+docker network connect tipsbank tipsbank-postgres 
+
+#API-CONTAS - referencia docker-compose.yaml
+
+docker run -d \
+--name tipsbank-api-contas \
+--network tipsbank \
+-e DB_URL="postgresql+psycopg://tipsbank:tipsbank@tipsbank-postgres:5432/tipsbank" \
+-e LOG_LEVEL=INFO \
+-p 8081:8080
+tipsbank-api-contas:1.0
+
+docker container logs tipsbank-api-contas
+Found existing alias for "docker container logs". You should use: "dlo"
+INFO:     Started server process [1]
+INFO:     Waiting for application startup.
+{"ts":"2026-04-24 14:10:57,789","level":"INFO","service":"api-contas","msg":"bootstrap: criando schema se necessário"}
+INFO:     Application startup complete.
+INFO:     Uvicorn running on http://0.0.0.0:8080 (Press CTRL+C to quit)
+INFO:     172.19.0.1:46256 - "GET /health/live HTTP/1.1" 200 OK
+INFO:     172.19.0.1:59276 - "GET /health/ready HTTP/1.1" 200 OK
+INFO:     172.19.0.1:60088 - "GET /health/ready HTTP/1.1" 200 OK

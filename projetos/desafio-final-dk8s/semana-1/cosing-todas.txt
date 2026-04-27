@@ -1,0 +1,56 @@
+[
+  {
+    "critical": {
+      "identity": {
+        "docker-reference": "index.docker.io/felipestaypuff/tipsbank-api-contas:v1.0.0"
+      },
+      "image": {
+        "docker-manifest-digest": "sha256:05c5f3b2c81d39a45bab14705176337f3c303375707ed060f58b98060b4fe18c"
+      },
+      "type": "https://sigstore.dev/cosign/sign/v1"
+    },
+    "optional": {}
+  }
+]
+[
+  {
+    "critical": {
+      "identity": {
+        "docker-reference": "index.docker.io/felipestaypuff/tipsbank-api-transacoes:v1.0.0"
+      },
+      "image": {
+        "docker-manifest-digest": "sha256:4fefcd94fdadc031bb09080b161daea36b9d198a1b81577e3d53f9603249a66e"
+      },
+      "type": "https://sigstore.dev/cosign/sign/v1"
+    },
+    "optional": {}
+  }
+]
+[
+  {
+    "critical": {
+      "identity": {
+        "docker-reference": "index.docker.io/felipestaypuff/tipsbank-auditoria:v1.0.0"
+      },
+      "image": {
+        "docker-manifest-digest": "sha256:37a633a73c433514a171172eeaacc8278e2efd28e8d7ba000891f3579ca5ef51"
+      },
+      "type": "https://sigstore.dev/cosign/sign/v1"
+    },
+    "optional": {}
+  }
+]
+[
+  {
+    "critical": {
+      "identity": {
+        "docker-reference": "index.docker.io/felipestaypuff/tipsbank-web:v1.0.0"
+      },
+      "image": {
+        "docker-manifest-digest": "sha256:2830b4c4bdbd751b17d24eeaf4bb6f294dc31131e6e4849e820d107bc8b117cb"
+      },
+      "type": "https://sigstore.dev/cosign/sign/v1"
+    },
+    "optional": {}
+  }
+]

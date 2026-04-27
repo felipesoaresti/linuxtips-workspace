@@ -1,0 +1,47 @@
+#auditoria-init
+
+docker run --rm \
+-v tipsbank-auditdata:/data \
+alpine:3.19 \
+sh -c "mkdir -p /data && chown -R 65532:65532 /data"
+
+-> Quando eu criei eu não coloquei o rm ele subiu junto ai eu exclui e depois eu coloquei o rm
+não entendi direito como isso funciona perguntar 
+ 
+#auditoria
+
+docker run -d \
+--name tipsbank-auditoria \
+--network tipsbank \
+-e DATA_DIR=/data \
+-e LOG_LEVEL=INFO \
+-v tipsbank-auditdata:/data \
+-p 8083:8080 \
+tipsbank-api-auditoria:1.0
+
+
+curl -s http://localhost:8083/health/ready
+{"status":"ready"}%  
+
+	auditoria-init:
+    image: alpine:3.19
+    container_name: tipsbank-auditoria-init
+    command: ["sh", "-c", "mkdir -p /data && chown -R 65532:65532 /data"]
+    volumes:
+      - auditdata:/data
+
+  auditoria:
+    build:
+      context: ./apps/auditoria
+    image: tipsbank/auditoria:dev
+    container_name: tipsbank-auditoria
+    environment:
+      DATA_DIR: /data
+      LOG_LEVEL: INFO
+    volumes:
+      - auditdata:/data
+    depends_on:
+      auditoria-init:
+        condition: service_completed_successfully
+    ports:
+      - "8083:8080"
