@@ -36,19 +36,45 @@ spec:
             - sh
             - -c
             - |
-              until wget -q --spider http://api-contas.tipsbank-contas.svc.cluster.local:8081/health/live; do
+              until wget -q --spider http://api-contas.tipsbank-contas.svc.cluster.local:8080/health/live; do
                 echo "Verificando se api-contas esta live..."
                 sleep 3
                 done
       containers:
         - name: api-transacoes
-          image: felipestaypuff/tipsbank-api-transacoes:v1.0.0
+          image: felipestaypuff/tipsbank-api-transacoes:v1.1.0
           ports:
             - containerPort: 8080
               name: api-transacoes
-          envFrom:
-            - secretRef:
-                name: transacoes-secret
+          env:
+            - name: DB_URL
+              valueFrom:
+                secretKeyRef:
+                  name: transacoes-secret
+                  key: DB_URL
+            - name: CONTAS_URL
+              valueFrom:
+                configMapKeyRef:
+                  name: transacoes-config
+                  key: CONTAS_URL
+            - name: AUDITORIA_URL
+              valueFrom:
+                configMapKeyRef:
+                  name: transacoes-config
+                  key: AUDITORIA_URL
+            - name: APP_VERSION
+              valueFrom:
+                configMapKeyRef:
+                  name: transacoes-config
+                  key: APP_VERSION
+            - name: LOG_LEVEL
+              valueFrom:
+                configMapKeyRef:
+                  name: transacoes-config
+                  key: LOG_LEVEL
+          volumeMounts:
+            - mountPath: /var/log/app
+              name: app-logs
           resources:
             requests:
               cpu: 200m
@@ -73,6 +99,28 @@ spec:
             successThreshold: 1
             failureThreshold: 5
 
+        - name: log-forwarder
+          image: busybox:1.36
+          command:
+            - sh
+            - -c
+            - |
+              until [ -f /var/log/app/app.log ]; do echo "Aguardando o arquivo de log ser criado..."; sleep 1; done;
+              tail -F /var/log/app/app.log
+          resources:
+            requests:
+              cpu: 50m
+              memory: 64Mi
+            limits:
+              cpu: 100m
+              memory: 128Mi
+          volumeMounts:
+            - mountPath: /var/log/app
+              name: app-logs
+      volumes:
+        - name: app-logs
+          emptyDir: {}
+
 ---
 apiVersion: v1
 kind: Service
@@ -88,6 +136,6 @@ spec:
   selector:
     app: api-transacoes
   ports:
-    - port: 8082
+    - port: 8080
       targetPort: 8080
       name: api-transacoes
