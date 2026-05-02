@@ -1,16 +1,22 @@
 # Primeiros passos e comandos no Linux
 
+_Atualizado em 02/05/2026_
+
+# Primeiros passos e comandos no Linux
+
+
 _Exportado em 08/04/2026_
 
 Tipos de arquibo: 
 - - arquivo comum 
 d - diretório
 l - link simbólico 
-c - caracter -> tudo que transfere informação 
+c - caracter -> tudo que transfere informação - rede por exemplo 
 b - bloco -> armazenamento de informação - pen drive, HD
 Terminal - Dispositivo de caracter - tty - console - crtl + alt + F1...... 
 
-bin - executaveis binarios
+
+bin - executaveis binarios - atalho para /usr/bin
 etc - configuração do sistema
 dev - dispositivos
 home - diretorio de usuarios
@@ -27,6 +33,8 @@ tmp - reboot já era / informações de processos/ volátil no boot
 usr - não é default - para todos - segunda estrutura  - qualquer usuario para usar - existe sbin nesse diretorio
 var - arquivos variáveis - 
 
+
+
 ### Comandos 
 
 head -20 - (cabeçalho) 20 linhas
@@ -36,8 +44,5 @@ tar -czf nome.arquivo / c- create | z - gzip | f - nome do arquivo criado
 tar -xzf nome.arquivo / e - extract | z - gzip | f - nome do arquivo extrair
 find /var/log -type f -name  "*.log" 
 mkdir -p projeto-devops/{app/{src,config},infra/{terraform,ansible},logs,docs}
-
-
-
-  
+ps -ef 
 
