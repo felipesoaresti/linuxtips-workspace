@@ -1,0 +1,65 @@
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+.Python
+venv/
+.venv/
+env/
+ENV/
+
+# Dist / build
+dist/
+build/
+*.egg-info/
+
+# Variáveis de ambiente
+.env
+.env.local
+.env.*.local
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Logs
+*.log
+logs/
+
+# Kubernetes — artefatos locais
+*.kubeconfig
+kubeconfig-*
+*.crt
+*.csr
+ca.crt
+admin.conf
+
+# Chaves privadas
+*.key
+cosign.key
+cosign-tipsbank.key
+
+# Segredos reais — NUNCA versionar
+**/secret-token-cloudflare.yaml
+
+# Binários grandes (instalar via script)
+**/awscliv2.zip
+**/eksctl_Linux_amd64.tar.gz
+**/aws/dist/
+
+# Diretório interno do Claude Code
+.claude/
+
+# Helm
+helm/*/charts/
+helm/*/Chart.lock
+*.tgz
+
+# Locust output
+locust/reports/

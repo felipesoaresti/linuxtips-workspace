@@ -105,6 +105,19 @@ def db() -> Session:
 def live():
     return {"status": "ok", "version": APP_VERSION}
 
+# Adicionando o endpoint /pix v2 - 2.4 by puff
+
+@app.get("/pix")
+def pix():
+    return {
+        "versao": APP_VERSION,
+        "chave_tipo": "cpf",
+        "chave": "000.000.000-00",
+        "banco": "TipsBank",
+        "mensagem": "Endpoint PIX disponivel apenas na v2"
+    }
+
+# Fim da adição /pix v2 - 2.4 by puff
 
 @app.get("/health/ready")
 def ready():

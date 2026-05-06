@@ -1,0 +1,291 @@
+kubectl patch configmap ingress-nginx-controller \
+-n ingress-nginx \
+--type merge \
+-p '{"data":{"limit-req-status-code":"429"}}'
+
+echo | openssl s_client -connect 192.168.3.110:443 \
+-servername app.tipsbank.staypuff.info 2>/dev/null \
+| openssl x509 -noout -subject -issuer -dates
+
+AWS - Comandos
+  
+eksctl create cluster --name tipsbank --region us-east-1 --version 1.31 --nodes 2 --node-type t3.medium --node-volume-size 20 --managed --kubeconfig ~/.kube/config
+
+aws iam attach-user-policy --user-name eks-tipsbank --policy-arn arn:aws:iam::aws:policy/AmazonEKSFullAccess
+
+aws iam put-user-policy --user-name eks-tipsbank --policy-name eksctl-extra \
+    --policy-document '{
+      "Version": "2012-10-17",
+      "Statement": [
+        {
+          "Effect": "Allow",
+          "Action": [
+            "eks:*",
+            "ssm:GetParameter",
+            "autoscaling:*",
+            "ecr:*"
+          ],
+          "Resource": "*"eter",
+        }
+      ]     "ecr:*"
+    }'
+          "Resource": "*"
+        }
+      ]
+	  
+kubectl config rename-context  $(kubectl config current-context) eks-tipsbank  
+
+eksctl create addon --name aws-ebs-csi-driver --cluster tipsbank --region us-east-1 --force 
+
+kubectl --context eks-tipsbank logs -n kube-system -l app=ebs-csi-controller -c csi-provisioner --tail=1
+eksctl utils associate-iam-oidc-provider --cluster tipsbank --region us-east-1 --approve
+
+eksctl create iamserviceaccount \
+    --name ebs-csi-controller-sa \
+    --namespace kube-system \
+    --cluster tipsbank \
+	--region us-east-1 \
+    --attach-policy-arn arn:aws:iam::aws:policy/service-role/AmazonEBSCSIDriverPolicy \
+    --approve \
+    --override-existing-serviceaccounts
+	
+helm upgrade --install ingress-nginx ingress-nginx --repo https://kubernetes.github.io/ingress-nginx --namespace ingress-nginx --create-namespace \
+--set controller.service.type=LoadBalancer --set controller.service.annotations."service\.beta\.kubernetes\.io/aws-load-balancer-type"=nlb --kube-context eks-tipsbank --wait
+
+VPC_ID=$(aws eks describe-cluster \
+--name tipsbank \
+--region us-east-1 \
+--query "cluster.resourcesVpcConfig.vpcId" \
+--output text)
+echo $VPC_ID - vpc-0ee88fba5cad63afa
+
+aws iam attach-user-policy \
+--user-name eks-tipsbank \
+--policy-arn arn:aws:iam::aws:policy/AmazonElasticFileSystemFullAccess
+
+EFS_ID=$(aws efs create-file-system \
+--region us-east-1 \
+--performance-mode generalPurpose \
+--tags Key=Name,Value=tipsbank-auditoria \
+--query "FileSystemId" \
+--output text)
+echo $EFS_ID  - fs-0d5b539e1d48f267d
+
+aws efs describe-file-systems \
+--file-system-id $EFS_ID \
+--query "FileSystems[0].LifeCycleState" \
+--output text - available
+
+VPC_CIDR=$(aws ec2 describe-vpcs \
+--vpc-ids $VPC_ID \
+--query "Vpcs[0].CidrBlock" \
+--output text)
+echo $VPC_CIDR - 192.168.0.0/16
+                          
+EFS_SG_ID=$(aws ec2 create-security-group \
+--group-name efs-tipsbank-sg \
+--description "NFS access for TipsBank auditoria" \
+--vpc-id $VPC_ID \
+--query "GroupId" \
+--output text)
+echo $EFS_SG_ID - sg-062718d7afec63f35
+
+aws ec2 authorize-security-group-ingress \
+--group-id $EFS_SG_ID \
+--protocol tcp \
+--port 2049 \
+--cidr $VPC_CIDR
+
+Return:
+
+{
+    "Return": true,
+    "SecurityGroupRules": [
+        {
+            "SecurityGroupRuleId": "sgr-0412ccd38b27e8366",
+            "GroupId": "sg-062718d7afec63f35",
+            "GroupOwnerId": "068368901858",
+            "IsEgress": false,
+            "IpProtocol": "tcp",
+            "FromPort": 2049,
+            "ToPort": 2049,
+            "CidrIpv4": "192.168.0.0/16",
+            "SecurityGroupRuleArn": "arn:aws:ec2:us-east-1:068368901858:security-group-rule/sgr-0412ccd38b27e8366"
+        }
+    ]
+}
+
+  O eksctl criou subnets em duas AZs. Precisamos de um mount target em cada:
+
+# Listar subnets públicas do cluster
+
+SUBNETS=$(aws eks describe-cluster \
+--name tipsbank \
+--region us-east-1 \
+--query "cluster.resourcesVpcConfig.subnetIds" \
+--output text)
+echo $SUBNETS
+Result:
+
+subnet-0914d51204614e7ff       subnet-0dc57cb956c41cc03        subnet-08465c639316c5a67        subnet-0feee009ffaf51e4b
+
+
+Chatgpt: 
+SUBNETS=($(aws eks describe-cluster \
+  --name tipsbank \
+  --region us-east-1 \
+  --query "cluster.resourcesVpcConfig.subnetIds[]" \
+  --output text))
+
+Para cada subnet na saída, crie um mount target:
+                                          
+for SUBNET in $SUBNETS; do
+aws efs create-mount-target \
+--file-system-id $EFS_ID \
+--subnet-id $SUBNET \
+--security-groups $EFS_SG_ID echo "Mount target criado na subnet $SUBNET" done
+
+Chatgpt:
+
+for SUBNET in "${SUBNETS[@]}"; do
+  aws efs create-mount-target \
+    --file-system-id "$EFS_ID" \
+    --subnet-id "$SUBNET" \
+    --security-groups "$EFS_SG_ID" \
+  && echo "Mount target criado na subnet $SUBNET" \
+  || echo "Erro ao criar mount target na subnet $SUBNET"
+done
+
+Result: 
+
+{
+    "OwnerId": "068368901858",
+    "MountTargetId": "fsmt-07f58183ca736680a",
+    "FileSystemId": "fs-0d5b539e1d48f267d",
+    "SubnetId": "subnet-0914d51204614e7ff",
+    "LifeCycleState": "creating",
+    "IpAddress": "192.168.18.95",
+    "NetworkInterfaceId": "eni-05ee67277f8895515",
+    "AvailabilityZoneId": "use1-az4",
+    "AvailabilityZoneName": "us-east-1c",
+    "VpcId": "vpc-0ee88fba5cad63afa"
+}
+
+{
+    "OwnerId": "068368901858",
+    "MountTargetId": "fsmt-0d6555c010514d69a",
+    "FileSystemId": "fs-0d5b539e1d48f267d",
+    "SubnetId": "subnet-0dc57cb956c41cc03",
+    "LifeCycleState": "creating",
+    "IpAddress": "192.168.43.79",
+    "NetworkInterfaceId": "eni-0d29e330dd0e16665",
+    "AvailabilityZoneId": "use1-az5",
+    "AvailabilityZoneName": "us-east-1f",
+    "VpcId": "vpc-0ee88fba5cad63afa"
+}
+
+{
+    "OwnerId": "068368901858",
+    "MountTargetId": "fsmt-0d6555c010514d69a",
+    "FileSystemId": "fs-0d5b539e1d48f267d",
+    "SubnetId": "subnet-0dc57cb956c41cc03",
+    "LifeCycleState": "creating",
+    "IpAddress": "192.168.43.79",
+    "NetworkInterfaceId": "eni-0d29e330dd0e16665",
+    "AvailabilityZoneId": "use1-az5",
+    "AvailabilityZoneName": "us-east-1f",
+    "VpcId": "vpc-0ee88fba5cad63afa"
+}
+
+aws efs describe-mount-targets \
+  --file-system-id "$EFS_ID" \
+  --region us-east-1 \
+  --query "MountTargets[*].[MountTargetId,SubnetId,LifeCycleState]" \
+  --output table
+
+---------------------------------------------------------------------
+|                       DescribeMountTargets                        |
++-------------------------+----------------------------+------------+
+|  fsmt-07f58183ca736680a |  subnet-0914d51204614e7ff  |  available |
+|  fsmt-0d6555c010514d69a |  subnet-0dc57cb956c41cc03  |  available |
++-------------------------+----------------------------+------------+
+
+aws ec2 describe-subnets \
+  --subnet-ids "${SUBNETS[@]}" \
+  --region us-east-1 \
+  --query "Subnets[*].[SubnetId,AvailabilityZone]" \
+  --output table
+  
+--------------------------------------------
+|              DescribeSubnets             |
++---------------------------+--------------+
+|  subnet-0914d51204614e7ff |  us-east-1c  |
+|  subnet-0feee009ffaf51e4b |  us-east-1f  |
+|  subnet-08465c639316c5a67 |  us-east-1c  |
+|  subnet-0dc57cb956c41cc03 |  us-east-1f  |
++---------------------------+--------------+
+
+#Aguarde todos ficarem available (~1 min):   
+
+--file-system-id $EFS_ID \
+--query "MountTargets[*].[MountTargetId,LifeCycleState]" \
+--output table
+                                                                                                                                                                                                
+  # → todos devem mostrar "available"     
+
+Passo 5 — EFS CSI Driver + IRSA
+OIDC já está habilitado (fizemos para o EBS). Criar a service account com a policy correta:
+
+eksctl create iamserviceaccount \
+--name efs-csi-controller-sa \
+--namespace kube-system \
+--cluster tipsbank \
+--region us-east-1 \
+--attach-policy-arn arn:aws:iam::aws:policy/service-role/AmazonEFSCSIDriverPolicy \
+--approve \
+--override-existing-serviceaccounts
+
+Instalar o addon:                                                                                                                                                                                                  
+
+eksctl create addon \
+--name aws-efs-csi-driver \
+--cluster tipsbank \
+--region us-east-1 \
+--force
+
+
+
+
+  kubectl --context eks-tipsbank get pods -n kube-system | grep efs                                                                                                                                               
+  # efs-csi-controller-xxx   3/3   Running
+  # efs-csi-node-xxx         3/3   Running    
+  
+  
+  
+aws efs describe-file-systems --region us-east-1 \
+--query "FileSystems[*].[FileSystemId,LifeCycleState,Name]" \
+--output table
+
+
+-------------------------------------------------------------
+|                    DescribeFileSystems                    |
++-----------------------+------------+----------------------+
+|  fs-0d5b539e1d48f267d |  available |  tipsbank-auditoria  |
++-----------------------+------------+----------------------+
+(END)
+
+helm upgrade --install cert-manager jetstack/cert-manager \
+    --namespace cert-manager \
+    --create-namespace \
+    --set crds.enabled=true \
+    --kube-context eks-tipsbank \
+    --wait
+	
+aws ce get-cost-and-usage \
+--time-period Start=2026-05-01,End=2026-05-04 \
+--granularity DAILY \
+--metrics "UnblendedCost" \
+--group-by Type=DIMENSION,Key=SERVICE \
+--region us-east-1 \
+--query 'ResultsByTime[-1].Groups[?Metrics.UnblendedCost.Amount>`0.01`].[Keys[0],Metrics.UnblendedCost.Amount]' \
+--output table	

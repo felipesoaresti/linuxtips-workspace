@@ -1,0 +1,78 @@
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: allow-ingress-to-web
+  namespace: tipsbank-web
+spec:
+  podSelector:
+    matchLabels:
+      app: web
+  policyTypes:
+    - Ingress
+  ingress:
+    - from:
+        - namespaceSelector:
+            matchLabels:
+              kubernetes.io/metadata.name: ingress-nginx
+      ports:
+        - port: 8080
+          protocol: TCP
+
+---
+
+# Portas das apis - egress da web para as apis
+
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: allow-web-egress-to-apis
+  namespace: tipsbank-web
+spec:
+  podSelector:
+    matchLabels:
+      app: web
+  policyTypes:
+    - Egress
+  egress:
+    - to:
+      - namespaceSelector:
+          matchLabels:
+            kubernetes.io/metadata.name: tipsbank-contas
+        podSelector:
+          matchLabels:
+            app: api-contas
+      - namespaceSelector:
+          matchLabels:
+            kubernetes.io/metadata.name: tipsbank-transacoes
+        podSelector:
+          matchLabels:
+            app: api-transacoes
+      - namespaceSelector:
+          matchLabels:
+            kubernetes.io/metadata.name: tipsbank-auditoria
+        podSelector:
+          matchLabels:
+            app: auditoria
+      ports:
+        - port: 8080
+          protocol: TCP
+
+---
+
+# Regra DNS EGRESS -  DNS para todos os pods da web
+
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: allow-dns-egress-web
+  namespace: tipsbank-web
+spec:
+  podSelector: {}
+  policyTypes:
+  - Egress
+  egress:
+    - ports:
+        - port: 53
+          protocol: UDP
+        - port: 53
+          protocol: TCP

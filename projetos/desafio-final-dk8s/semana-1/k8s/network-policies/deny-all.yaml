@@ -1,0 +1,49 @@
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: default-deny-all
+  namespace: tipsbank-contas
+spec:
+    podSelector: {}
+    policyTypes:
+      - Ingress
+      - Egress
+
+---
+
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: default-deny-all
+  namespace: tipsbank-transacoes
+spec:
+    podSelector: {}
+    policyTypes:
+      - Ingress
+      - Egress
+
+---
+
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: default-deny-all
+  namespace: tipsbank-auditoria
+spec:
+  podSelector: {}
+  policyTypes:
+    - Ingress
+    - Egress
+
+---
+
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: default-deny-all
+  namespace: tipsbank-web
+spec:
+  podSelector: {}
+  policyTypes:
+    - Ingress
+    - Egress

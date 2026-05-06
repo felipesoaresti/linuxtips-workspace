@@ -43,8 +43,8 @@ ca.crt
 admin.conf
 
 # Evidências pessoais do aluno
-docs/EVIDENCIAS.md
-evidencias/
+#docs/EVIDENCIAS.md
+#evidencias/
 
 # Helm
 helm/*/charts/
@@ -54,8 +54,20 @@ helm/*/Chart.lock
 # Locust output
 locust/reports/
 
-
-
 cosign.key
 cosign-tipsbank.key
-cosign.key
+
+# Backups gerados automaticamente
+docs/EVIDENCIAS-bkp-*.md
+
+# Segredos reais — NÃO commitar
+aws/cert-manager/secret-token-cloudflare.yaml
+k8s/cert-manager/secret-token-cloudflare.yaml
+
+# Binários grandes do AWS CLI / eksctl
+aws/awscliv2.zip
+aws/eksctl_Linux_amd64.tar.gz
+aws/aws/dist/
+
+# Diretório interno do Claude Code
+.claude/

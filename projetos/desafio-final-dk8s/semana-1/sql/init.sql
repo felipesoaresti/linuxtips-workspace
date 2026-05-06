@@ -3,6 +3,7 @@
 -- (o SQLAlchemy tambem cria as tabelas se nao existirem, mas deixamos aqui
 -- para ser a "fonte da verdade" e gerar dados seed)
 
+
 CREATE TABLE IF NOT EXISTS contas (
     id VARCHAR(64) PRIMARY KEY,
     titular VARCHAR(120) NOT NULL,
