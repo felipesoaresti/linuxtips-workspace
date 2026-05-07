@@ -1,0 +1,45 @@
+tipsbank-auditoria    pod/auditoria-659555485f-r7hbw                 1/1     Running   0              22h
+tipsbank-auditoria    pod/auditoria-659555485f-zn4tr                 1/1     Running   0              22h
+tipsbank-contas       pod/api-contas-65d86d5dc7-d6lt6                1/1     Running   0              20h
+tipsbank-contas       pod/api-contas-65d86d5dc7-mzns4                1/1     Running   0              20h
+tipsbank-contas       pod/postgres-0                                 1/1     Running   0              19h
+tipsbank-transacoes   pod/api-transacoes-7558cf5d9c-87vc4            1/1     Running   0              19h
+tipsbank-transacoes   pod/api-transacoes-7558cf5d9c-xvqxt            1/1     Running   0              19h
+tipsbank-web          pod/web-6bc8b8c546-4hc57                       1/1     Running   0              18h
+tipsbank-web          pod/web-6bc8b8c546-jwjpt                       1/1     Running   0              18h
+tipsbank-auditoria    service/auditoria                         ClusterIP   10.97.172.68     <none>        8080/TCP                 23h
+tipsbank-contas       service/api-contas                        ClusterIP   10.110.102.200   <none>        8080/TCP                 45h
+tipsbank-contas       service/postgres-service                  ClusterIP   None             <none>        5432/TCP                 19h
+tipsbank-transacoes   service/api-transacoes                    ClusterIP   10.99.150.139    <none>        8080/TCP                 43h
+tipsbank-web          service/web                               ClusterIP   10.103.110.21    <none>        8080/TCP                 21h
+tipsbank-auditoria    deployment.apps/auditoria                 2/2     2            2           23h
+tipsbank-contas       deployment.apps/api-contas                2/2     2            2           45h
+tipsbank-transacoes   deployment.apps/api-transacoes            2/2     2            2           43h
+tipsbank-web          deployment.apps/web                       2/2     2            2           21h
+tipsbank-auditoria    replicaset.apps/auditoria-659555485f                 2         2         2       22h
+tipsbank-auditoria    replicaset.apps/auditoria-6c859b8d87                 0         0         0       22h
+tipsbank-auditoria    replicaset.apps/auditoria-845b4664d                  0         0         0       22h
+tipsbank-auditoria    replicaset.apps/auditoria-8657559b7f                 0         0         0       23h
+tipsbank-auditoria    replicaset.apps/auditoria-b5bc479fb                  0         0         0       22h
+tipsbank-auditoria    replicaset.apps/auditoria-fb47ff566                  0         0         0       22h
+tipsbank-contas       replicaset.apps/api-contas-594c4dbd5b                0         0         0       44h
+tipsbank-contas       replicaset.apps/api-contas-65d86d5dc7                2         2         2       20h
+tipsbank-contas       replicaset.apps/api-contas-68f86bffcc                0         0         0       42h
+tipsbank-contas       replicaset.apps/api-contas-6b8777dfc                 0         0         0       45h
+tipsbank-contas       replicaset.apps/api-contas-849f89799                 0         0         0       44h
+tipsbank-contas       replicaset.apps/api-contas-856f59f7d6                0         0         0       44h
+tipsbank-transacoes   replicaset.apps/api-transacoes-7558cf5d9c            2         2         2       19h
+tipsbank-transacoes   replicaset.apps/api-transacoes-75c957f969            0         0         0       43h
+tipsbank-transacoes   replicaset.apps/api-transacoes-7db9d67f47            0         0         0       43h
+tipsbank-transacoes   replicaset.apps/api-transacoes-8fdc9489b             0         0         0       20h
+tipsbank-transacoes   replicaset.apps/api-transacoes-c5b4dbbc              0         0         0       43h
+tipsbank-web          replicaset.apps/web-584894f6b6                       0         0         0       20h
+tipsbank-web          replicaset.apps/web-5bbb54df69                       0         0         0       20h
+tipsbank-web          replicaset.apps/web-5c5f5b9f5d                       0         0         0       21h
+tipsbank-web          replicaset.apps/web-67cb77f9fc                       0         0         0       21h
+tipsbank-web          replicaset.apps/web-6bc8b8c546                       2         2         2       18h
+tipsbank-web          replicaset.apps/web-757cf45b8c                       0         0         0       20h
+tipsbank-web          replicaset.apps/web-75dff7dfc6                       0         0         0       18h
+tipsbank-web          replicaset.apps/web-7df6cdd49f                       0         0         0       18h
+tipsbank-web          replicaset.apps/web-bdc86b8fc                        0         0         0       18h
+tipsbank-contas   statefulset.apps/postgres   1/1     19h

@@ -1,0 +1,9 @@
+tipsbank-auditoria    auditoria-659555485f-r7hbw                 1/1     Running   0               4h8m
+tipsbank-auditoria    auditoria-659555485f-zn4tr                 1/1     Running   0               4h8m
+tipsbank-contas       api-contas-65d86d5dc7-d6lt6                1/1     Running   0               147m
+tipsbank-contas       api-contas-65d86d5dc7-mzns4                1/1     Running   0               146m
+tipsbank-contas       postgres-0                                 1/1     Running   0               71m
+tipsbank-transacoes   api-transacoes-7558cf5d9c-87vc4            1/1     Running   0               42m
+tipsbank-transacoes   api-transacoes-7558cf5d9c-xvqxt            1/1     Running   0               43m
+tipsbank-web          web-6bc8b8c546-4hc57                       1/1     Running   0               3m35s
+tipsbank-web          web-6bc8b8c546-jwjpt                       1/1     Running   0               3m41s

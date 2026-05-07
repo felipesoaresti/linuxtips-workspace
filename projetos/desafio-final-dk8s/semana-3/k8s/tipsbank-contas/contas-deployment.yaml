@@ -1,0 +1,91 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: api-contas
+  namespace: tipsbank-contas
+  labels:
+    app: api-contas
+    app.kubernetes.io/name: api-contas
+    app.kubernetes.io/part-of: tipsbank
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      app: api-contas
+  template:
+    metadata:
+      labels:
+        app: api-contas
+        app.kubernetes.io/name: api-contas
+        app.kubernetes.io/part-of: tipsbank
+    spec:
+      initContainers:
+        - name: init-postgres
+          image: busybox:1.36
+          command:
+            - sh
+            - -c
+            - |
+              until nc -z postgres-service.tipsbank-contas.svc.cluster.local 5432; do
+                echo "Verificando conexão com Postgres..."
+                sleep 3
+              done
+      containers:
+        - name: api-contas
+          image: felipestaypuff/tipsbank-api-contas:v2.0.0
+          ports:
+            - containerPort: 8080
+              name: api-contas
+          envFrom:
+            - secretRef:
+                name: contas-secret
+          resources:
+            requests:
+              cpu: 200m
+              memory: 256Mi
+            limits:
+              cpu: 500m
+              memory: 512Mi
+          startupProbe:
+            httpGet:
+              path: /health/startup
+              port: 8080
+            failureThreshold: 30
+            periodSeconds: 5
+          livenessProbe:
+            httpGet:
+              path: /health/live
+              port: 8080
+            initialDelaySeconds: 0
+            timeoutSeconds: 3
+            periodSeconds: 10
+            successThreshold: 1
+            failureThreshold: 3
+          readinessProbe:
+            httpGet:
+              path: /health/ready
+              port: 8080
+            initialDelaySeconds: 0
+            timeoutSeconds: 3
+            periodSeconds: 5
+            successThreshold: 1
+            failureThreshold: 3
+
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: api-contas
+  namespace: tipsbank-contas
+  labels:
+    app: api-contas
+    app.kubernetes.io/name: api-contas
+    app.kubernetes.io/part-of: tipsbank
+spec:
+  type: ClusterIP
+  selector:
+    app: api-contas
+  ports:
+    - port: 8080
+      targetPort: 8080
+      name: api-contas

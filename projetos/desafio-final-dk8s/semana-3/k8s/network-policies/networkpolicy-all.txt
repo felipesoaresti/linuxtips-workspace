@@ -1,0 +1,524 @@
+NAMESPACE             NAME                           POD-SELECTOR     AGE
+tipsbank-auditoria    default-deny-all               <none>           74m
+tipsbank-contas       allow-api-contas-to-postgres   app=api-contas   5m30s
+tipsbank-contas       allow-dns-egress-contas        <none>           59s
+tipsbank-contas       allow-ingress-to-api-contas    app=api-contas   5m30s
+tipsbank-contas       allow-ingress-to-postgres      app=postgres     5m30s
+tipsbank-contas       default-deny-all               <none>           74m
+tipsbank-transacoes   default-deny-all               <none>           74m
+tipsbank-web          allow-dns-egress-web           <none>           44m
+tipsbank-web          allow-ingress-to-web           app=web          44m
+tipsbank-web          allow-web-egress-to-apis       app=web          44m
+tipsbank-web          default-deny-all               <none>           74m
+Name:         default-deny-all
+Namespace:    tipsbank-auditoria
+Created on:   2026-05-05 16:23:20 -0300 -03
+Labels:       <none>
+Annotations:  <none>
+Spec:
+  PodSelector:     <none> (Allowing the specific traffic to all pods in this namespace)
+  Allowing ingress traffic:
+    <none> (Selected pods are isolated for ingress connectivity)
+  Allowing egress traffic:
+    <none> (Selected pods are isolated for egress connectivity)
+  Policy Types: Ingress, Egress
+
+
+Name:         allow-api-contas-to-postgres
+Namespace:    tipsbank-contas
+Created on:   2026-05-05 17:32:49 -0300 -03
+Labels:       <none>
+Annotations:  <none>
+Spec:
+  PodSelector:     app=api-contas
+  Not affecting ingress traffic
+  Allowing egress traffic:
+    To Port: 5432/TCP
+    To:
+      PodSelector: app=postgres
+  Policy Types: Egress
+
+
+Name:         allow-dns-egress-contas
+Namespace:    tipsbank-contas
+Created on:   2026-05-05 17:37:20 -0300 -03
+Labels:       <none>
+Annotations:  <none>
+Spec:
+  PodSelector:     <none> (Allowing the specific traffic to all pods in this namespace)
+  Not affecting ingress traffic
+  Allowing egress traffic:
+    To Port: 53/UDP
+    To Port: 53/TCP
+    To:
+      NamespaceSelector: kubernetes.io/metadata.name=kube-system
+      PodSelector: k8s-app=kube-dns
+  Policy Types: Egress
+
+
+Name:         allow-ingress-to-api-contas
+Namespace:    tipsbank-contas
+Created on:   2026-05-05 17:32:49 -0300 -03
+Labels:       <none>
+Annotations:  <none>
+Spec:
+  PodSelector:     app=api-contas
+  Allowing ingress traffic:
+    To Port: 8080/TCP
+    From:
+      NamespaceSelector: kubernetes.io/metadata.name=ingress-nginx
+    From:
+      NamespaceSelector: kubernetes.io/metadata.name=tipsbank-web
+      PodSelector: app=web
+    From:
+      NamespaceSelector: kubernetes.io/metadata.name=tipsbank-transacoes
+      PodSelector: app=api-transacoes
+    From:
+      NamespaceSelector: kubernetes.io/metadata.name=tipsbank-transacoes
+      PodSelector: app=api-transacoes-v2
+  Not affecting egress traffic
+  Policy Types: Ingress
+
+
+Name:         allow-ingress-to-postgres
+Namespace:    tipsbank-contas
+Created on:   2026-05-05 17:32:49 -0300 -03
+Labels:       <none>
+Annotations:  <none>
+Spec:
+  PodSelector:     app=postgres
+  Allowing ingress traffic:
+    To Port: 5432/TCP
+    From:
+      PodSelector: app=api-contas
+    From:
+      NamespaceSelector: kubernetes.io/metadata.name=tipsbank-transacoes
+  Not affecting egress traffic
+  Policy Types: Ingress
+
+
+Name:         default-deny-all
+Namespace:    tipsbank-contas
+Created on:   2026-05-05 16:23:20 -0300 -03
+Labels:       <none>
+Annotations:  <none>
+Spec:
+  PodSelector:     <none> (Allowing the specific traffic to all pods in this namespace)
+  Allowing ingress traffic:
+    <none> (Selected pods are isolated for ingress connectivity)
+  Allowing egress traffic:
+    <none> (Selected pods are isolated for egress connectivity)
+  Policy Types: Ingress, Egress
+
+
+Name:         default-deny-all
+Namespace:    tipsbank-transacoes
+Created on:   2026-05-05 16:23:20 -0300 -03
+Labels:       <none>
+Annotations:  <none>
+Spec:
+  PodSelector:     <none> (Allowing the specific traffic to all pods in this namespace)
+  Allowing ingress traffic:
+    <none> (Selected pods are isolated for ingress connectivity)
+  Allowing egress traffic:
+    <none> (Selected pods are isolated for egress connectivity)
+  Policy Types: Ingress, Egress
+
+
+Name:         allow-dns-egress-web
+Namespace:    tipsbank-web
+Created on:   2026-05-05 16:53:24 -0300 -03
+Labels:       <none>
+Annotations:  <none>
+Spec:
+  PodSelector:     <none> (Allowing the specific traffic to all pods in this namespace)
+  Not affecting ingress traffic
+  Allowing egress traffic:
+    To Port: 53/UDP
+    To Port: 53/TCP
+    To:
+      NamespaceSelector: kubernetes.io/metadata.name=kube-system
+      PodSelector: k8s-app=kube-dns
+  Policy Types: Egress
+
+
+Name:         allow-ingress-to-web
+Namespace:    tipsbank-web
+Created on:   2026-05-05 16:53:24 -0300 -03
+Labels:       <none>
+Annotations:  <none>
+Spec:
+  PodSelector:     app=web
+  Allowing ingress traffic:
+    To Port: 8080/TCP
+    From:
+      NamespaceSelector: kubernetes.io/metadata.name=ingress-nginx
+  Not affecting egress traffic
+  Policy Types: Ingress
+
+
+Name:         allow-web-egress-to-apis
+Namespace:    tipsbank-web
+Created on:   2026-05-05 16:53:24 -0300 -03
+Labels:       <none>
+Annotations:  <none>
+Spec:
+  PodSelector:     app=web
+  Not affecting ingress traffic
+  Allowing egress traffic:
+    To Port: 8080/TCP
+    To:
+      NamespaceSelector: kubernetes.io/metadata.name=tipsbank-contas
+      PodSelector: app=api-contas
+    To:
+      NamespaceSelector: kubernetes.io/metadata.name=tipsbank-transacoes
+      PodSelector: app=api-transacoes
+    To:
+      NamespaceSelector: kubernetes.io/metadata.name=tipsbank-auditoria
+      PodSelector: app=auditoria
+  Policy Types: Egress
+
+
+Name:         default-deny-all
+Namespace:    tipsbank-web
+Created on:   2026-05-05 16:23:20 -0300 -03
+Labels:       <none>
+Annotations:  <none>
+Spec:
+  PodSelector:     <none> (Allowing the specific traffic to all pods in this namespace)
+  Allowing ingress traffic:
+    <none> (Selected pods are isolated for ingress connectivity)
+  Allowing egress traffic:
+    <none> (Selected pods are isolated for egress connectivity)
+  Policy Types: Ingress, Egress
+Name:         allow-auditoria-to-nfs
+Namespace:    tipsbank-auditoria
+Created on:   2026-05-05 18:30:45 -0300 -03
+Labels:       <none>
+Annotations:  <none>
+Spec:
+  PodSelector:     app=auditoria
+  Not affecting ingress traffic
+  Allowing egress traffic:
+    To Port: 2049/TCP
+    To:
+      IPBlock:
+        CIDR: 192.168.3.11/32
+        Except: 
+    To:
+      IPBlock:
+        CIDR: 192.168.3.12/32
+        Except: 
+  Policy Types: Egress
+
+
+Name:         allow-dns-egress-auditoria
+Namespace:    tipsbank-auditoria
+Created on:   2026-05-05 18:30:45 -0300 -03
+Labels:       <none>
+Annotations:  <none>
+Spec:
+  PodSelector:     <none> (Allowing the specific traffic to all pods in this namespace)
+  Not affecting ingress traffic
+  Allowing egress traffic:
+    To Port: 53/UDP
+    To Port: 53/TCP
+    To:
+      NamespaceSelector: kubernetes.io/metadata.name=kube-system
+      PodSelector: k8s-app=kube-dns
+  Policy Types: Egress
+
+
+Name:         allow-ingress-to-auditoria
+Namespace:    tipsbank-auditoria
+Created on:   2026-05-05 18:30:45 -0300 -03
+Labels:       <none>
+Annotations:  <none>
+Spec:
+  PodSelector:     app=auditoria
+  Allowing ingress traffic:
+    To Port: 8080/TCP
+    From:
+      NamespaceSelector: kubernetes.io/metadata.name=ingress-nginx
+    From:
+      NamespaceSelector: kubernetes.io/metadata.name=tipsbank-web
+      PodSelector: app=web
+    From:
+      NamespaceSelector: kubernetes.io/metadata.name=tipsbank-transacoes
+      PodSelector: app in (api-transacoes,api-transacoes-v2)
+  Not affecting egress traffic
+  Policy Types: Ingress
+
+
+Name:         default-deny-all
+Namespace:    tipsbank-auditoria
+Created on:   2026-05-05 16:23:20 -0300 -03
+Labels:       <none>
+Annotations:  <none>
+Spec:
+  PodSelector:     <none> (Allowing the specific traffic to all pods in this namespace)
+  Allowing ingress traffic:
+    <none> (Selected pods are isolated for ingress connectivity)
+  Allowing egress traffic:
+    <none> (Selected pods are isolated for egress connectivity)
+  Policy Types: Ingress, Egress
+
+
+Name:         allow-api-contas-to-postgres
+Namespace:    tipsbank-contas
+Created on:   2026-05-05 17:32:49 -0300 -03
+Labels:       <none>
+Annotations:  <none>
+Spec:
+  PodSelector:     app=api-contas
+  Not affecting ingress traffic
+  Allowing egress traffic:
+    To Port: 5432/TCP
+    To:
+      PodSelector: app=postgres
+  Policy Types: Egress
+
+
+Name:         allow-dns-egress-contas
+Namespace:    tipsbank-contas
+Created on:   2026-05-05 17:37:20 -0300 -03
+Labels:       <none>
+Annotations:  <none>
+Spec:
+  PodSelector:     <none> (Allowing the specific traffic to all pods in this namespace)
+  Not affecting ingress traffic
+  Allowing egress traffic:
+    To Port: 53/UDP
+    To Port: 53/TCP
+    To:
+      NamespaceSelector: kubernetes.io/metadata.name=kube-system
+      PodSelector: k8s-app=kube-dns
+  Policy Types: Egress
+
+
+Name:         allow-ingress-to-api-contas
+Namespace:    tipsbank-contas
+Created on:   2026-05-05 17:32:49 -0300 -03
+Labels:       <none>
+Annotations:  <none>
+Spec:
+  PodSelector:     app=api-contas
+  Allowing ingress traffic:
+    To Port: 8080/TCP
+    From:
+      NamespaceSelector: kubernetes.io/metadata.name=ingress-nginx
+    From:
+      NamespaceSelector: kubernetes.io/metadata.name=tipsbank-web
+      PodSelector: app=web
+    From:
+      NamespaceSelector: kubernetes.io/metadata.name=tipsbank-transacoes
+      PodSelector: app=api-transacoes
+    From:
+      NamespaceSelector: kubernetes.io/metadata.name=tipsbank-transacoes
+      PodSelector: app=api-transacoes-v2
+  Not affecting egress traffic
+  Policy Types: Ingress
+
+
+Name:         allow-ingress-to-postgres
+Namespace:    tipsbank-contas
+Created on:   2026-05-05 17:32:49 -0300 -03
+Labels:       <none>
+Annotations:  <none>
+Spec:
+  PodSelector:     app=postgres
+  Allowing ingress traffic:
+    To Port: 5432/TCP
+    From:
+      PodSelector: app=api-contas
+    From:
+      NamespaceSelector: kubernetes.io/metadata.name=tipsbank-transacoes
+  Not affecting egress traffic
+  Policy Types: Ingress
+
+
+Name:         default-deny-all
+Namespace:    tipsbank-contas
+Created on:   2026-05-05 16:23:20 -0300 -03
+Labels:       <none>
+Annotations:  <none>
+Spec:
+  PodSelector:     <none> (Allowing the specific traffic to all pods in this namespace)
+  Allowing ingress traffic:
+    <none> (Selected pods are isolated for ingress connectivity)
+  Allowing egress traffic:
+    <none> (Selected pods are isolated for egress connectivity)
+  Policy Types: Ingress, Egress
+
+
+Name:         allow-dns-egress-transacoes
+Namespace:    tipsbank-transacoes
+Created on:   2026-05-05 17:59:09 -0300 -03
+Labels:       <none>
+Annotations:  <none>
+Spec:
+  PodSelector:     <none> (Allowing the specific traffic to all pods in this namespace)
+  Not affecting ingress traffic
+  Allowing egress traffic:
+    To Port: 53/UDP
+    To Port: 53/TCP
+    To:
+      NamespaceSelector: kubernetes.io/metadata.name=kube-system
+      PodSelector: k8s-app=kube-dns
+  Policy Types: Egress
+
+
+Name:         allow-ingress-to-api-transacoes
+Namespace:    tipsbank-transacoes
+Created on:   2026-05-05 17:59:09 -0300 -03
+Labels:       <none>
+Annotations:  <none>
+Spec:
+  PodSelector:     app in (api-transacoes,api-transacoes-v2)
+  Allowing ingress traffic:
+    To Port: 8080/TCP
+    From:
+      NamespaceSelector: kubernetes.io/metadata.name=ingress-nginx
+    From:
+      NamespaceSelector: kubernetes.io/metadata.name=tipsbank-web
+      PodSelector: app=web
+  Not affecting egress traffic
+  Policy Types: Ingress
+
+
+Name:         allow-transacoes-to-auditoria
+Namespace:    tipsbank-transacoes
+Created on:   2026-05-05 17:59:09 -0300 -03
+Labels:       <none>
+Annotations:  <none>
+Spec:
+  PodSelector:     app in (api-transacoes,api-transacoes-v2)
+  Not affecting ingress traffic
+  Allowing egress traffic:
+    To Port: 8080/TCP
+    To:
+      NamespaceSelector: kubernetes.io/metadata.name=tipsbank-auditoria
+      PodSelector: app=auditoria
+  Policy Types: Egress
+
+
+Name:         allow-transacoes-to-contas
+Namespace:    tipsbank-transacoes
+Created on:   2026-05-05 17:59:09 -0300 -03
+Labels:       <none>
+Annotations:  <none>
+Spec:
+  PodSelector:     app in (api-transacoes,api-transacoes-v2)
+  Not affecting ingress traffic
+  Allowing egress traffic:
+    To Port: 8080/TCP
+    To:
+      NamespaceSelector: kubernetes.io/metadata.name=tipsbank-contas
+      PodSelector: app=api-contas
+    ----------
+    To Port: 5432/TCP
+    To:
+      NamespaceSelector: kubernetes.io/metadata.name=tipsbank-contas
+      PodSelector: app=postgres
+  Policy Types: Egress
+
+
+Name:         default-deny-all
+Namespace:    tipsbank-transacoes
+Created on:   2026-05-05 16:23:20 -0300 -03
+Labels:       <none>
+Annotations:  <none>
+Spec:
+  PodSelector:     <none> (Allowing the specific traffic to all pods in this namespace)
+  Allowing ingress traffic:
+    <none> (Selected pods are isolated for ingress connectivity)
+  Allowing egress traffic:
+    <none> (Selected pods are isolated for egress connectivity)
+  Policy Types: Ingress, Egress
+
+
+Name:         allow-dns-egress-web
+Namespace:    tipsbank-web
+Created on:   2026-05-05 16:53:24 -0300 -03
+Labels:       <none>
+Annotations:  <none>
+Spec:
+  PodSelector:     <none> (Allowing the specific traffic to all pods in this namespace)
+  Not affecting ingress traffic
+  Allowing egress traffic:
+    To Port: 53/UDP
+    To Port: 53/TCP
+    To:
+      NamespaceSelector: kubernetes.io/metadata.name=kube-system
+      PodSelector: k8s-app=kube-dns
+  Policy Types: Egress
+
+
+Name:         allow-ingress-to-web
+Namespace:    tipsbank-web
+Created on:   2026-05-05 16:53:24 -0300 -03
+Labels:       <none>
+Annotations:  <none>
+Spec:
+  PodSelector:     app=web
+  Allowing ingress traffic:
+    To Port: 8080/TCP
+    From:
+      NamespaceSelector: kubernetes.io/metadata.name=ingress-nginx
+  Not affecting egress traffic
+  Policy Types: Ingress
+
+
+Name:         allow-web-egress-to-apis
+Namespace:    tipsbank-web
+Created on:   2026-05-05 16:53:24 -0300 -03
+Labels:       <none>
+Annotations:  <none>
+Spec:
+  PodSelector:     app=web
+  Not affecting ingress traffic
+  Allowing egress traffic:
+    To Port: 8080/TCP
+    To:
+      NamespaceSelector: kubernetes.io/metadata.name=tipsbank-contas
+      PodSelector: app=api-contas
+    To:
+      NamespaceSelector: kubernetes.io/metadata.name=tipsbank-transacoes
+      PodSelector: app=api-transacoes
+    To:
+      NamespaceSelector: kubernetes.io/metadata.name=tipsbank-auditoria
+      PodSelector: app=auditoria
+  Policy Types: Egress
+
+
+Name:         default-deny-all
+Namespace:    tipsbank-web
+Created on:   2026-05-05 16:23:20 -0300 -03
+Labels:       <none>
+Annotations:  <none>
+Spec:
+  PodSelector:     <none> (Allowing the specific traffic to all pods in this namespace)
+  Allowing ingress traffic:
+    <none> (Selected pods are isolated for ingress connectivity)
+  Allowing egress traffic:
+    <none> (Selected pods are isolated for egress connectivity)
+  Policy Types: Ingress, Egress
+NAMESPACE             NAME                              POD-SELECTOR                                AGE
+tipsbank-auditoria    allow-auditoria-to-nfs            app=auditoria                               2m2s
+tipsbank-auditoria    allow-dns-egress-auditoria        <none>                                      2m2s
+tipsbank-auditoria    allow-ingress-to-auditoria        app=auditoria                               2m2s
+tipsbank-auditoria    default-deny-all                  <none>                                      129m
+tipsbank-contas       allow-api-contas-to-postgres      app=api-contas                              59m
+tipsbank-contas       allow-dns-egress-contas           <none>                                      55m
+tipsbank-contas       allow-ingress-to-api-contas       app=api-contas                              59m
+tipsbank-contas       allow-ingress-to-postgres         app=postgres                                59m
+tipsbank-contas       default-deny-all                  <none>                                      129m
+tipsbank-transacoes   allow-dns-egress-transacoes       <none>                                      33m
+tipsbank-transacoes   allow-ingress-to-api-transacoes   app in (api-transacoes,api-transacoes-v2)   33m
+tipsbank-transacoes   allow-transacoes-to-auditoria     app in (api-transacoes,api-transacoes-v2)   33m
+tipsbank-transacoes   allow-transacoes-to-contas        app in (api-transacoes,api-transacoes-v2)   33m
+tipsbank-transacoes   default-deny-all                  <none>                                      129m
+tipsbank-web          allow-dns-egress-web              <none>                                      99m
+tipsbank-web          allow-ingress-to-web              app=web                                     99m
+tipsbank-web          allow-web-egress-to-apis          app=web                                     99m
+tipsbank-web          default-deny-all                  <none>                                      129m
