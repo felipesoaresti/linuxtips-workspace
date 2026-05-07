@@ -1,0 +1,90 @@
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: allow-ingress-to-auditoria
+  namespace: tipsbank-auditoria
+spec:
+  podSelector:
+    matchLabels:
+      app: auditoria
+  policyTypes:
+    - Ingress
+  ingress:
+    - from:
+        - namespaceSelector:
+              matchLabels:
+                kubernetes.io/metadata.name: ingress-nginx
+        - namespaceSelector:
+              matchLabels:
+                kubernetes.io/metadata.name: tipsbank-web
+          podSelector:
+              matchLabels:
+                app: web
+        - namespaceSelector:
+            matchLabels:
+              kubernetes.io/metadata.name: tipsbank-transacoes
+          podSelector:
+            matchExpressions:
+              - key: app
+                operator: In
+                values: ["api-transacoes", "api-transacoes-v2"]
+      ports:
+        - port: 8080
+          protocol: TCP
+
+---
+
+# Egress: auditoria para NFS (ipBlock com except para bloquear cluster nodes)
+
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: allow-auditoria-to-nfs
+  namespace: tipsbank-auditoria
+spec:
+  podSelector:
+    matchLabels:
+      app: auditoria
+  policyTypes:
+    - Egress
+  egress:
+    - to:
+      - ipBlock:
+          cidr: 192.168.3.0/24 # seguindo o manual , porem o ideal seria bloquear o para acesso apenas o IP dos NFS.
+#      - ipBlock:
+#          cidr: 192.168.3.11/32 # ao invés de liberar a rede, coloquei os dois IPS dos meus NFS
+#      - ipBlock:
+#          cidr: 192.168.3.12/32
+          except: # except não faz sendito nenhum, mas fiz assim devido ao Manual
+              - 192.168.3.40/32   # tb-master1
+              - 192.168.3.41/32   # tb-worker1
+              - 192.168.3.42/32   # tb-worker2
+      ports:
+        - port: 2049
+          protocol: TCP
+
+---
+
+# Egress: DNS
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: allow-dns-egress-auditoria
+  namespace: tipsbank-auditoria
+spec:
+  podSelector: {}
+  policyTypes:
+    - Egress
+  egress:
+    - to:
+      - namespaceSelector:
+          matchLabels:
+            kubernetes.io/metadata.name: kube-system
+        podSelector:
+          matchLabels:
+            k8s-app: kube-dns
+      ports:
+      - port: 53
+        protocol: UDP
+      - port: 53
+        protocol: TCP

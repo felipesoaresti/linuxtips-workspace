@@ -16,11 +16,21 @@ from sqlalchemy import Column, String, Numeric, DateTime, create_engine, func
 from sqlalchemy.orm import declarative_base, sessionmaker, Session
 from prometheus_client import Counter, Histogram, generate_latest, CONTENT_TYPE_LATEST
 
-logging.basicConfig(
-    level=os.getenv("LOG_LEVEL", "INFO"),
-    format='{"ts":"%(asctime)s","level":"%(levelname)s","service":"api-transacoes","msg":"%(message)s"}',
-)
+#### Modificação log - sidecar desafio ####
+#logging.basicConfig(
+#    level=os.getenv("LOG_LEVEL", "INFO"),
+#    format='{"ts":"%(asctime)s","level":"%(levelname)s","service":"api-transacoes","msg":"%(message)s"}',
+#)
+#log = logging.getLogger("api-transacoes")
+
+_LOG_FMT = '{"ts":"%(asctime)s","level":"%(levelname)s","service":"api-transacoes","msg":"%(message)s"}'
+logging.basicConfig(level=os.getenv("LOG_LEVEL", "INFO"), format=_LOG_FMT)
 log = logging.getLogger("api-transacoes")
+
+os.makedirs("/var/log/app", exist_ok=True)
+_fh = logging.FileHandler("/var/log/app/app.log")
+_fh.setFormatter(logging.Formatter(_LOG_FMT))
+log.addHandler(_fh)
 
 DB_URL = os.getenv(
     "DB_URL",
@@ -95,6 +105,19 @@ def db() -> Session:
 def live():
     return {"status": "ok", "version": APP_VERSION}
 
+# Adicionando o endpoint /pix v2 - 2.4 by puff
+
+@app.get("/pix")
+def pix():
+    return {
+        "versao": APP_VERSION,
+        "chave_tipo": "cpf",
+        "chave": "000.000.000-00",
+        "banco": "TipsBank",
+        "mensagem": "Endpoint PIX disponivel apenas na v2"
+    }
+
+# Fim da adição /pix v2 - 2.4 by puff
 
 @app.get("/health/ready")
 def ready():

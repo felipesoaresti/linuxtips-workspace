@@ -4,3 +4,6 @@ __pycache__
 .venv
 .env
 .git
+Dockerfile.bkp01
+requirements.txt.bkp01
+trivy-final.txt

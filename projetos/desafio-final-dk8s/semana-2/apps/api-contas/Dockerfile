@@ -3,7 +3,7 @@
 # =============================================================================
 # STAGE 1 — builder (Python 3.11-slim)
 # =============================================================================
-FROM python:3.11-slim-bookworm AS builder
+FROM python:3.14-slim-bookworm AS builder
 
 WORKDIR /app
 
@@ -17,7 +17,8 @@ COPY main.py .
 # STAGE 2 — runtime (Distroless Python, sem shell, sem package manager)
 # gcr.io/distroless/python3-debian12 → Python 3.11 + glibc, user nonroot (uid 65532)
 # =============================================================================
-FROM gcr.io/distroless/python3-debian12:nonroot
+
+FROM cgr.dev/chainguard/python:latest@sha256:18a4fbda8c280978b6aa5329f7acd4dbb106876e76fdc87913855ebf4876f2ff
 
 WORKDIR /app
 
@@ -31,4 +32,5 @@ ENV PYTHONUNBUFFERED=1 \
 
 EXPOSE 8080
 
-ENTRYPOINT ["python3", "-m", "uvicorn", "main:app", "--host", "0.0.0.0", "--port", "8080"]
+#ENTRYPOINT ["python3", "-m", "uvicorn", "main:app", "--host", "0.0.0.0", "--port", "8080"] funfou ditroless pyhon13
+ENTRYPOINT ["python", "-m", "uvicorn", "main:app", "--host", "0.0.0.0", "--port", "8080"]

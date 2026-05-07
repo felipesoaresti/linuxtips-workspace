@@ -1,0 +1,95 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: auditoria
+  namespace: tipsbank-auditoria
+  labels:
+    app: auditoria
+    app.kubernetes.io/name: auditoria
+    app.kubernetes.io/part-of: tipsbank
+spec:
+  replicas: 3
+  selector:
+    matchLabels:
+      app: auditoria
+  template:
+    metadata:
+      labels:
+        app: auditoria
+        app.kubernetes.io/name: auditoria
+        app.kubernetes.io/part-of: tipsbank
+    spec:
+      securityContext:
+        fsGroup: 65532
+      containers:
+        - name: auditoria
+          image: felipestaypuff/tipsbank-auditoria:v1.0.0
+          ports:
+            - containerPort: 8080
+              name: auditoria
+          env:
+            - name: DATA_DIR
+              value: /data
+            - name: LOG_LEVEL
+              value: INFO
+          volumeMounts:
+            - name: data-volume
+              mountPath: /data
+          resources:
+            limits:
+              memory: "512Mi"
+              cpu: "500m"
+            requests:
+              memory: "256Mi"
+              cpu: "250m"
+          livenessProbe:
+            httpGet:
+              path: /health/live
+              port: 8080
+            initialDelaySeconds: 5
+            periodSeconds: 5
+            failureThreshold: 3
+            successThreshold: 1
+      volumes:
+        - name: data-volume
+          persistentVolumeClaim:
+            claimName: auditoria-pvc
+
+---
+
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: auditoria-pvc
+  namespace: tipsbank-auditoria
+  labels:
+    app: auditoria
+    app.kubernetes.io/name: auditoria
+    app.kubernetes.io/part-of: tipsbank
+spec:
+  storageClassName: nfs-tp-data
+  accessModes:
+    - ReadWriteMany
+  resources:
+    requests:
+      storage: 2Gi
+
+---
+
+apiVersion: v1
+kind: Service
+metadata:
+  name: auditoria
+  namespace: tipsbank-auditoria
+  labels:
+    app: auditoria
+    app.kubernetes.io/name: auditoria
+    app.kubernetes.io/part-of: tipsbank
+spec:
+  type: ClusterIP
+  selector:
+    app: auditoria
+  ports:
+    - port: 8080
+      targetPort: 8080
+      name: auditoria

@@ -1,0 +1,33 @@
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: tipsbank-contas
+  labels:
+    app.kubernetes.io/part-of: tipsbank
+
+---
+
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: tipsbank-transacoes
+  labels:
+    app.kubernetes.io/part-of: tipsbank
+
+---
+
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: tipsbank-auditoria
+  labels:
+    app.kubernetes.io/part-of: tipsbank
+
+---
+
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: tipsbank-web
+  labels:
+    app.kubernetes.io/part-of: tipsbank

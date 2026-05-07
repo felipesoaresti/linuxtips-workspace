@@ -5,7 +5,8 @@
 # Alternativa didatica a Distroless: enxuta (~25 MB), usuario nao-root,
 # binariamente isolada. Dia-13 do DK8s: minimalismo + nao-root.
 # =============================================================================
-FROM nginxinc/nginx-unprivileged:1.27-alpine
+FROM nginxinc/nginx-unprivileged:1.29-alpine-slim
+
 
 EXPOSE 8080
 
