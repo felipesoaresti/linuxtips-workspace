@@ -42,21 +42,36 @@ spec:
             requests:
               memory: "256Mi"
               cpu: "250m"
+          startupProbe:
+            httpGet:
+              path: /health/startup
+              port: 8080
+            failureThreshold: 30
+            periodSeconds: 5
           livenessProbe:
             httpGet:
               path: /health/live
               port: 8080
-            initialDelaySeconds: 5
-            periodSeconds: 5
-            failureThreshold: 3
+            initialDelaySeconds: 0
+            timeoutSeconds: 3
+            periodSeconds: 10
             successThreshold: 1
+            failureThreshold: 3
+          readinessProbe:
+            httpGet:
+              path: /health/ready
+              port: 8080
+            initialDelaySeconds: 0
+            timeoutSeconds: 3
+            periodSeconds: 5
+            successThreshold: 1
+            failureThreshold: 3
       volumes:
         - name: data-volume
           persistentVolumeClaim:
             claimName: auditoria-pvc
 
 ---
-
 apiVersion: v1
 kind: PersistentVolumeClaim
 metadata:
@@ -75,7 +90,6 @@ spec:
       storage: 2Gi
 
 ---
-
 apiVersion: v1
 kind: Service
 metadata:
