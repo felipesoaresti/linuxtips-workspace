@@ -1,7 +1,7 @@
 ---
 tags: [tipsbank, evidencias, semana-1, dk8s]
 created: 2026-04-24
-updated: 2026-05-05
+updated: 2026-05-06
 status: concluído
 semana: 1
 ---
@@ -215,16 +215,16 @@ curl http://localhost:8083/eventos | jq
 
 #### Screenshots
 
-![](<imagens/Captura de tela 2026-04-24 152744.png>)  
+![](<imagens/Captura de tela 2026-04-24 152744.png>)
 *Dashboard local — app rodando com docker-compose*
 
-![](<imagens/Captura de tela 2026-04-24 153243.png>)  
+![](<imagens/Captura de tela 2026-04-24 153243.png>)
 *Todos os containers up (api-contas, api-transacoes, auditoria, web)*
 
-![](<imagens/Captura de tela 2026-04-24 173234.png>)  
+![](<imagens/Captura de tela 2026-04-24 173234.png>)
 *Transferência de R\$ 100,00 entre contas*
 
-![](<imagens/Captura de tela 2026-04-24 173258.png>)  
+![](<imagens/Captura de tela 2026-04-24 173258.png>)
 *Auditoria — evento de transferência registrado*
 
 ---
@@ -235,8 +235,11 @@ curl http://localhost:8083/eventos | jq
 
 #### Justificativa: por que Chainguard/Distroless reduz vulnerabilidades
 
-As imagens Chainguard e Distroless (base Wolfi) eliminam shell, package manager e utilitários do sistema. A imagem/container contém apenas o Python runtime e as dependências da aplicação. A Chainguard é uma empresa especializada e mantem suas imagens com 0 CVEs. Como a imagem não possui shell, não existe como acesssar ou executra algo, inútil o "kubectl exec",  outra vantagem ainda é o uso de noroot, o usuário não tem privilégios administrativos, apenas executa a aplicação.
-A imagem `web` usa `nginxinc/nginx-unprivileged:1.29-alpine-slim`: Alpine enxuto, roda como user 101 (nonroot), sem shell funcional exposto ao processo principal.
+Nesta etapa eu foquei em reduzir a superfície de ataque das imagens. A ideia foi deixar dentro do container só o necessário para a aplicação rodar: runtime Python, dependências da aplicação e nada de ferramentas extras do sistema.
+
+As imagens Chainguard/Distroless, baseadas em Wolfi, ajudam nisso porque não trazem shell, package manager nem utilitários comuns de troubleshooting. Na prática, se alguém conseguir entrar no container, o ambiente já é bem mais limitado: não tem `sh`, não tem `apt`, não tem `apk` e o processo roda com usuário nonroot. Isso não resolve segurança sozinho, mas diminui bastante o impacto de uma exploração.
+
+No caso da `web`, usei `nginxinc/nginx-unprivileged:1.29-alpine-slim`, que também é uma imagem mais enxuta e roda como usuário 101, sem depender de root para servir o frontend.
 
 
 #### Usuário nonroot nas imagens ####
@@ -416,8 +419,11 @@ File: cosing-todas.txt
 ]
 ```
 #### Observações ####
- Na imagem `api-contas` foi identificado dois CVE´S CRITICAL, relacionado a uma biblioteca Python (`pyyaml`) por esse motivo optei por usar uma imagem Chainguard.
- A Chainguard mantém suas imagens atualizadas e seguras, contudo utilizei uma image latest. Para poder não sofrer nennhum tipo de atualização da imagem configurei no dockerfile a imagem da chainguard utilizada. Obrigando assim a usar a que esta no repositorio da aplicação api-contas.
+
+O principal problema encontrado nessa parte foi na imagem da `api-contas`: o scan apontou dois CVEs `CRITICAL` relacionados a uma dependência Python (`pyyaml`). Por isso eu usei essa imagem como base do ajuste e migrei para Chainguard/Distroless até chegar no resultado com `0 HIGH` e `0 CRITICAL`.
+
+Outro ponto importante foi o uso de `latest`. Mesmo a Chainguard mantendo as imagens atualizadas, usar `latest` direto deixa o build menos previsível, porque a base pode mudar sem eu perceber. Para evitar esse tipo de variação, eu validei o digest da imagem e fixei a referência no Dockerfile. Assim o build passa a usar exatamente a imagem testada e versionada junto com o projeto.
+
  ```
 ❯ docker inspect cgr.dev/chainguard/python:latest --format '{{index .RepoDigests 0}}'
 cgr.dev/chainguard/python@sha256:18a4fbda8c280978b6aa5329f7acd4dbb106876e76fdc87913855ebf4876f2ff
@@ -427,25 +433,25 @@ cgr.dev/chainguard/python@sha256:18a4fbda8c280978b6aa5329f7acd4dbb106876e76fdc87
 
 #### Screenshots
 
-![](<imagens/Captura de tela 2026-04-25 065012.png>)  
+![](<imagens/Captura de tela 2026-04-25 065012.png>)
 *Dockerfile multi-stage distroless*
 
-![](<imagens/Captura de tela 2026-04-25 072153.png>)  
+![](<imagens/Captura de tela 2026-04-25 072153.png>)
 *requirements.txt das dependências*
 
-![](<imagens/Captura de tela 2026-04-25 091243.png>)  
+![](<imagens/Captura de tela 2026-04-25 091243.png>)
 *Trivy scan — resultado do scan de vulnerabilidades*
 
-![](<imagens/Captura de tela 2026-04-25 145426.png>)  
+![](<imagens/Captura de tela 2026-04-25 145426.png>)
 *Docker history — imagem distroless (sem shell, sem camadas desnecessárias)*
 
-![](<imagens/Captura de tela 2026-04-25 145754.png>)  
+![](<imagens/Captura de tela 2026-04-25 145754.png>)
 *Docker Desktop — imagens TipsBank construídas*
 
-![](<imagens/Captura de tela 2026-04-25 145855.png>)  
+![](<imagens/Captura de tela 2026-04-25 145855.png>)
 *Docker Desktop — detalhes das imagens*
 
-![](<imagens/Captura de tela 2026-04-25 150119.png>)  
+![](<imagens/Captura de tela 2026-04-25 150119.png>)
 *Inspecção da imagem — digest e layers*
 
 ---
@@ -532,13 +538,13 @@ Taints:             node-role.kubernetes.io/control-plane:NoSchedule
 
 #### Screenshots
 
-![](<imagens/Captura de tela 2026-04-26 130350.png>)  
+![](<imagens/Captura de tela 2026-04-26 130350.png>)
 *kubectl edit — ajuste de pod no cluster*
 
-![](<imagens/Captura de tela 2026-04-26 130540.png>)  
+![](<imagens/Captura de tela 2026-04-26 130540.png>)
 *kubectl get pods — cluster kubeadm operacional*
 
-![](<imagens/Captura de tela 2026-04-26 130716.png>)  
+![](<imagens/Captura de tela 2026-04-26 130716.png>)
 *Nós do cluster — tb-master1, tb-worker1, tb-worker2*
 
 ---
@@ -565,8 +571,6 @@ tipsbank-transacoes   api-transacoes-7558cf5d9c-xvqxt            1/1     Running
 tipsbank-web          web-6bc8b8c546-4hc57                       1/1     Running   0               7m14s
 tipsbank-web          web-6bc8b8c546-jwjpt                       1/1     Running   0               7m20s
 ```
-
-
 
 ---
 
@@ -619,16 +623,16 @@ Imagens públicas no Docker Hub (`felipestaypuff/tipsbank-*:v1.0.0`) — imagePu
 
 #### Screenshots
 
-![](<imagens/Captura de tela 2026-04-27 174113.png>)  
+![](<imagens/Captura de tela 2026-04-27 174113.png>)
 *VS Code — manifests YAML de Deployments e Services*
 
-![](<imagens/Captura de tela 2026-04-28 000523.png>)  
+![](<imagens/Captura de tela 2026-04-28 000523.png>)
 *Login na aplicação TipsBank rodando no cluster*
 
-![](<imagens/Captura de tela 2026-04-28 000546.png>)  
+![](<imagens/Captura de tela 2026-04-28 000546.png>)
 *Tela de login — autenticação com conta de teste*
 
-![](<imagens/Captura de tela 2026-04-28 004537.png>)  
+![](<imagens/Captura de tela 2026-04-28 004537.png>)
 *Dashboard — conta Jeferson Fernando acessível*
 
 ---
@@ -807,7 +811,8 @@ kubectl exec -n tipsbank-auditoria debug-nfs -- wc -l /data/eventos-2026-04-29.j
 
 #### Screenshots
 
-![](<imagens/Captura de tela 2026-04-27 174248.png>)  
+![](<imagens/Captura de tela 2026-04-27 174248.png>)
 *NFS /data — arquivo de auditoria criado e lido pelo pod*
 
 ---
+

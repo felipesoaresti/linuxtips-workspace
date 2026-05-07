@@ -215,16 +215,16 @@ curl http://localhost:8083/eventos | jq
 
 #### Screenshots
 
-![](<imagens/Captura de tela 2026-04-24 152744.png>)  
+![](<imagens/Captura de tela 2026-04-24 152744.png>)
 *Dashboard local — app rodando com docker-compose*
 
-![](<imagens/Captura de tela 2026-04-24 153243.png>)  
+![](<imagens/Captura de tela 2026-04-24 153243.png>)
 *Todos os containers up (api-contas, api-transacoes, auditoria, web)*
 
-![](<imagens/Captura de tela 2026-04-24 173234.png>)  
+![](<imagens/Captura de tela 2026-04-24 173234.png>)
 *Transferência de R\$ 100,00 entre contas*
 
-![](<imagens/Captura de tela 2026-04-24 173258.png>)  
+![](<imagens/Captura de tela 2026-04-24 173258.png>)
 *Auditoria — evento de transferência registrado*
 
 ---
@@ -235,8 +235,11 @@ curl http://localhost:8083/eventos | jq
 
 #### Justificativa: por que Chainguard/Distroless reduz vulnerabilidades
 
-As imagens Chainguard e Distroless (base Wolfi) eliminam shell, package manager e utilitários do sistema. A imagem/container contém apenas o Python runtime e as dependências da aplicação. A Chainguard é uma empresa especializada e mantem suas imagens com 0 CVEs. Como a imagem não possui shell, não existe como acesssar ou executra algo, inútil o "kubectl exec",  outra vantagem ainda é o uso de noroot, o usuário não tem privilégios administrativos, apenas executa a aplicação.
-A imagem `web` usa `nginxinc/nginx-unprivileged:1.29-alpine-slim`: Alpine enxuto, roda como user 101 (nonroot), sem shell funcional exposto ao processo principal.
+Nesta etapa eu foquei em reduzir a superfície de ataque das imagens. A ideia foi deixar dentro do container só o necessário para a aplicação rodar: runtime Python, dependências da aplicação e nada de ferramentas extras do sistema.
+
+As imagens Chainguard/Distroless, baseadas em Wolfi, ajudam nisso porque não trazem shell, package manager nem utilitários comuns de troubleshooting. Na prática, se alguém conseguir entrar no container, o ambiente já é bem mais limitado: não tem `sh`, não tem `apt`, não tem `apk` e o processo roda com usuário nonroot. Isso não resolve segurança sozinho, mas diminui bastante o impacto de uma exploração.
+
+No caso da `web`, usei `nginxinc/nginx-unprivileged:1.29-alpine-slim`, que também é uma imagem mais enxuta e roda como usuário 101, sem depender de root para servir o frontend.
 
 
 #### Usuário nonroot nas imagens ####
@@ -416,8 +419,11 @@ File: cosing-todas.txt
 ]
 ```
 #### Observações ####
- Na imagem `api-contas` foi identificado dois CVE´S CRITICAL, relacionado a uma biblioteca Python (`pyyaml`) por esse motivo optei por usar uma imagem Chainguard.
- A Chainguard mantém suas imagens atualizadas e seguras, contudo utilizei uma image latest. Para poder não sofrer nennhum tipo de atualização da imagem configurei no dockerfile a imagem da chainguard utilizada. Obrigando assim a usar a que esta no repositorio da aplicação api-contas.
+
+O principal problema encontrado nessa parte foi na imagem da `api-contas`: o scan apontou dois CVEs `CRITICAL` relacionados a uma dependência Python (`pyyaml`). Por isso eu usei essa imagem como base do ajuste e migrei para Chainguard/Distroless até chegar no resultado com `0 HIGH` e `0 CRITICAL`.
+
+Outro ponto importante foi o uso de `latest`. Mesmo a Chainguard mantendo as imagens atualizadas, usar `latest` direto deixa o build menos previsível, porque a base pode mudar sem eu perceber. Para evitar esse tipo de variação, eu validei o digest da imagem e fixei a referência no Dockerfile. Assim o build passa a usar exatamente a imagem testada e versionada junto com o projeto.
+
  ```
 ❯ docker inspect cgr.dev/chainguard/python:latest --format '{{index .RepoDigests 0}}'
 cgr.dev/chainguard/python@sha256:18a4fbda8c280978b6aa5329f7acd4dbb106876e76fdc87913855ebf4876f2ff
@@ -427,25 +433,25 @@ cgr.dev/chainguard/python@sha256:18a4fbda8c280978b6aa5329f7acd4dbb106876e76fdc87
 
 #### Screenshots
 
-![](<imagens/Captura de tela 2026-04-25 065012.png>)  
+![](<imagens/Captura de tela 2026-04-25 065012.png>)
 *Dockerfile multi-stage distroless*
 
-![](<imagens/Captura de tela 2026-04-25 072153.png>)  
+![](<imagens/Captura de tela 2026-04-25 072153.png>)
 *requirements.txt das dependências*
 
-![](<imagens/Captura de tela 2026-04-25 091243.png>)  
+![](<imagens/Captura de tela 2026-04-25 091243.png>)
 *Trivy scan — resultado do scan de vulnerabilidades*
 
-![](<imagens/Captura de tela 2026-04-25 145426.png>)  
+![](<imagens/Captura de tela 2026-04-25 145426.png>)
 *Docker history — imagem distroless (sem shell, sem camadas desnecessárias)*
 
-![](<imagens/Captura de tela 2026-04-25 145754.png>)  
+![](<imagens/Captura de tela 2026-04-25 145754.png>)
 *Docker Desktop — imagens TipsBank construídas*
 
-![](<imagens/Captura de tela 2026-04-25 145855.png>)  
+![](<imagens/Captura de tela 2026-04-25 145855.png>)
 *Docker Desktop — detalhes das imagens*
 
-![](<imagens/Captura de tela 2026-04-25 150119.png>)  
+![](<imagens/Captura de tela 2026-04-25 150119.png>)
 *Inspecção da imagem — digest e layers*
 
 ---
@@ -532,13 +538,13 @@ Taints:             node-role.kubernetes.io/control-plane:NoSchedule
 
 #### Screenshots
 
-![](<imagens/Captura de tela 2026-04-26 130350.png>)  
+![](<imagens/Captura de tela 2026-04-26 130350.png>)
 *kubectl edit — ajuste de pod no cluster*
 
-![](<imagens/Captura de tela 2026-04-26 130540.png>)  
+![](<imagens/Captura de tela 2026-04-26 130540.png>)
 *kubectl get pods — cluster kubeadm operacional*
 
-![](<imagens/Captura de tela 2026-04-26 130716.png>)  
+![](<imagens/Captura de tela 2026-04-26 130716.png>)
 *Nós do cluster — tb-master1, tb-worker1, tb-worker2*
 
 ---
@@ -565,8 +571,6 @@ tipsbank-transacoes   api-transacoes-7558cf5d9c-xvqxt            1/1     Running
 tipsbank-web          web-6bc8b8c546-4hc57                       1/1     Running   0               7m14s
 tipsbank-web          web-6bc8b8c546-jwjpt                       1/1     Running   0               7m20s
 ```
-
-
 
 ---
 
@@ -619,16 +623,16 @@ Imagens públicas no Docker Hub (`felipestaypuff/tipsbank-*:v1.0.0`) — imagePu
 
 #### Screenshots
 
-![](<imagens/Captura de tela 2026-04-27 174113.png>)  
+![](<imagens/Captura de tela 2026-04-27 174113.png>)
 *VS Code — manifests YAML de Deployments e Services*
 
-![](<imagens/Captura de tela 2026-04-28 000523.png>)  
+![](<imagens/Captura de tela 2026-04-28 000523.png>)
 *Login na aplicação TipsBank rodando no cluster*
 
-![](<imagens/Captura de tela 2026-04-28 000546.png>)  
+![](<imagens/Captura de tela 2026-04-28 000546.png>)
 *Tela de login — autenticação com conta de teste*
 
-![](<imagens/Captura de tela 2026-04-28 004537.png>)  
+![](<imagens/Captura de tela 2026-04-28 004537.png>)
 *Dashboard — conta Jeferson Fernando acessível*
 
 ---
@@ -807,7 +811,7 @@ kubectl exec -n tipsbank-auditoria debug-nfs -- wc -l /data/eventos-2026-04-29.j
 
 #### Screenshots
 
-![](<imagens/Captura de tela 2026-04-27 174248.png>)  
+![](<imagens/Captura de tela 2026-04-27 174248.png>)
 *NFS /data — arquivo de auditoria criado e lido pelo pod*
 
 ---
@@ -879,16 +883,16 @@ curl -s http://api.tipsbank.staypuff.info/auditoria/health/live
 
 #### Screenshots
 
-![](<imagens/Captura de tela 2026-04-29 204941.png>)  
+![](<imagens/Captura de tela 2026-04-29 204941.png>)
 *VS Code — MetalLB e Ingress Nginx YAML*
 
-![](<imagens/Captura de tela 2026-04-29 223452.png>)  
+![](<imagens/Captura de tela 2026-04-29 223452.png>)
 *VS Code — Ingress resource configurado*
 
-![](<imagens/Captura de tela 2026-05-01 181601.png>)  
+![](<imagens/Captura de tela 2026-05-01 181601.png>)
 *curl HTTP — todos os hosts respondendo corretamente*
 
-![](<imagens/Captura de tela 2026-05-01 201139.png>)  
+![](<imagens/Captura de tela 2026-05-01 201139.png>)
 *helm install ingress-nginx via MetalLB*
 
 ---
@@ -932,9 +936,11 @@ tipsbank-transacoes   api-tipsbank-tls   True    api-tipsbank-tls   84s
 tipsbank-web          app-tipsbank-tls   True    app-tipsbank-tls   8m3s
 ```
 
-`curl` sem `-k` funcionando. Browser mostra 🔒 sem aviso. Cert emitido via DNS-01 (Cloudflare cria TXT `_acme-challenge.*` → Let's Encrypt valida → emite).
+`curl` sem `-k` funcionando. Browser mostra TLS sem aviso. Cert emitido via DNS-01.
 
 **Nota:** `limit-req-status-code` é configuração global do ConfigMap do ingress-nginx (não annotation por Ingress).
+https://kubernetes.github.io/ingress-nginx/user-guide/nginx-configuration/configmap/#limit-req-status-code
+
 Patch aplicado: `kubectl patch configmap ingress-nginx-controller -n ingress-nginx --type merge -p '{"data":{"limit-req-status-code":"429"}}'`
 
 #### Critério 2 — Basic Auth: 401 sem credencial, 200 com credencial
@@ -980,7 +986,9 @@ Status code distribution:
 
 **Nota — por que a annotation não funcionou e foi necessário o ConfigMap:**
 
-A annotation `nginx.ingress.kubernetes.io/limit-req-status-code: "429"` **não existe** como configuração por Ingress. O `limit-rps` injeta `limit_req` no bloco `location` do nginx.conf gerado (escopo por rota), mas o status code de rejeição é a diretiva `limit_req_status` no bloco `http {}` (escopo global) — que o ingress-nginx mapeia para o ConfigMap do controller.
+Aqui o problema foi uma diferença de escopo dentro do ingress-nginx. Eu tentei tratar o retorno `429` como se fosse uma annotation do próprio Ingress, mas essa annotation não existe.
+
+O `limit-rps` funciona por rota, porque ele injeta o `limit_req` no bloco `location` do `nginx.conf`. Só que o status retornado quando o limite é estourado vem da diretiva `limit_req_status`, que fica no bloco global `http {}`. Por isso o ajuste certo não era no Ingress da aplicação, e sim no ConfigMap do controller.
 
 Referência oficial: https://kubernetes.github.io/ingress-nginx/user-guide/nginx-configuration/configmap/
 
@@ -996,14 +1004,7 @@ kubectl patch configmap ingress-nginx-controller -n ingress-nginx \
 kubectl rollout restart deployment ingress-nginx-controller -n ingress-nginx
 ```
 
-**Problema com Cloudflare e rate limiting por IP:**
 
-Nos primeiros testes com `hey -n 100 -c 10` todos os requests retornaram 200, mesmo com `limit-rps: 50` configurado. O motivo: com Cloudflare Tunnel, o nginx-ingress vê **todos os requests chegando do mesmo IP** — o IP interno do tunnel (não o IP real do cliente). A diretiva `limit_req_zone` do nginx usa `$binary_remote_addr` como chave, que neste cenário é sempre o IP do Cloudflare Tunnel.
-
-Consequências práticas:
-1. **Todos os usuários compartilham um único bucket de rate limit** — 50 req/s globais, não por usuário
-2. **O rate limit é mais fácil de atingir em testes locais** (100% do tráfego vem de um IP) e mais difícil de calibrar para produção real
-3. Em produção com Cloudflare, a correção é usar o header `CF-Connecting-IP` como chave: configurar `use-forwarded-headers: "true"` no ConfigMap + `forwarded-for-header: "CF-Connecting-IP"` para que o nginx use o IP real do cliente como chave do rate limiter
 
 #### Critério 4 — Affinity Cookie em transações
 
@@ -1027,19 +1028,19 @@ set-cookie: TIPSBANK_AFFINITY=1777686728.211.645.931183|ce724c427397688022a6eba5
 
 #### Screenshots
 
-![](<imagens/Captura de tela 2026-05-01 235112.png>)  
+![](<imagens/Captura de tela 2026-05-01 235112.png>)
 *helm install cert-manager — instalação do controlador*
 
-![](<imagens/Captura de tela 2026-05-01 235134.png>)  
+![](<imagens/Captura de tela 2026-05-01 235134.png>)
 *Certificado TLS emitido pelo Let's Encrypt*
 
-![](<imagens/Captura de tela 2026-05-01 235153.png>)  
+![](<imagens/Captura de tela 2026-05-01 235153.png>)
 *Browser — HTTPS validado com cadeado verde*
 
-![](<imagens/Captura de tela 2026-05-01 235215.png>)  
+![](<imagens/Captura de tela 2026-05-01 235215.png>)
 *curl HTTPS — resposta 200 com TLS*
 
-![](<imagens/Captura de tela 2026-05-01 235228.png>)  
+![](<imagens/Captura de tela 2026-05-01 235228.png>)
 *Detalhes do certificado — CN e validade*
 
 ---
@@ -1060,6 +1061,8 @@ set-cookie: TIPSBANK_AFFINITY=1777686728.211.645.931183|ce724c427397688022a6eba5
 
 **Problemas encontrados e soluções:**
 
+Nessa etapa os problemas vieram principalmente da diferença entre o homelab e o EKS. O manifesto que funcionava localmente precisava de ajustes para storage, DNS e permissões AWS.
+
 | # | Problema | Causa | Solução |
 |---|---|---|---|
 | 1 | `eksctl create cluster` → `AccessDeniedException: eks:DescribeClusterVersions` | IAM user `eks-tipsbank` sem permissões EKS | Inline policy com `eks:*`, `ssm:GetParameter`, `autoscaling:*`, `ecr:*` |
@@ -1069,7 +1072,13 @@ set-cookie: TIPSBANK_AFFINITY=1777686728.211.645.931183|ce724c427397688022a6eba5
 | 5 | PVC `auditoria-pvc` ProvisioningFailed | EFS CSI Driver v3.0.1: bug no modo `efs-ap` — campo `permissions` não é passado ao `CreateAccessPoint` | Abandonado dynamic provisioning; criado PV estático com `volumeHandle: fs-0d5b539e1d48f267d` (sem Access Point) |
 | 6 | Frontend "offline" (nginx 502, DNS timeout) | nginx `resolver 10.96.0.10` (CoreDNS homelab) inacessível do EKS — CoreDNS do EKS é `10.100.0.10` | Novo ConfigMap com `resolver 10.100.0.10` + `rollout restart` do Deployment web |
 
-**Nota sobre `subPath` e hot-reload de ConfigMap:** o volumeMount da web usa `subPath`, o que impede o Kubernetes de atualizar o arquivo automaticamente ao mudar o ConfigMap. O pod precisa de `rollout restart` após qualquer atualização de ConfigMap.
+O primeiro bloqueio foi permissão: o usuário IAM ainda não tinha acesso suficiente para o `eksctl` consultar e criar os recursos do EKS. Depois disso, o EBS CSI entrou em `CrashLoopBackOff` porque faltava associar o OIDC ao cluster, então o service account não conseguia assumir a role da AWS via IRSA.
+
+No PostgreSQL, o problema foi de storage. O manifesto ainda usava `local-path`, que existia no homelab, mas não no EKS. Troquei para `gp2`. Depois que o EBS montou, apareceu outro detalhe: volume ext4 cria o diretório `lost+found` na raiz, e o `initdb` do Postgres não aceita inicializar em um diretório que já tenha conteúdo. A correção foi apontar o `PGDATA` para um subdiretório limpo.
+
+Na auditoria, o EFS CSI falhou no provisionamento dinâmico com Access Point, então abandonei o dynamic provisioning e usei um PV estático apontando para o File System. Para esse lab ficou mais direto e previsível.
+
+O frontend ficou offline com `502` porque o Nginx ainda estava configurado com o IP do CoreDNS do homelab (`10.96.0.10`). No EKS o CoreDNS era `10.100.0.10`, então o Nginx não resolvia os serviços internos. Ajustei o ConfigMap e reiniciei o Deployment web. Como esse arquivo é montado com `subPath`, o Kubernetes não faz hot-reload automático do ConfigMap dentro do pod; por isso o `rollout restart` é obrigatório depois desse tipo de alteração.
 
 ---
 
@@ -1087,8 +1096,6 @@ CURRENT   NAME           CLUSTER                                    AUTHINFO    
           kind-girus     kind-girus                                 kind-girus
           tipsbank       tipsbank                                   kubernetes-admin-tipsbank
 ```
-
-> **Nota:** O context do cluster kubeadm local ainda está nomeado `tipsbank` (pendente renomear para `kubeadm-local` com `kubectl config rename-context tipsbank kubeadm-local`). O context `eks-tipsbank` está corretamente configurado e funcional.
 
 ---
 
@@ -1160,67 +1167,66 @@ tipsbank-auditoria   auditoria-pvc              Bound    auditoria-efs-pv     5G
 tipsbank-contas      postgres-data-postgres-0   Bound    pvc-6bb54f9c-...     5Gi    RWO    gp2              2h
 ```
 
-> [!WARNING] Custos AWS ativos
-> O cluster EKS (`tipsbank`, `us-east-1`) gera custos enquanto ativo (~$0.10/h control plane + instâncias EC2 + NLB + EFS). Destruir com `eksctl delete cluster --name tipsbank --region us-east-1` após concluir as evidências.
+Cluster destruído com `eksctl delete cluster --name tipsbank --region us-east-1` após concluir as evidências.
 
 
 #### Screenshots
 
-![](<imagens/Captura de tela 2026-05-03 113222.png>)  
+![](<imagens/Captura de tela 2026-05-03 113222.png>)
 *eksctl create cluster — criação do cluster EKS tipsbank*
 
-![](<imagens/Captura de tela 2026-05-03 113516.png>)  
+![](<imagens/Captura de tela 2026-05-03 113516.png>)
 *kubectl config get-contexts — contexto EKS ativo*
 
-![](<imagens/Captura de tela 2026-05-03 114821.png>)  
+![](<imagens/Captura de tela 2026-05-03 114821.png>)
 *kubectl get nodes — worker nodes EKS Running*
 
-![](<imagens/Captura de tela 2026-05-03 115945.png>)  
+![](<imagens/Captura de tela 2026-05-03 115945.png>)
 *EBS CSI driver — instalação do addon*
 
-![](<imagens/Captura de tela 2026-05-03 120130.png>)  
+![](<imagens/Captura de tela 2026-05-03 120130.png>)
 *Ingress Nginx — LoadBalancer NLB provisionado*
 
-![](<imagens/Captura de tela 2026-05-03 120413.png>)  
+![](<imagens/Captura de tela 2026-05-03 120413.png>)
 *Cloudflare DNS — registros apontando para o NLB*
 
-![](<imagens/Captura de tela 2026-05-03 120640.png>)  
+![](<imagens/Captura de tela 2026-05-03 120640.png>)
 *kubectl get ingress — ADDRESS do NLB*
 
-![](<imagens/Captura de tela 2026-05-03 120649.png>)  
+![](<imagens/Captura de tela 2026-05-03 120649.png>)
 *dig tipsbank.staypuff.info — resolução para IPs do NLB*
 
-![](<imagens/Captura de tela 2026-05-03 121329.png>)  
+![](<imagens/Captura de tela 2026-05-03 121329.png>)
 *AWS Console — instâncias EC2 worker nodes*
 
-![](<imagens/Captura de tela 2026-05-03 122619.png>)  
+![](<imagens/Captura de tela 2026-05-03 122619.png>)
 *kubectl apply — postgres StatefulSet no EKS*
 
-![](<imagens/Captura de tela 2026-05-03 124816.png>)  
+![](<imagens/Captura de tela 2026-05-03 124816.png>)
 *postgres — CrashLoopBackOff resolvido, pod Running 1/1*
 
-![](<imagens/Captura de tela 2026-05-03 130403.png>)  
+![](<imagens/Captura de tela 2026-05-03 130403.png>)
 *kubectl apply — api-contas Deployment no EKS*
 
-![](<imagens/Captura de tela 2026-05-03 195244.png>)  
+![](<imagens/Captura de tela 2026-05-03 195244.png>)
 *kubectl get all -A — todos os pods Running no EKS*
 
-![](<imagens/Captura de tela 2026-05-03 200701.png>)  
+![](<imagens/Captura de tela 2026-05-03 200701.png>)
 *TipsBank — homepage acessível no EKS*
 
-![](<imagens/Captura de tela 2026-05-03 202048.png>)  
+![](<imagens/Captura de tela 2026-05-03 202048.png>)
 *TipsBank — dashboard com 2 correntistas*
 
-![](<imagens/Captura de tela 2026-05-03 202958.png>)  
+![](<imagens/Captura de tela 2026-05-03 202958.png>)
 *kubectl apply — todos os Ingresses configurados*
 
-![](<imagens/Captura de tela 2026-05-03 203239.png>)  
+![](<imagens/Captura de tela 2026-05-03 203239.png>)
 *Transferência de R\$ 99,99 via EKS*
 
-![](<imagens/Captura de tela 2026-05-03 203256.png>)  
+![](<imagens/Captura de tela 2026-05-03 203256.png>)
 *Extrato — transferência registrada no EKS*
 
-![](<imagens/Captura de tela 2026-05-03 203938.png>)  
+![](<imagens/Captura de tela 2026-05-03 203938.png>)
 *Dashboard — Olá Felipe, R\$ 100.000.000,00 no EKS*
 
 ---
@@ -1251,7 +1257,7 @@ done | grep -o '"version":"v[12]"' | sort | uniq -c
   91 "version":"v1"     9 "version":"v2"
 ```
 
-Split dentro da faixa esperada (~90/10). Variação normal — distribuição probabilística.
+Split dentro da faixa esperada (~90/10).
 
 #### Critério 2 — Header `X-Canary: true` força 100% para v2
 
@@ -1292,42 +1298,46 @@ REVISION  CHANGE-CAUSE
 
 **Problemas encontrados:**
 
+Os problemas do canary foram pequenos, mas todos ligados a detalhes que mudam completamente o comportamento do roteamento.
+
 | # | Problema | Causa | Solução |
 |---|---|---|---|
-| 1 | Pod v2 retornando `version: v1` | Env var `APP-VERSION` (hífen) é inválida em Linux — ignorada. `APP_VERSION` do ConfigMap sobrescrevia com `v1` | Remover entrada inválida e adicionar `APP_VERSION: "v2"` como `value` direto |
-| 2 | Ingress canary com `spec.spec` duplicado | Campo inválido copiado por engano | Removido — `spec:` só aparece uma vez |
-| 3 | `X-Canary: always` não forçava v2 | `canary-by-header-value: "true"` substitui os valores padrão `always`/`never` | Usar `X-Canary: true` (valor configurado) |
-| 4 | `/pix` retornando 404 | Imagem buildada antes de adicionar o endpoint ao `main.py` | Adicionar endpoint, rebuildar e repushar `v2.0.0` |
-| 5 | `curl -H " X-Canary: true"` (espaço no header) não funcionou | Espaço antes do nome do header — nginx não reconhece, cai no weight | Header names são whitespace-sensitive |
+| 1 | Pod v2 retornando `version: v1` | Env var `APP-VERSION` (hífen) é inválida em Linux — ignorada. `APP_VERSION` do ConfigMap sobrescrevia com `v1` |  `APP_VERSION: "v2"`  |
+| 2 | `X-Canary: always` não forçava v2 | `canary-by-header-value: "true"` substitui os valores padrão `always`/`never` | `X-Canary: true` (valor configurado) |
+| 3 | `curl -H " X-Canary: true"` (espaço no header) não funcionou | Espaço antes do nome do header — nginx não reconhece, cai no weight | Header names são whitespace-sensitive |
+
+O primeiro ponto foi a versão da aplicação. O pod v2 subia, mas respondia como `v1`, porque eu tinha usado `APP-VERSION` com hífen. Em variável de ambiente Linux isso não é um nome válido, então o valor era ignorado e o `APP_VERSION` antigo do ConfigMap continuava vencendo. Corrigi para `APP_VERSION: "v2"`.
+
+Depois teve o header do canary. Como eu configurei `canary-by-header-value: "true"`, o valor esperado passou a ser exatamente `true`. Nesse modo, `always` e `never` deixam de ser os valores padrão úteis para o teste. Também peguei um erro simples de digitação no `curl`: havia um espaço antes de `X-Canary`, e o Nginx não reconhece esse header como o mesmo nome.
 
 
 #### Screenshots
 
-![](<imagens/Captura de tela 2026-05-04 101916.png>)  
+![](<imagens/Captura de tela 2026-05-04 101916.png>)
 *locustfile.py — script de carga para teste do canary*
 
-![](<imagens/Captura de tela 2026-05-04 102049.png>)  
+![](<imagens/Captura de tela 2026-05-04 102049.png>)
 *docker build — construção da imagem api-transacoes-v2*
 
-![](<imagens/Captura de tela 2026-05-04 102323.png>)  
+![](<imagens/Captura de tela 2026-05-04 102323.png>)
 *cosign sign — assinatura da imagem v2.0.0*
 
-![](<imagens/Captura de tela 2026-05-04 105816.png>)  
+![](<imagens/Captura de tela 2026-05-04 105816.png>)
 *cosign verify + kubectl apply — deploy da v2*
 
-![](<imagens/Captura de tela 2026-05-04 105925.png>)  
+![](<imagens/Captura de tela 2026-05-04 105925.png>)
 *kubectl get pods — api-transacoes v1 e v2 Running*
 
-![](<imagens/Captura de tela 2026-05-04 114535.png>)  
+![](<imagens/Captura de tela 2026-05-04 114535.png>)
 *kubectl get pods — todos os pods tipsbank-transacoes Running*
 
-![](<imagens/Captura de tela 2026-05-04 114656.png>)  
+![](<imagens/Captura de tela 2026-05-04 114656.png>)
 *wget health/live — resposta confirmando versão v1/v2*
 
-![](<imagens/Captura de tela 2026-05-04 151935.png>)  
+![](<imagens/Captura de tela 2026-05-04 151935.png>)
 *Ingress canary — weight=10, for loop curl (v1 e v2 respondendo)*
 
-![](<imagens/Captura de tela 2026-05-04 160207.png>)  
+![](<imagens/Captura de tela 2026-05-04 160207.png>)
 *Canary weight=50 — distribuição 50/50 confirmada*
 
 ---
@@ -1346,13 +1356,13 @@ REVISION  CHANGE-CAUSE
 #### Critério 1 — auditoria NÃO acessa api-contas (timeout esperado)
 
 ```bash
-# Teste via ClusterIP (bypass DNS — Alpine/musl tem bug com ndots:5)
+# Teste via ClusterIP direto sem DNS
 kubectl debug -it auditoria-659555485f-hqzjc \
   --image=curlimages/curl --target=auditoria \
   -n tipsbank-auditoria --profile=netadmin \
   -- curl -m 5 http://10.110.102.200:8080/health/live
 
-# Teste via DNS com trailing dot (força lookup absoluto, bypassa search domains)
+# Teste via DNS
 kubectl debug -it auditoria-659555485f-hqzjc \
   --image=curlimages/curl --target=auditoria \
   -n tipsbank-auditoria \
@@ -1365,7 +1375,7 @@ curl: (28) Connection timed out after 5002 milliseconds
 curl: (28) Connection timed out after 5003 milliseconds
 ```
 
-NetworkPolicy bloqueou o TCP:8080 — auditoria não está na whitelist de ingress do tipsbank-contas. ✅
+NetworkPolicy bloqueou o TCP:8080 — auditoria não está na whitelist de ingress do tipsbank-contas.
 
 #### Critério 2 — transacoes ACESSA api-contas (200 esperado)
 
@@ -1381,16 +1391,11 @@ kubectl debug -it api-transacoes-d4cdd957b-pbhmw \
 {"status":"ok"}
 ```
 
-allow-transacoes-to-contas liberou o egress TCP:8080. ✅
+allow-transacoes-to-contas liberou o egress TCP:8080.
 
 #### Critério 3 — pods NÃO acessam IPs externos (timeout esperado)
 
 ```bash
-# Proxmox host 1
-kubectl debug -it api-contas-65d86d5dc7-d6lt6 \
-  --image=curlimages/curl --target=api-contas \
-  -n tipsbank-contas --profile=netadmin \
-  -- curl -m 5 http://192.168.3.11:8006
 
 # MetalLB homelab geral
 kubectl debug -it api-contas-65d86d5dc7-d6lt6 \
@@ -1405,7 +1410,7 @@ curl: (28) Connection timed out after 5002 milliseconds
 curl: (28) Connection timed out after 5002 milliseconds
 ```
 
-default-deny bloqueou egress para IPs externos não permitidos. ✅
+default-deny bloqueou egress para IPs externos não permitidos.
 
 #### Smoke test — aplicação continua funcionando após as policies
 
@@ -1418,9 +1423,11 @@ curl -s -o /dev/null -w "%{http_code}" https://app.tipsbank.staypuff.info
 200
 ```
 
-Ingress → web → APIs: fluxo completo funcionando com zero-trust ativo. ✅
+Ingress → web → APIs: fluxo completo funcionando com zero-trust ativo.
 
 **Problemas encontrados:**
+
+Aqui os problemas foram bem ligados à ordem em que Kubernetes, kube-proxy e Calico tratam DNS e tráfego de rede.
 
 | # | Problema | Causa | Solução |
 |---|---|---|---|
@@ -1428,35 +1435,81 @@ Ingress → web → APIs: fluxo completo funcionando com zero-trust ativo. ✅
 | 2 | DNS egress com `namespaceSelector: kube-system` bloqueava novos containers | Calico avalia antes do DNAT — query vai para ClusterIP `10.96.0.10`, não ao pod real do coredns | Regra DNS port-only (sem `to:`): `To: <any>` |
 | 3 | `--profile=legacy` deprecated no kubectl debug | K8s depreciou o perfil legacy | Usar `--profile=netadmin` ou `--profile=general` |
 
+O primeiro sintoma foi o `curlimages/curl` não resolver alguns nomes internos. A imagem usa Alpine/musl, e com `ndots:5` mais vários search domains o resolver pode desistir antes de fechar o lookup como esperado. Para tirar essa variável do teste, usei FQDN com ponto final (`svc.cluster.local.`) ou ClusterIP direto.
+
+O segundo ponto foi mais importante para a NetworkPolicy: liberar DNS apenas com `namespaceSelector: kube-system` não funcionava de forma consistente, porque o Calico avalia a política antes do DNAT do kube-proxy. A requisição saía para o ClusterIP do DNS (`10.96.0.10`), não diretamente para o pod real do CoreDNS. A primeira solução funcional foi liberar porta 53 sem `to`, mas isso ainda era amplo demais para zero-trust.
+
+Também atualizei o uso do `kubectl debug`, porque o perfil `legacy` já está deprecated. Passei a usar `--profile=netadmin` ou `--profile=general`, dependendo do teste.
 
 #### Screenshots
 
-![](<imagens/Captura de tela 2026-05-05 162258.png>)  
+![](<imagens/Captura de tela 2026-05-05 162258.png>)
 *Smoke test pré-NP — app respondendo em https://app.tipsbank.staypuff.info*
 
-![](<imagens/Captura de tela 2026-05-05 165348.png>)  
+![](<imagens/Captura de tela 2026-05-05 165348.png>)
 *kubectl apply — allow-tipsbank-web.yaml criado*
 
-![](<imagens/Captura de tela 2026-05-05 170413.png>)  
+![](<imagens/Captura de tela 2026-05-05 170413.png>)
 *kubectl get networkpolicy — NetworkPolicies aplicadas*
 
-![](<imagens/Captura de tela 2026-05-05 173301.png>)  
+![](<imagens/Captura de tela 2026-05-05 173301.png>)
 *kubectl apply — allow-tipsbank-contas.yaml criado*
 
-![](<imagens/Captura de tela 2026-05-05 180818.png>)  
+![](<imagens/Captura de tela 2026-05-05 180818.png>)
 *Extrato -R\$ 0,01 — app funcional após NetworkPolicies*
 
-![](<imagens/Captura de tela 2026-05-05 183110.png>)  
+![](<imagens/Captura de tela 2026-05-05 183110.png>)
 *allow-tipsbank-auditoria.yaml (NFS ipBlock) + kubectl apply all*
 
-![](<imagens/Captura de tela 2026-05-05 183630.png>)  
+![](<imagens/Captura de tela 2026-05-05 183630.png>)
 *kubectl get deployments -A — todos os Deployments Running*
 
-![](<imagens/Captura de tela 2026-05-05 191430.png>)  
+![](<imagens/Captura de tela 2026-05-05 191430.png>)
 *kubectl debug auditoria — wget interno confirmando isolamento*
 
-![](<imagens/Captura de tela 2026-05-05 195504.png>)  
+![](<imagens/Captura de tela 2026-05-05 195504.png>)
 *curl auditoria→api-contas — bloqueado (zero-trust confirmado)*
+
+#### Refinamento — Regra DNS restrita ao CoreDNS (2026-05-06)
+
+**Motivação:** A implementação inicial usou regra DNS port-only (sem `to:`), porque foi o caminho que fez o DNS voltar a funcionar durante os testes com Calico. O problema é que isso ficava aberto demais para uma proposta zero-trust: qualquer pod poderia mandar tráfego na porta 53 para qualquer destino, bastando parecer uma query DNS. Em um ambiente bancário, isso é um risco real de exfiltração via DNS tunneling.
+
+**O que mudou:** A regra `allow-dns-egress-*` foi endurecida nos 4 namespaces para:
+
+```yaml
+egress:
+  - to:
+    - namespaceSelector:
+        matchLabels:
+          kubernetes.io/metadata.name: kube-system
+      podSelector:
+        matchLabels:
+          k8s-app: kube-dns
+    ports:
+    - port: 53
+      protocol: UDP
+    - port: 53
+      protocol: TCP
+```
+
+**Por que funciona agora:** O problema anterior com `namespaceSelector: kube-system` sozinho era que o Calico avaliava a política antes do DNAT do kube-proxy, então a query ia para o ClusterIP `10.96.0.10`, e não para o pod real do CoreDNS. Com `namespaceSelector + podSelector`, a política passa a casar com os endpoints reais do CoreDNS usando o label `k8s-app: kube-dns`. Resultado: DNS continua funcionando, mas agora só pode ir para os pods CoreDNS. Isso fecha a brecha da regra por porta aberta.
+
+**Manifestos atualizados:**
+- `k8s/network-policies/allow-dns-egress-contas` (tipsbank-contas)
+- `k8s/network-policies/allow-dns-egress-transacoes` (tipsbank-transacoes)
+- `k8s/network-policies/allow-dns-egress-auditoria` (tipsbank-auditoria)
+- `k8s/network-policies/allow-dns-egress-web` (tipsbank-web)
+
+#### Screenshots (refinamento DNS — 2026-05-06)
+
+![](<imagens/Captura de tela 2026-05-06 174455.png>)
+*Manifesto DNS refinado — `namespaceSelector kube-system + podSelector k8s-app: kube-dns`*
+
+![](<imagens/Captura de tela 2026-05-06 174858.png>)
+*kubectl apply — NetworkPolicies DNS atualizadas em todos os 4 namespaces*
+
+![](<imagens/Captura de tela 2026-05-06 174928.png>)
+*Smoke test pós-refinamento — aplicação respondendo com regra DNS zero-trust mais restrita*
 
 ---
 
