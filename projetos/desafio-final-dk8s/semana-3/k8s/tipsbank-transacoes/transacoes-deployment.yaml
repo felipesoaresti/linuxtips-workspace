@@ -42,7 +42,7 @@ spec:
                 done
       containers:
         - name: api-transacoes
-          image: felipestaypuff/tipsbank-api-transacoes:v2.0.0
+          image: felipestaypuff/tipsbank-api-transacoes:v1.1.0
           ports:
             - containerPort: 8080
               name: api-transacoes
