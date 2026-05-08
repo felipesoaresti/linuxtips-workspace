@@ -1,0 +1,633 @@
+❯ k debug -it api-contas-6f58f96b9f-49rl4 --image busybox --target=api-contas -n tipsbank-contas --profile=sysadmin -- sh
+Targeting container "api-contas". If you don't see processes from this container it may be because the container runtime doesn't support this feature.
+Defaulting debug container name to debugger-wwt48.
+All commands and output from this session will be recorded in container logs, including credentials and sensitive information passed through the command prompt.
+If you don't see a command prompt, try pressing enter.
+/ # wget -qO- http://localhost:8080/health/live
+/ # wget -qO- http://localhost:8080/health/live
+{"status":"ok"}/ # 
+/ # 
+/ # wget -qO- http://localhost:8080/health/ready
+{"status":"ready"}/ # 
+/ # 
+/ # 
+
+cd api-contas
+cd: no such file or directory: api-contas
+❯ cd tipsbank-contas
+❯ ll
+.rwxrwxrwx 9.7k felipe 26 Apr 22:40 --  api-contas.ok.txt
+.rwxrwxrwx 2.2k felipe  7 May 20:01 --  contas-deployment.yaml
+.rwxrwxrwx  345 felipe 26 Apr 23:03 --  contas-secret.yaml
+.rwxrwxrwx 6.8k felipe 26 Apr 22:12 --  erro-postgres-nome.txt
+.rwxrwxrwx 1.5k felipe 26 Apr 16:01 --  postgres-configmap.yaml
+.rwxrwxrwx  283 felipe 26 Apr 15:44 --  postgres-secret.yaml
+.rwxrwxrwx 2.0k felipe 26 Apr 22:48 --  postgres-statefull.yaml
+❯ k get pod -n tipsbank-contas
+NAME                          READY   STATUS    RESTARTS   AGE
+api-contas-6f58f96b9f-49rl4   1/1     Running   0          26h
+api-contas-6f58f96b9f-7nm2x   1/1     Running   0          26h
+postgres-0                    1/1     Running   0          9d
+❯ k get apply -f contas-deployment.yaml
+error: when paths, URLs, or stdin is provided as input, you may not specify resource arguments as well
+❯ k get apply -f contas-deployment.yaml
+error: when paths, URLs, or stdin is provided as input, you may not specify resource arguments as well
+❯ k apply -f contas-deployment.yaml
+deployment.apps/api-contas configured
+service/api-contas unchanged
+❯ k rollout status deployment -n tipsbank-contas api-contas
+deployment "api-contas" successfully rolled out
+❯ k get pod -n tipsbank-contas
+NAME                         READY   STATUS    RESTARTS   AGE
+api-contas-c574fcd6b-csthc   1/1     Running   0          33s
+api-contas-c574fcd6b-mcgzr   1/1     Running   0          23s
+postgres-0  
+
+k describe -n tipsbank-contas deployments.apps api-contas
+Name:                   api-contas
+Namespace:              tipsbank-contas
+CreationTimestamp:      Sun, 26 Apr 2026 21:54:33 -0300
+Labels:                 app=api-contas
+                        app.kubernetes.io/name=api-contas
+                        app.kubernetes.io/part-of=tipsbank
+Annotations:            deployment.kubernetes.io/revision: 8
+Selector:               app=api-contas
+Replicas:               2 desired | 2 updated | 2 total | 2 available | 0 unavailable
+StrategyType:           RollingUpdate
+MinReadySeconds:        0
+RollingUpdateStrategy:  25% max unavailable, 25% max surge
+Pod Template:
+  Labels:       app=api-contas
+                app.kubernetes.io/name=api-contas
+                app.kubernetes.io/part-of=tipsbank
+  Annotations:  kubectl.kubernetes.io/restartedAt: 2026-05-06T17:47:26-03:00
+  Init Containers:
+   init-postgres:
+    Image:      busybox:1.36
+    Port:       <none>
+    Host Port:  <none>
+    Command:
+      sh
+      -c
+      until nc -z postgres-service.tipsbank-contas.svc.cluster.local 5432; do
+        echo "Verificando conexão com Postgres..."
+        sleep 3
+      done
+      
+    Environment:  <none>
+    Mounts:       <none>
+  Containers:
+   api-contas:
+    Image:      felipestaypuff/tipsbank-api-contas:v1.0.0
+    Port:       8080/TCP (api-contas)
+    Host Port:  0/TCP (api-contas)
+    Limits:
+      cpu:     500m
+      memory:  512Mi
+    Requests:
+      cpu:      200m
+      memory:   256Mi
+    Liveness:   http-get http://:8080/health/live delay=0s timeout=3s period=10s #success=1 #failure=3
+    Readiness:  http-get http://:8080/health/ready delay=0s timeout=3s period=5s #success=1 #failure=3
+    Startup:    http-get http://:8080/health/startup delay=0s timeout=1s period=5s #success=1 #failure=30
+    Environment Variables from:
+      contas-secret  Secret  Optional: false
+    Environment:     <none>
+    Mounts:          <none>
+  Volumes:           <none>
+  Node-Selectors:    <none>
+  Tolerations:       <none>
+Conditions:
+  Type           Status  Reason
+  ----           ------  ------
+  Available      True    MinimumReplicasAvailable
+  Progressing    True    NewReplicaSetAvailable
+OldReplicaSets:  api-contas-6b8777dfc (0/0 replicas created), api-contas-849f89799 (0/0 replicas created), api-contas-594c4dbd5b (0/0 replicas created), api-contas-856f59f7d6 (0/0 replicas created), api-contas-68f86bffcc (0/0 replicas created), api-contas-65d86d5dc7 (0/0 replicas created), api-contas-6f58f96b9f (0/0 replicas created)
+NewReplicaSet:   api-contas-c574fcd6b (2/2 replicas created)
+Events:
+  Type    Reason             Age   From                   Message
+  ----    ------             ----  ----                   -------
+  Normal  ScalingReplicaSet  100s  deployment-controller  Scaled up replica set api-contas-c574fcd6b from 0 to 1
+  Normal  ScalingReplicaSet  90s   deployment-controller  Scaled down replica set api-contas-6f58f96b9f from 2 to 1
+  Normal  ScalingReplicaSet  90s   deployment-controller  Scaled up replica set api-contas-c574fcd6b from 1 to 2
+  Normal  ScalingReplicaSet  79s   deployment-controller  Scaled down replica set api-contas-6f58f96b9f from 1 to 0
+
+ k get apply -f contas-deployment.yaml
+error: when paths, URLs, or stdin is provided as input, you may not specify resource arguments as well
+❯ k get apply -f contas-deployment.yaml
+error: when paths, URLs, or stdin is provided as input, you may not specify resource arguments as well
+❯ k apply -f contas-deployment.yaml
+deployment.apps/api-contas configured
+service/api-contas unchanged
+❯ k rollout status deployment -n tipsbank-contas api-contas
+deployment "api-contas" successfully rolled out
+❯ k get pod -n tipsbank-contas
+NAME                         READY   STATUS    RESTARTS   AGE
+api-contas-c574fcd6b-csthc   1/1     Running   0          33s
+api-contas-c574fcd6b-mcgzr   1/1     Running   0          23s
+postgres-0                   1/1     Running   0          9d
+❯ k describe -n tipsbank-contas deployments.apps api-contas
+Name:                   api-contas
+Namespace:              tipsbank-contas
+CreationTimestamp:      Sun, 26 Apr 2026 21:54:33 -0300
+Labels:                 app=api-contas
+                        app.kubernetes.io/name=api-contas
+                        app.kubernetes.io/part-of=tipsbank
+Annotations:            deployment.kubernetes.io/revision: 8
+Selector:               app=api-contas
+Replicas:               2 desired | 2 updated | 2 total | 2 available | 0 unavailable
+StrategyType:           RollingUpdate
+MinReadySeconds:        0
+RollingUpdateStrategy:  25% max unavailable, 25% max surge
+Pod Template:
+  Labels:       app=api-contas
+                app.kubernetes.io/name=api-contas
+                app.kubernetes.io/part-of=tipsbank
+  Annotations:  kubectl.kubernetes.io/restartedAt: 2026-05-06T17:47:26-03:00
+  Init Containers:
+   init-postgres:
+    Image:      busybox:1.36
+    Port:       <none>
+    Host Port:  <none>
+    Command:
+      sh
+      -c
+      until nc -z postgres-service.tipsbank-contas.svc.cluster.local 5432; do
+        echo "Verificando conexão com Postgres..."
+        sleep 3
+      done
+      
+    Environment:  <none>
+    Mounts:       <none>
+  Containers:
+   api-contas:
+    Image:      felipestaypuff/tipsbank-api-contas:v1.0.0
+    Port:       8080/TCP (api-contas)
+    Host Port:  0/TCP (api-contas)
+    Limits:
+      cpu:     500m
+      memory:  512Mi
+    Requests:
+      cpu:      200m
+      memory:   256Mi
+    Liveness:   http-get http://:8080/health/live delay=0s timeout=3s period=10s #success=1 #failure=3
+    Readiness:  http-get http://:8080/health/ready delay=0s timeout=3s period=5s #success=1 #failure=3
+    Startup:    http-get http://:8080/health/startup delay=0s timeout=1s period=5s #success=1 #failure=30
+    Environment Variables from:
+      contas-secret  Secret  Optional: false
+    Environment:     <none>
+    Mounts:          <none>
+  Volumes:           <none>
+  Node-Selectors:    <none>
+  Tolerations:       <none>
+Conditions:
+  Type           Status  Reason
+  ----           ------  ------
+  Available      True    MinimumReplicasAvailable
+  Progressing    True    NewReplicaSetAvailable
+OldReplicaSets:  api-contas-6b8777dfc (0/0 replicas created), api-contas-849f89799 (0/0 replicas created), api-contas-594c4dbd5b (0/0 replicas created), api-contas-856f59f7d6 (0/0 replicas created), api-contas-68f86bffcc (0/0 replicas created), api-contas-65d86d5dc7 (0/0 replicas created), api-contas-6f58f96b9f (0/0 replicas created)
+NewReplicaSet:   api-contas-c574fcd6b (2/2 replicas created)
+Events:
+  Type    Reason             Age   From                   Message
+  ----    ------             ----  ----                   -------
+  Normal  ScalingReplicaSet  100s  deployment-controller  Scaled up replica set api-contas-c574fcd6b from 0 to 1
+  Normal  ScalingReplicaSet  90s   deployment-controller  Scaled down replica set api-contas-6f58f96b9f from 2 to 1
+  Normal  ScalingReplicaSet  90s   deployment-controller  Scaled up replica set api-contas-c574fcd6b from 1 to 2
+  Normal  ScalingReplicaSet  79s   deployment-controller  Scaled down replica set api-contas-6f58f96b9f from 1 to 0
+❯ cd ..
+❯ cd  tipsbank-auditoria
+❯ k apply -f auditoria-deployment.yaml
+deployment.apps/auditoria configured
+persistentvolumeclaim/auditoria-pvc unchanged
+service/auditoria unchanged
+❯ k describe -n tipsbank-auditoria deployments.apps auditoria
+Name:                   auditoria
+Namespace:              tipsbank-auditoria
+CreationTimestamp:      Mon, 27 Apr 2026 19:48:00 -0300
+Labels:                 app=auditoria
+                        app.kubernetes.io/name=auditoria
+                        app.kubernetes.io/part-of=tipsbank
+Annotations:            deployment.kubernetes.io/revision: 8
+Selector:               app=auditoria
+Replicas:               3 desired | 3 updated | 3 total | 3 available | 0 unavailable
+StrategyType:           RollingUpdate
+MinReadySeconds:        0
+RollingUpdateStrategy:  25% max unavailable, 25% max surge
+Pod Template:
+  Labels:       app=auditoria
+                app.kubernetes.io/name=auditoria
+                app.kubernetes.io/part-of=tipsbank
+  Annotations:  kubectl.kubernetes.io/restartedAt: 2026-05-06T17:47:11-03:00
+  Containers:
+   auditoria:
+    Image:      felipestaypuff/tipsbank-auditoria:v1.0.0
+    Port:       8080/TCP (auditoria)
+    Host Port:  0/TCP (auditoria)
+    Limits:
+      cpu:     500m
+      memory:  512Mi
+    Requests:
+      cpu:      250m
+      memory:   256Mi
+    Liveness:   http-get http://:8080/health/live delay=0s timeout=3s period=10s #success=1 #failure=3
+    Readiness:  http-get http://:8080/health/ready delay=0s timeout=3s period=5s #success=1 #failure=3
+    Startup:    http-get http://:8080/health/startup delay=0s timeout=1s period=5s #success=1 #failure=30
+    Environment:
+      DATA_DIR:   /data
+      LOG_LEVEL:  INFO
+    Mounts:
+      /data from data-volume (rw)
+  Volumes:
+   data-volume:
+    Type:          PersistentVolumeClaim (a reference to a PersistentVolumeClaim in the same namespace)
+    ClaimName:     auditoria-pvc
+    ReadOnly:      false
+  Node-Selectors:  <none>
+  Tolerations:     <none>
+Conditions:
+  Type           Status  Reason
+  ----           ------  ------
+  Available      True    MinimumReplicasAvailable
+  Progressing    True    NewReplicaSetAvailable
+OldReplicaSets:  auditoria-8657559b7f (0/0 replicas created), auditoria-fb47ff566 (0/0 replicas created), auditoria-845b4664d (0/0 replicas created), auditoria-b5bc479fb (0/0 replicas created), auditoria-6c859b8d87 (0/0 replicas created), auditoria-659555485f (0/0 replicas created), auditoria-86d479b57b (0/0 replicas created)
+NewReplicaSet:   auditoria-7fd5c4f477 (3/3 replicas created)
+Events:
+  Type    Reason             Age   From                   Message
+  ----    ------             ----  ----                   -------
+  Normal  ScalingReplicaSet  30s   deployment-controller  Scaled up replica set auditoria-7fd5c4f477 from 0 to 1
+  Normal  ScalingReplicaSet  23s   deployment-controller  Scaled down replica set auditoria-86d479b57b from 3 to 2
+  Normal  ScalingReplicaSet  23s   deployment-controller  Scaled up replica set auditoria-7fd5c4f477 from 1 to 2
+  Normal  ScalingReplicaSet  17s   deployment-controller  Scaled down replica set auditoria-86d479b57b from 2 to 1
+  Normal  ScalingReplicaSet  17s   deployment-controller  Scaled up replica set auditoria-7fd5c4f477 from 2 to 3
+  Normal  ScalingReplicaSet  11s   deployment-controller  Scaled down replica set auditoria-86d479b57b from 1 to 0
+❯ git add .
+Found existing alias for "git add". You should use: "ga"
+❯ git commit -m "semana-3.1 api-auditoria Probes"
+Found existing alias for "git commit -m". You should use: "gc"
+[main 00585c9] semana-3.1 api-auditoria Probes
+ 1 file changed, 18 insertions(+), 4 deletions(-)
+❯ git push -u origin main
+Found existing alias for "git push". You should use: "gp"
+Enumerating objects: 23, done.
+Counting objects: 100% (23/23), done.
+Delta compression using up to 24 threads
+Compressing objects: 100% (14/14), done.
+Writing objects: 100% (15/15), 4.37 KiB | 319.00 KiB/s, done.
+Total 15 (delta 11), reused 0 (delta 0), pack-reused 0
+remote: Resolving deltas: 100% (11/11), completed with 8 local objects.
+To github.com:felipesoaresti/tipsbank.git
+   e085ddb..00585c9  main -> main
+branch 'main' set up to track 'origin/main'.
+
+    /mnt/c/Users/felip/Documents/Projetos/tipsbank/k8s/tipsbank-auditoria  on   main !1 ▓▒░                                                 ░▒▓ at 20:22:56  
+❯ 
+❯ cd ../tipsbank-transacoes
+❯ k delete -f transacoes-deployment-v2.yaml
+deployment.apps "api-transacoes-v2" deleted from tipsbank-transacoes namespace
+service "api-transacoes-v2" deleted from tipsbank-transacoes namespace
+❯ k apply  -f transacoes-deployment.yaml
+deployment.apps/api-transacoes configured
+service/api-transacoes unchanged
+❯ k delete -f ../ingress/ingres-pai-transacoes-canary.yaml
+ingress.networking.k8s.io "tipsbank-api-transacoes-canary" deleted from tipsbank-transacoes namespace
+❯ k describe -n tipsbank-transacoes deployments.apps api-transacoes
+Name:                   api-transacoes
+Namespace:              tipsbank-transacoes
+CreationTimestamp:      Sun, 26 Apr 2026 23:52:10 -0300
+Labels:                 app=api-transacoes
+                        app.kubernetes.io/name=api-transacoes
+                        app.kubernetes.io/part-of=tipsbank
+Annotations:            deployment.kubernetes.io/revision: 10
+Selector:               app=api-transacoes
+Replicas:               2 desired | 2 updated | 2 total | 2 available | 0 unavailable
+StrategyType:           RollingUpdate
+MinReadySeconds:        0
+RollingUpdateStrategy:  25% max unavailable, 25% max surge
+Pod Template:
+  Labels:       app=api-transacoes
+                app.kubernetes.io/name=api-transacoes
+                app.kubernetes.io/part-of=tipsbank
+  Annotations:  kubectl.kubernetes.io/restartedAt: 2026-05-06T17:47:36-03:00
+  Init Containers:
+   init-postgres:
+    Image:      busybox:1.36
+    Port:       <none>
+    Host Port:  <none>
+    Command:
+      sh
+      -c
+      until nc -z postgres-service.tipsbank-contas.svc.cluster.local 5432; do
+        echo "Verificando conexão com Postgres..."
+        sleep 3
+      done
+      
+    Environment:  <none>
+    Mounts:       <none>
+   init-api-contas:
+    Image:      busybox:1.36
+    Port:       <none>
+    Host Port:  <none>
+    Command:
+      sh
+      -c
+      until wget -q --spider http://api-contas.tipsbank-contas.svc.cluster.local:8080/health/live; do
+        echo "Verificando se api-contas esta live..."
+        sleep 3
+        done
+      
+    Environment:  <none>
+    Mounts:       <none>
+  Containers:
+   api-transacoes:
+    Image:      felipestaypuff/tipsbank-api-transacoes:v2.0.0
+    Port:       8080/TCP (api-transacoes)
+    Host Port:  0/TCP (api-transacoes)
+    Limits:
+      cpu:     500m
+      memory:  512Mi
+    Requests:
+      cpu:      200m
+      memory:   256Mi
+    Liveness:   http-get http://:8080/health/live delay=0s timeout=3s period=10s #success=1 #failure=3
+    Readiness:  http-get http://:8080/health/ready delay=0s timeout=3s period=5s #success=1 #failure=3
+    Startup:    http-get http://:8080/health/startup delay=0s timeout=1s period=5s #success=1 #failure=30
+    Environment:
+      DB_URL:         <set to the key 'DB_URL' in secret 'transacoes-secret'>             Optional: false
+      CONTAS_URL:     <set to the key 'CONTAS_URL' of config map 'transacoes-config'>     Optional: false
+      AUDITORIA_URL:  <set to the key 'AUDITORIA_URL' of config map 'transacoes-config'>  Optional: false
+      APP_VERSION:    <set to the key 'APP_VERSION' of config map 'transacoes-config'>    Optional: false
+      LOG_LEVEL:      <set to the key 'LOG_LEVEL' of config map 'transacoes-config'>      Optional: false
+    Mounts:
+      /var/log/app from app-logs (rw)
+   log-forwarder:
+    Image:      busybox:1.36
+    Port:       <none>
+    Host Port:  <none>
+    Command:
+      sh
+      -c
+      until [ -f /var/log/app/app.log ]; do echo "Aguardando o arquivo de log ser criado..."; sleep 1; done;
+      tail -F /var/log/app/app.log
+      
+    Limits:
+      cpu:     100m
+      memory:  128Mi
+    Requests:
+      cpu:        50m
+      memory:     64Mi
+    Environment:  <none>
+    Mounts:
+      /var/log/app from app-logs (rw)
+  Volumes:
+   app-logs:
+    Type:          EmptyDir (a temporary directory that shares a pod's lifetime)
+    Medium:        
+    SizeLimit:     <unset>
+  Node-Selectors:  <none>
+  Tolerations:     <none>
+Conditions:
+  Type           Status  Reason
+  ----           ------  ------
+  Available      True    MinimumReplicasAvailable
+  Progressing    True    NewReplicaSetAvailable
+OldReplicaSets:  api-transacoes-7db9d67f47 (0/0 replicas created), api-transacoes-75c957f969 (0/0 replicas created), api-transacoes-c5b4dbbc (0/0 replicas created), api-transacoes-8fdc9489b (0/0 replicas created), api-transacoes-7558cf5d9c (0/0 replicas created), api-transacoes-6f79bdb64b (0/0 replicas created), api-transacoes-646bb857d6 (0/0 replicas created), api-transacoes-d4cdd957b (0/0 replicas created), api-transacoes-86594f74ff (0/0 replicas created)
+NewReplicaSet:   api-transacoes-f96d7c44d (2/2 replicas created)
+Events:
+  Type    Reason             Age   From                   Message
+  ----    ------             ----  ----                   -------
+  Normal  ScalingReplicaSet  76s   deployment-controller  Scaled up replica set api-transacoes-f96d7c44d from 0 to 1
+  Normal  ScalingReplicaSet  66s   deployment-controller  Scaled down replica set api-transacoes-86594f74ff from 2 to 1
+  Normal  ScalingReplicaSet  66s   deployment-controller  Scaled up replica set api-transacoes-f96d7c44d from 1 to 2
+  Normal  ScalingReplicaSet  55s   deployment-controller  Scaled down replica set api-transacoes-86594f74ff from 1 to 0
+
+    /mnt/c/Users/felip/Documents/Projetos/tipsbank/k8s/tipsbank-transacoes  on   main ⇡1 !1 ▓▒░                                             ░▒▓ at 20:29:03  
+❯ 
+/ # exit
+Session ended, the ephemeral container will not be restarted but may be reattached using 'kubectl attach web-b94f466b5-lz22c -c debugger-f4plq -i -t' if it is still running
+
+    /mnt/c/Users/felip/Documents/Projetos/tipsbank/k8s/tipsbank-transacoes  on   main ⇡2 !1 ▓▒░                             ░▒▓ took 1m 19s   at 22:13:31  
+❯ 
+❯ k apply -f web-deployment.yaml
+error: the path "web-deployment.yaml" does not exist
+❯ k apply -f  ../tipsbank-web/web-deployment.yaml
+deployment.apps/web configured
+service/web unchanged
+❯ k describe -n tipsbank-web deployment web
+Name:                   web
+Namespace:              tipsbank-web
+CreationTimestamp:      Mon, 27 Apr 2026 21:39:38 -0300
+Labels:                 app=web
+                        kubernetes.io/name=web
+                        kubernetes.io/part-of=tipsbank
+Annotations:            deployment.kubernetes.io/revision: 11
+Selector:               app=web
+Replicas:               2 desired | 2 updated | 2 total | 2 available | 0 unavailable
+StrategyType:           RollingUpdate
+MinReadySeconds:        0
+RollingUpdateStrategy:  25% max unavailable, 25% max surge
+Pod Template:
+  Labels:       app=web
+                kubernetes.io/name=web
+                kubernetes.io/part-of=tipsbank
+  Annotations:  kubectl.kubernetes.io/restartedAt: 2026-05-06T17:47:44-03:00
+  Init Containers:
+   init-contas:
+    Image:      busybox:1.36
+    Port:       <none>
+    Host Port:  <none>
+    Command:
+      sh
+      -c
+      until wget -q --spider http://api-contas.tipsbank-contas.svc.cluster.local:8080/health/live; do echo 'Verificando se api-contas esta live...'; sleep 3; done;
+    Environment:  <none>
+    Mounts:       <none>
+   init-transacoes:
+    Image:      busybox:1.36
+    Port:       <none>
+    Host Port:  <none>
+    Command:
+      sh
+      -c
+      until wget -q --spider http://api-transacoes.tipsbank-transacoes.svc.cluster.local:8080/health/live; do echo 'Verificando se api-transacoes esta live...'; sleep 3; done;
+    Environment:  <none>
+    Mounts:       <none>
+   init-auditoria:
+    Image:      busybox:1.36
+    Port:       <none>
+    Host Port:  <none>
+    Command:
+      sh
+      -c
+      until wget -q --spider http://auditoria.tipsbank-auditoria.svc.cluster.local:8080/health/live; do echo 'Verificando se auditoria esta live...'; sleep 3; done;
+    Environment:  <none>
+    Mounts:       <none>
+  Containers:
+   web:
+    Image:      felipestaypuff/tipsbank-web:v1.0.0
+    Port:       8080/TCP (web)
+    Host Port:  0/TCP (web)
+    Limits:
+      cpu:     500m
+      memory:  128Mi
+    Requests:
+      cpu:        250m
+      memory:     64Mi
+    Liveness:     http-get http://:8080/healthz delay=5s timeout=1s period=10s #success=1 #failure=3
+    Readiness:    http-get http://:8080/healthz delay=5s timeout=1s period=5s #success=1 #failure=3
+    Environment:  <none>
+    Mounts:
+      /etc/nginx/nginx.conf from nginx-conf (ro,path="nginx.conf")
+  Volumes:
+   nginx-conf:
+    Type:          ConfigMap (a volume populated by a ConfigMap)
+    Name:          nginx-conf-v2
+    Optional:      false
+  Node-Selectors:  <none>
+  Tolerations:     <none>
+Conditions:
+  Type           Status  Reason
+  ----           ------  ------
+  Available      True    MinimumReplicasAvailable
+  Progressing    True    NewReplicaSetAvailable
+OldReplicaSets:  web-5c5f5b9f5d (0/0 replicas created), web-67cb77f9fc (0/0 replicas created), web-584894f6b6 (0/0 replicas created), web-757cf45b8c (0/0 replicas created), web-5bbb54df69 (0/0 replicas created), web-75dff7dfc6 (0/0 replicas created), web-7df6cdd49f (0/0 replicas created), web-bdc86b8fc (0/0 replicas created), web-6bc8b8c546 (0/0 replicas created), web-b94f466b5 (0/0 replicas created)
+NewReplicaSet:   web-769c8c8fd5 (2/2 replicas created)
+Events:
+  Type    Reason             Age   From                   Message
+  ----    ------             ----  ----                   -------
+  Normal  ScalingReplicaSet  38s   deployment-controller  Scaled up replica set web-769c8c8fd5 from 0 to 1
+  Normal  ScalingReplicaSet  27s   deployment-controller  Scaled down replica set web-b94f466b5 from 2 to 1
+  Normal  ScalingReplicaSet  27s   deployment-controller  Scaled up replica set web-769c8c8fd5 from 1 to 2
+  Normal  ScalingReplicaSet  11s   deployment-controller  Scaled down replica set web-b94f466b5 from 1 to 0
+
+
+    /mnt/c/Users/felip/Documents/Projetos/tipsbank/k8s/tipsbank-transacoes  on   main ⇡2 !1 ▓▒░                                             ░▒▓ at 22:16:26  
+❯ 
+❯ cd ..
+❯ cd api-contas
+cd: no such file or directory: api-contas
+❯ cd tipsbank-contas
+❯ ll
+.rwxrwxrwx 9.7k felipe 26 Apr 22:40 --  api-contas.ok.txt
+.rwxrwxrwx 2.2k felipe  7 May 20:06 --  contas-deployment.yaml
+.rwxrwxrwx  345 felipe 26 Apr 23:03 --  contas-secret.yaml
+.rwxrwxrwx 6.8k felipe 26 Apr 22:12 --  erro-postgres-nome.txt
+.rwxrwxrwx 1.5k felipe 26 Apr 16:01 --  postgres-configmap.yaml
+.rwxrwxrwx  283 felipe 26 Apr 15:44 --  postgres-secret.yaml
+.rwxrwxrwx 2.3k felipe  7 May 22:21 -M  postgres-statefull.yaml
+❯ k apply -f postgres-statefull.yaml
+statefulset.apps/postgres configured
+service/postgres-service unchanged
+❯ k describe -n tipsbank-contas statefulsets.apps postgres
+Name:               postgres
+Namespace:          tipsbank-contas
+CreationTimestamp:  Mon, 27 Apr 2026 23:23:15 -0300
+Selector:           app=postgres
+Labels:             app=postgres
+                    app.kubernetes.io/name=postgres
+                    app.kubernetes.io/part-of=tipsbank
+Annotations:        <none>
+Replicas:           1 desired | 1 total
+Update Strategy:    RollingUpdate
+  Partition:        0
+  MaxUnavailable:   1
+Pods Status:        1 Running / 0 Waiting / 0 Succeeded / 0 Failed
+Pod Template:
+  Labels:  app=postgres
+           app.kubernetes.io/name=postgres
+           app.kubernetes.io/part-of=tipsbank
+  Containers:
+   postgres:
+    Image:      postgres:16-alpine
+    Port:       5432/TCP (postgres)
+    Host Port:  0/TCP (postgres)
+    Limits:
+      cpu:     500m
+      memory:  512Mi
+    Requests:
+      cpu:      200m
+      memory:   256Mi
+    Liveness:   exec [pg_isready -U tipsbank] delay=30s timeout=3s period=10s #success=1 #failure=3
+    Readiness:  exec [pg_isready -U tipsbank] delay=5s timeout=3s period=5s #success=1 #failure=3
+    Environment Variables from:
+      postgres-secret  Secret  Optional: false
+    Environment:       <none>
+    Mounts:
+      /docker-entrypoint-initdb.d/init.sql from init-sql (rw,path="init.sql")
+      /var/lib/postgresql/data from postgres-data (rw)
+  Volumes:
+   init-sql:
+    Type:          ConfigMap (a volume populated by a ConfigMap)
+    Name:          postgres-configmap
+    Optional:      false
+  Node-Selectors:  <none>
+  Tolerations:     <none>
+Volume Claims:
+  Name:          postgres-data
+  StorageClass:  local-path
+  Labels:        <none>
+  Annotations:   <none>
+  Capacity:      5Gi
+  Access Modes:  [ReadWriteOnce]
+Events:
+  Type    Reason            Age               From                    Message
+  ----    ------            ----              ----                    -------
+  Normal  SuccessfulDelete  26s               statefulset-controller  Delete Pod postgres-0 in StatefulSet postgres successful
+  Normal  SuccessfulCreate  24s (x2 over 9d)  statefulset-controller  Create Pod postgres-0 in StatefulSet postgres successful
+
+    /mnt/c/Users/felip/Documents/Projetos/tipsbank/k8s/tipsbank-contas  on   main ⇡2 !2 ▓▒░                                                 ░▒▓ at 22:22:38  
+❯ 
+❯ git add .
+Found existing alias for "git add". You should use: "ga"
+❯ git commit -m "semana-3.1 web e postgres Probes"
+Found existing alias for "git commit -m". You should use: "gc"
+[main aa56306] semana-3.1 web e postgres Probes
+ 1 file changed, 10 insertions(+), 4 deletions(-)
+
+    /mnt/c/Users/felip/Documents/Projetos/tipsbank/k8s/tipsbank-contas  on   main ⇡3 !1 ▓▒░                                                 ░▒▓ at 22:23:41  
+❯ 
+
+ k debug -it api-transacoes-f96d7c44d-6f8fx --image busybox --target=api-transacoes -n tipsbank-transacoes --profile=sysadmin -- sh
+Targeting container "api-transacoes". If you don't see processes from this container it may be because the container runtime doesn't support this feature.
+Defaulting debug container name to debugger-bvsk9.
+All commands and output from this session will be recorded in container logs, including credentials and sensitive information passed through the command prompt.
+If you don't see a command prompt, try pressing enter.
+/ # kill 1
+/ # Session ended, the ephemeral container will not be restarted but may be reattached using 'kubectl attach api-transacoes-f96d7c44d-6f8fx -c debugger-bvsk9 -i -t' if it is still running
+❯ k get pod -n tipsbank-transacoes -w
+NAME                             READY   STATUS    RESTARTS      AGE
+api-transacoes-f96d7c44d-6f8fx   2/2     Running   2 (40s ago)   126m
+api-transacoes-f96d7c44d-f9wkf   2/2     Running   0             127m
+api-transacoes-f96d7c44d-6f8fx   2/2     Running   2 (50s ago)   127m
+api-transacoes-f96d7c44d-6f8fx   2/2     Running   2 (50s ago)   127m
+api-transacoes-f96d7c44d-6f8fx   2/2     Running   2 (52s ago)   127m
+api-transacoes-f96d7c44d-6f8fx   1/2     NotReady   2 (58s ago)   127m
+api-transacoes-f96d7c44d-6f8fx   1/2     CrashLoopBackOff   2 (4s ago)    127m
+api-transacoes-f96d7c44d-6f8fx   1/2     Running            3 (24s ago)   127m
+api-transacoes-f96d7c44d-6f8fx   1/2     Running            3 (29s ago)   127m
+api-transacoes-f96d7c44d-6f8fx   2/2     Running            3 (29s ago)   127m
+
+❯ k get events  -n tipsbank-transacoes
+LAST SEEN   TYPE      REASON      OBJECT                               MESSAGE
+84s         Normal    Pulled      pod/api-transacoes-f96d7c44d-6f8fx   Container image "felipestaypuff/tipsbank-api-transacoes:v2.0.0" already present on machine and can be accessed by the pod
+84s         Normal    Created     pod/api-transacoes-f96d7c44d-6f8fx   Container created
+84s         Normal    Started     pod/api-transacoes-f96d7c44d-6f8fx   Container started
+14m         Warning   Unhealthy   pod/api-transacoes-f96d7c44d-6f8fx   Readiness probe failed: HTTP probe failed with statuscode: 503
+5m54s       Normal    Pulling     pod/api-transacoes-f96d7c44d-6f8fx   Pulling image "busybox"
+5m52s       Normal    Pulled      pod/api-transacoes-f96d7c44d-6f8fx   Successfully pulled image "busybox" in 1.995s (1.995s including waiting). Image size: 2222002 bytes.
+5m52s       Normal    Created     pod/api-transacoes-f96d7c44d-6f8fx   Container created
+5m52s       Normal    Started     pod/api-transacoes-f96d7c44d-6f8fx   Container started
+4m12s       Normal    Pulling     pod/api-transacoes-f96d7c44d-6f8fx   Pulling image "busybox"
+4m10s       Normal    Pulled      pod/api-transacoes-f96d7c44d-6f8fx   Successfully pulled image "busybox" in 1.91s (1.91s including waiting). Image size: 2222002 bytes.
+4m10s       Normal    Created     pod/api-transacoes-f96d7c44d-6f8fx   Container created
+4m10s       Normal    Started     pod/api-transacoes-f96d7c44d-6f8fx   Container started
+2m49s       Normal    Pulling     pod/api-transacoes-f96d7c44d-6f8fx   Pulling image "busybox"
+2m48s       Normal    Pulled      pod/api-transacoes-f96d7c44d-6f8fx   Successfully pulled image "busybox" in 906ms (906ms including waiting). Image size: 2222002 bytes.
+2m48s       Normal    Created     pod/api-transacoes-f96d7c44d-6f8fx   Container created
+2m48s       Normal    Started     pod/api-transacoes-f96d7c44d-6f8fx   Container started
+102s        Warning   BackOff     pod/api-transacoes-f96d7c44d-6f8fx   Back-off restarting failed container api-transacoes in pod api-transacoes-f96d7c44d-6f8fx_tipsbank-transacoes(edcb04f6-2dae-457f-a9ab-2c1c9055da28)
+114s        Normal    Pulling     pod/api-transacoes-f96d7c44d-6f8fx   Pulling image "busybox"
+113s        Normal    Pulled      pod/api-transacoes-f96d7c44d-6f8fx   Successfully pulled image "busybox" in 847ms (847ms including waiting). Image size: 2222002 bytes.
+113s        Normal    Created     pod/api-transacoes-f96d7c44d-6f8fx   Container created
+113s        Normal    Started     pod/api-transacoes-f96d7c44d-6f8fx   Container started
+108s        Warning   Unhealthy   pod/api-transacoes-f96d7c44d-6f8fx   Readiness probe failed: Get "http://10.244.209.242:8080/health/ready": dial tcp 10.244.209.242:8080: connect: connection refused
+14m         Warning   Unhealthy   pod/api-transacoes-f96d7c44d-f9wkf   Readiness probe failed: HTTP probe failed with statuscode: 503
