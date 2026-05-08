@@ -1,7 +1,7 @@
 ---
 tags: [tipsbank, evidencias, semana-3, dk8s]
 created: 2026-05-07
-updated: 2026-05-07
+updated: 2026-05-08
 status: em-andamento
 semana: 3
 ---
@@ -370,5 +370,80 @@ Confirmação: pod voltou a `2/2 Running` com `RESTARTS: 3` — livenessProbe fu
 
 ![](<imagens/Captura de tela 2026-05-07 223804.png>)
 *22:38 — `k get events -n tipsbank-transacoes` + `k get pod -n tipsbank-transacoes -w`: ciclo completo de eventos — BackOff, Unhealthy (Readiness 503), Pulled, Created, Started — livenessProbe funcionando em produção*
+
+---
+
+### Etapa 3.2 — Rollout Strategy e Rollback
+
+**Data de conclusão:** 2026-05-08
+
+**Setup:**
+- `revisionHistoryLimit: 5` e `strategy.rollingUpdate.maxSurge: 1, maxUnavailable: 0` adicionados ao `api-transacoes`
+- Deploy de versão quebrada (`v1.9.9`) para simular bad release — pod ficou `1/2 ImagePullBackOff`
+- Comprovação de zero downtime durante rollout travado via curl e browser
+- Rollback via `kubectl rollout undo` → revisão restaurada com `v1.1.0`
+
+---
+
+#### Critério 1 — Pods durante rollout quebrado (maxUnavailable: 0 funcionando)
+
+```
+NAME                              READY   STATUS             RESTARTS   AGE
+api-transacoes-5cb7cc9b8b-l5fsp   2/2     Running            0          13m
+api-transacoes-5cb7cc9b8b-sh8hm   2/2     Running            0          13m
+api-transacoes-d56bff9bc-k7n8g    1/2     ImagePullBackOff   0          70s
+```
+
+2 pods velhos (`v1.1.0`) permanecem `Running`. Pod novo (`v1.9.9`) em `ImagePullBackOff`. `1/2` = log-forwarder iniciou OK, api-transacoes falhou ao puxar `v1.9.9`.
+
+---
+
+#### Critério 2 — Tráfego mantido durante rollout quebrado
+
+```
+HTTP/2 200
+{"status":"ok","version":"v1"}
+```
+
+HTTP/2 200 confirmado via curl e browser enquanto o pod `v1.9.9` estava em `ImagePullBackOff`.
+
+---
+
+#### Critério 3 — kubectl rollout history ≥ 3 revisões
+
+```
+REVISION  CHANGE-CAUSE
+7         <none>
+8         <none>
+9         <none>
+10        <none>
+12        <none>
+13        <none>
+```
+
+6 revisões visíveis. Revisão 12 = `v1.9.9` (quebrada). Revisão 13 = `v1.1.0` (restaurada via undo).
+
+---
+
+#### Critério 4 — rollout undo: pod Ready com versão restaurada
+
+Revisão 13 = `felipestaypuff/tipsbank-api-transacoes:v1.1.0` com todos os pods `2/2 Running`.
+
+---
+
+#### Screenshots — Semana 3.2
+
+![](<imagens/Captura de tela 2026-05-08 121923.png>)
+*12:19 — VS Code com `transacoes-deployment.yaml`: `revisionHistoryLimit: 5` e `strategy.rollingUpdate.maxSurge: 1, maxUnavailable: 0` visíveis no manifest + terminal com `kubectl rollout history` antes (revisions 1–11) e depois do `k apply` (revisions 6–11)*
+
+---
+
+![](<imagens/Captura de tela 2026-05-08 125335.png>)
+*12:53 — Browser em `api.tipsbank.staypuff.info/transacoes/health/live` retornando `{"status":"ok","version":"v1"}` enquanto o pod v1.9.9 estava em `ImagePullBackOff` — prova do zero downtime com `maxUnavailable: 0`*
+
+---
+
+![](<imagens/Captura de tela 2026-05-08 125417.png>)
+*12:54 — VS Code com manifest (seção `strategy` visível) + terminal com `curl` mostrando health/live respondendo `{"status":"ok","version":"v1"}` durante o rollout travado*
 
 ---
