@@ -42,12 +42,20 @@ spec:
             limits:
               cpu: 500m
               memory: 512Mi
+          livenessProbe:
+            exec:
+              command: ["pg_isready", "-U", "tipsbank"]
+            initialDelaySeconds: 30
+            timeoutSeconds: 3
+            periodSeconds: 10
+            successThreshold: 1
+            failureThreshold: 3
           readinessProbe:
             exec:
-              command: [ "pg_isready", "-U", "tipsbank" ]
+              command: ["pg_isready", "-U", "tipsbank"]
             initialDelaySeconds: 5
             timeoutSeconds: 3
-            periodSeconds: 3
+            periodSeconds: 5
             successThreshold: 1
             failureThreshold: 3
       volumes:
@@ -84,5 +92,3 @@ spec:
       name: postgres
       port: 5432
       targetPort: 5432
-
-
