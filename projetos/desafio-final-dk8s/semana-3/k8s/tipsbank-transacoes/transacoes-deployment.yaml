@@ -25,6 +25,17 @@ spec:
         app.kubernetes.io/name: api-transacoes
         app.kubernetes.io/part-of: tipsbank
     spec:
+      affinity:
+        podAntiAffinity:
+          preferredDuringSchedulingIgnoredDuringExecution:
+            - weight: 100
+              podAffinityTerm:
+                labelSelector:
+                  matchLabels:
+                    app: api-transacoes
+                topologyKey: kubernetes.io/hostname
+      securityContext:
+        fsGroup: 65532
       initContainers:
         - name: init-postgres
           image: busybox:1.36
@@ -48,7 +59,7 @@ spec:
                 done
       containers:
         - name: api-transacoes
-          image: felipestaypuff/tipsbank-api-transacoes:v1.1.0
+          image: felipestaypuff/tipsbank-api-transacoes:v2.0.0
           ports:
             - containerPort: 8080
               name: api-transacoes
