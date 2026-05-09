@@ -81,7 +81,7 @@ spec:
     - metadata:
         name: postgres-data
       spec:
-        storageClassName: local-path
+        storageClassName: nfs-tp-data
         accessModes:
           - ReadWriteOnce
         resources:
