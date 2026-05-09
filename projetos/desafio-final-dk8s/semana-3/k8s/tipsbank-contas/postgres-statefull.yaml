@@ -20,6 +20,21 @@ spec:
         app.kubernetes.io/name: postgres
         app.kubernetes.io/part-of: tipsbank
     spec:
+      tolerations:
+        - key: "compliance"
+          operator: "Equal"
+          value: "strict"
+          effect: "NoSchedule"
+      affinity:
+        nodeAffinity:
+          preferredDuringSchedulingIgnoredDuringExecution:
+            - weight: 100
+              preference:
+                matchExpressions:
+                  - key: compliance
+                    operator: In
+                    values:
+                      - strict
       containers:
         - name: postgres
           image: postgres:16-alpine
