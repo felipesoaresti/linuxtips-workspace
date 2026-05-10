@@ -27,7 +27,7 @@ spec:
           value: "strict"
           effect: "NoSchedule"
       affinity:
-        nodeAffinity:
+        podAffinity:
           requiredDuringSchedulingIgnoredDuringExecution:
             - labelSelector:
                 matchLabels:
