@@ -27,12 +27,12 @@ spec:
           value: "strict"
           effect: "NoSchedule"
       affinity:
-        podAffinity:
+        podAntiAffinity:
           requiredDuringSchedulingIgnoredDuringExecution:
             - labelSelector:
                 matchLabels:
                   app: postgres
-              topologyKey: kubernetes.io/name
+              topologyKey: kubernetes.io/hostname
       containers:
         - name: postgres-replica
           image: postgres:16-alpine
