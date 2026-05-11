@@ -51,12 +51,12 @@ spec:
             - secretRef:
                 name: contas-secret
           resources:
-            requests:
-              cpu: 200m
-              memory: 256Mi
             limits:
-              cpu: 500m
-              memory: 512Mi
+              memory: "256Mi"
+              cpu: "500m"
+            requests:
+              memory: "128Mi"
+              cpu: "100m"
           startupProbe:
             httpGet:
               path: /health/startup
