@@ -93,12 +93,12 @@ spec:
             - mountPath: /var/log/app
               name: app-logs
           resources:
-            requests:
-              cpu: 200m
-              memory: 256Mi
             limits:
-              cpu: 500m
-              memory: 512Mi
+              memory: "256Mi"
+              cpu: "500m"
+            requests:
+              memory: "128Mi"
+              cpu: "100m"
           startupProbe:
             httpGet:
               path: /health/startup
@@ -134,11 +134,11 @@ spec:
               tail -F /var/log/app/app.log
           resources:
             requests:
-              cpu: 50m
-              memory: 64Mi
+              cpu: 10m
+              memory: 16Mi
             limits:
-              cpu: 100m
-              memory: 128Mi
+              cpu: 50m
+              memory: 32Mi
           volumeMounts:
             - mountPath: /var/log/app
               name: app-logs
