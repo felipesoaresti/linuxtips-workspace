@@ -6,7 +6,7 @@ metadata:
 spec:
   podSelector:
     matchLabels:
-      app: api-auditoria
+      app: auditoria
   policyTypes:
     - Ingress
   ingress:
