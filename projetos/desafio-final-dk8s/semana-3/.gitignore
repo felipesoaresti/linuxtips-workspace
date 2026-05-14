@@ -43,8 +43,8 @@ ca.crt
 admin.conf
 
 # Evidências pessoais do aluno
-docs/EVIDENCIAS.md
-evidencias/
+#docs/EVIDENCIAS.md
+#evidencias/
 
 # Helm
 helm/*/charts/
