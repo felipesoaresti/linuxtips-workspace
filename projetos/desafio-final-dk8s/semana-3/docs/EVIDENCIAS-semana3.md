@@ -24,7 +24,7 @@ Configurar probes corretas nas APIs, no `web` e no Postgres, e validar reinício
 - `kubectl get events` mostra ciclo de falha/restart quando o processo é morto.
 - APIs não entram em CrashLoopBackOff durante deploy normal; startup probe dá tempo suficiente para subir.
 
-#### Status dos critérios
+### Status dos critérios
 
 | Critério | Status | Evidência neste arquivo |
 |---|---|---|
