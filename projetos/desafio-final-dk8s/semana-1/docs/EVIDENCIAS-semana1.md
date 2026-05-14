@@ -1,7 +1,7 @@
 ---
 tags: [tipsbank, evidencias, semana-1, dk8s]
 created: 2026-04-24
-updated: 2026-05-06
+updated: 2026-05-13
 status: concluído
 semana: 1
 ---
@@ -14,7 +14,33 @@ semana: 1
 
 **Data de conclusão:** 2026-04-24
 
+#### Objetivo segundo o MANUAL-ALUNO.md
+
+Rodar o TipsBank localmente no `docker-compose`, entender o papel de cada serviço e comprovar o fluxo ponta a ponta da aplicação antes de levar qualquer coisa para Kubernetes.
+
+#### Critérios de aceite do manual
+
+- `curl http://localhost:8081/contas` retorna as contas seed sem expor `senha_hash`.
+- Login retorna 200 com senha correta e 401 com senha incorreta.
+- Uma transferência de R$ 100 muda o saldo das contas de origem e destino.
+- O arquivo `/data/eventos-YYYY-MM-DD.jsonl` da auditoria recebe uma linha por transferência.
+- A SPA em `localhost:8080` funciona ponta a ponta.
+
+#### Status dos critérios
+
+| Critério | Status | Evidência neste arquivo |
+|---|---|---|
+| Contas seed sem `senha_hash` | **Atendido** | Output de `/contas` mostra as contas e não traz `senha_hash`. |
+| Login 200/401 | **Atendido** | Há teste com senha `giropops` e teste com senha inválida retornando `credenciais invalidas`. |
+| Transferência altera saldos | **Parcialmente atendido** | Há transferência concluída de R$ 100, mas sem evidência lado a lado do saldo antes/depois. |
+| Evento JSONL na auditoria | **Parcialmente atendido** | Há evento consultado via `/eventos`; não há, nesta etapa, leitura direta do arquivo dentro do container local. |
+| SPA ponta a ponta | **Atendido** | Screenshots mostram dashboard, transferência e auditoria no ambiente local. |
+
 #### Teste 1 — Listar contas seed (sem `senha_hash`)
+
+Primeiro validei se todos os serviços subiam localmente e se os endpoints básicos respondiam. Esse teste é simples, mas importante: antes de mexer em Kubernetes, imagem, ingress ou storage, a aplicação precisa estar coerente no ambiente local.
+
+Também conferi a listagem de contas para garantir que o contrato público da API não expõe `senha_hash`. A senha fica do lado servidor; para o cliente só voltam dados operacionais da conta.
 
 ```bash
 # health check
@@ -72,7 +98,9 @@ curl http://localhost:8081/contas | jq
 
 ---
 
-#### Teste 2 — Retorna senaha autenticada 0u 401
+#### Teste 2 — Autenticação válida ou retorno 401
+
+Aqui o objetivo foi validar os dois caminhos da autenticação: sucesso com credenciais conhecidas e falha controlada com senha inválida. O retorno positivo mostra os dados da conta autenticada; o retorno de erro não entrega detalhes sensíveis, só informa que as credenciais são inválidas.
 
 ```bash
 curl -X POST http://localhost:8081/login \
@@ -97,7 +125,9 @@ curl -X POST http://localhost:8081/login \
 }
 
 ```
-#### Evento gravado a auditoria
+#### Evento gravado na auditoria
+
+Além do retorno HTTP, validei o comportamento de auditoria. Mesmo quando a tentativa de login falha, o evento precisa ser rastreável para análise posterior. Para um sistema financeiro, esse tipo de trilha é parte da história do incidente, não só um log bonitinho no terminal.
 
 ```
 curl -X POST http://localhost:8081/login -H 'content-type: application/json' -d '{"documento":"12345678901","senha":"senha-errada-teste"}' | jq
@@ -110,7 +140,9 @@ curl -X POST http://localhost:8081/login -H 'content-type: application/json' -d 
 
 ```
 
-#### Teste 3 - Criar conta Nova
+#### Teste 3 — Criar nova conta
+
+Depois da autenticação, testei a criação de uma nova conta usando o endpoint da `api-contas`. O retorno confirma que a API persistiu o registro, gerou um `id` UUID e normalizou o saldo como valor decimal em string, evitando perda de precisão comum quando dinheiro é tratado como número de ponto flutuante.
 
 ```bash
 curl -X POST http://localhost:8081/contas \
@@ -146,7 +178,9 @@ curl -X POST http://localhost:8081/contas \
 }
 ```
 
-#### Teste 3 — Transferência entre contas
+#### Teste 4 — Transferência entre contas
+
+Com contas disponíveis, validei o fluxo principal do TipsBank: transferência entre origem e destino. A resposta `status: concluida` confirma que a `api-transacoes` conseguiu conversar com a camada de contas e registrar a operação sem erro de integração.
 
 ```bash
 
@@ -184,7 +218,9 @@ curl -X POST http://localhost:8082/transferencias \
 
 ---
 
-#### Teste 4 — Evento gravado na auditoria (arquivo JSONL)
+#### Teste 5 — Evento gravado na auditoria (arquivo JSONL)
+
+Por fim, conferi se a transferência apareceu na auditoria. Esse ponto fecha o ciclo da Semana 1: a ação do usuário não fica só no saldo das contas, ela também vira evento append-only em JSONL, um formato simples, fácil de inspecionar e bom para trilhas de auditoria no lab.
 
 ```bash
 curl http://localhost:8083/eventos | jq
@@ -229,9 +265,35 @@ curl http://localhost:8083/eventos | jq
 
 ---
 
+---
+
 ### Etapa 1.2 — Build Distroless + Trivy + Cosign
 
 **Data de conclusão:** 2026-04-25
+
+#### Objetivo segundo o MANUAL-ALUNO.md
+
+Gerar quatro imagens publicadas em registry controlado, com APIs em base Distroless ou equivalente minimal/nonroot, `web` nonroot, scan limpo de HIGH/CRITICAL e assinatura Cosign verificável.
+
+#### Critérios de aceite do manual
+
+- `trivy image` retorna 0 HIGH e 0 CRITICAL nas 4 imagens.
+- `cosign verify` passa nas 4 imagens.
+- `docker inspect` mostra usuário final não-root: UID 65532 nas APIs e UID 101 no `web`.
+- Tamanho final das imagens Python menor que 150 MB e `web` menor que 30 MB.
+
+#### Status dos critérios
+
+| Critério | Status | Evidência neste arquivo |
+|---|---|---|
+| Trivy 0 HIGH/CRITICAL | **Atendido** | Resumo do scan mostra `Total: 0 (HIGH: 0, CRITICAL: 0)` para as 4 imagens. |
+| Cosign verify | **Atendido** | Bloco de verificação mostra assinatura e digest das 4 imagens. |
+| Usuário nonroot | **Atendido** | `docker inspect` mostra `User: 65532` nas APIs e `User: 101` no `web`. |
+| Tamanho das imagens | **Pendente de evidência explícita** | O arquivo não mostra `docker images`/tamanho final das imagens. |
+
+#### Observações de alinhamento com o manual
+
+- O manual cita Google Distroless como caminho base e permite Wolfi/Chainguard se o Trivy ficar limpo. As evidências usam Chainguard/Wolfi nas APIs e `nginx-unprivileged` no `web`.
 
 #### Justificativa: por que Chainguard/Distroless reduz vulnerabilidades
 
@@ -336,9 +398,9 @@ Found existing alias for "docker". You should use: "d"
 #### Scan Trivy — 4 imagens
 
 ```
-Arquivos disponiveis nos diretórios de cada app, todas as tentativas.  /api-contas foi a base para CVE 0.
+Os relatórios completos ficaram salvos nos diretórios de cada app. A `api-contas` foi usada como base do ajuste porque foi nela que apareceram os CVEs críticos no primeiro scan. Depois da troca da base e revisão das dependências, as quatro imagens ficaram sem vulnerabilidades HIGH ou CRITICAL.
 
-fepestaypuff/tipsbank-api-contas:v1.0.0 (wolfi 20230201)
+felipestaypuff/tipsbank-api-contas:v1.0.0 (wolfi 20230201)
 ══════════════════════════════════════════
 Total: 0 (HIGH: 0, CRITICAL: 0)
 
@@ -357,10 +419,12 @@ Total: 0 (HIGH: 0, CRITICAL: 0)
 
 #### Assinaturas Cosign verificadas
 
+Depois do scan, assinei e verifiquei as imagens com Cosign. A verificação amarra a tag publicada ao digest esperado; assim, além de saber que a imagem foi escaneada, também dá para confirmar que o artefato consumido no deploy é exatamente o artefato assinado.
+
 ```bash
 
-❯ cat cosing-todas.txt
-File: cosing-todas.txt
+❯ cat cosign-todas.txt
+File: cosign-todas.txt
 [
   {
     "critical": {
@@ -418,11 +482,11 @@ File: cosing-todas.txt
   }
 ]
 ```
-#### Observações ####
+#### Observações
 
 O principal problema encontrado nessa parte foi na imagem da `api-contas`: o scan apontou dois CVEs `CRITICAL` relacionados a uma dependência Python (`pyyaml`). Por isso eu usei essa imagem como base do ajuste e migrei para Chainguard/Distroless até chegar no resultado com `0 HIGH` e `0 CRITICAL`.
 
-Outro ponto importante foi o uso de `latest`. Mesmo a Chainguard mantendo as imagens atualizadas, usar `latest` direto deixa o build menos previsível, porque a base pode mudar sem eu perceber. Para evitar esse tipo de variação, eu validei o digest da imagem e fixei a referência no Dockerfile. Assim o build passa a usar exatamente a imagem testada e versionada junto com o projeto.
+Outro ponto importante foi o uso de `latest`. Mesmo a Chainguard mantendo as imagens atualizadas, usar `latest` direto deixa o build menos previsível, porque a base pode mudar sem eu perceber. Para evitar esse tipo de variação, eu validei o digest da imagem e fixei a referência no Dockerfile. Assim o build passa a usar exatamente a imagem testada e versionada junto com o projeto. Menos surpresa no build, menos drama no deploy.
 
  ```
 ❯ docker inspect cgr.dev/chainguard/python:latest --format '{{index .RepoDigests 0}}'
@@ -452,13 +516,33 @@ cgr.dev/chainguard/python@sha256:18a4fbda8c280978b6aa5329f7acd4dbb106876e76fdc87
 *Docker Desktop — detalhes das imagens*
 
 ![](<imagens/Captura de tela 2026-04-25 150119.png>)
-*Inspecção da imagem — digest e layers*
+*Inspeção da imagem — digest e layers*
+
+---
 
 ---
 
 ### Etapa 1.3 — Cluster kubeadm
 
 **Data de conclusão:** 2026-04-26
+
+#### Objetivo segundo o MANUAL-ALUNO.md
+
+Instalar um cluster kubeadm multi-node com 1 control-plane e 2 workers, containerd e CNI funcionando.
+
+#### Critérios de aceite do manual
+
+- 3 nodes `Ready`.
+- Pods do `kube-system` em `Running`.
+- `kubectl run nginx --image=nginx` agenda o pod em worker, sem remover o taint do control-plane.
+
+#### Status dos critérios
+
+| Critério | Status | Evidência neste arquivo |
+|---|---|---|
+| 3 nodes Ready | **Atendido** | `kubectl get nodes -o wide` mostra `tb-master1`, `tb-worker1` e `tb-worker2` Ready. |
+| Pods kube-system Running | **Atendido** | `kubectl get pods -A -o wide` mostra componentes principais Running. |
+| Pod nginx em worker | **Atendido** | Pod `nginx` aparece em `tb-worker2`; taint do control-plane segue `NoSchedule`. |
 
 #### Cluster provisionado
 
@@ -549,9 +633,31 @@ Taints:             node-role.kubernetes.io/control-plane:NoSchedule
 
 ---
 
+---
+
 ### Etapa 1.4 — Namespaces, Deployments e Services
 
 **Data de conclusão:** 2026-04-28
+
+#### Objetivo segundo o MANUAL-ALUNO.md
+
+Subir APIs, frontend e Postgres em namespaces separados usando Deployments, Services e StatefulSet, ainda sem Ingress, validando via `port-forward`.
+
+#### Critérios de aceite do manual
+
+- Pods TipsBank em `Running` nos namespaces esperados.
+- `port-forward` para `api-transacoes` permite transferência via API.
+- `port-forward` para `web` abre a SPA com login funcionando.
+- `imagePullSecrets` configurado quando o registry for privado.
+
+#### Status dos critérios
+
+| Critério | Status | Evidência neste arquivo |
+|---|---|---|
+| Pods Running | **Atendido** | `kubectl get pods -A | grep tipsbank` mostra workloads da aplicação Running. |
+| Transferência via API | **Atendido** | Transferência via `svc/api-transacoes` retorna `status: concluida`. |
+| SPA via port-forward | **Atendido** | `curl` retorna HTML da SPA e há evidência de login no browser. |
+| imagePullSecrets | **Não aplicável neste lab** | As imagens estão públicas no Docker Hub; por isso não foi necessário `imagePullSecret`. |
 
 #### Critério 1 — Todos os pods Running
 
@@ -618,7 +724,9 @@ Browser: `http://localhost:8080` → login com documento `12345678901` / senha `
 
 #### Critério 4 — imagePullSecrets
 
-Imagens públicas no Docker Hub (`felipestaypuff/tipsbank-*:v1.0.0`) — imagePullSecrets nenhumas das imagens esta como private.
+As imagens usadas no lab foram publicadas como públicas no Docker Hub (`felipestaypuff/tipsbank-*:v1.0.0`). Por isso, nenhum `imagePullSecret` foi necessário neste momento.
+
+Se essas imagens fossem privadas, o caminho correto seria criar um secret do tipo `kubernetes.io/dockerconfigjson` e referenciá-lo nos `ServiceAccounts` ou diretamente nos Pods. Como o objetivo aqui era validar deploy, service discovery e comunicação entre os componentes, manter as imagens públicas deixou o fluxo mais direto.
 
 
 #### Screenshots
@@ -637,11 +745,33 @@ Imagens públicas no Docker Hub (`felipestaypuff/tipsbank-*:v1.0.0`) — imagePu
 
 ---
 
+---
+
 ### Etapa 1.5 — ConfigMap, Secret e pod multicontainer
 
 **Data de conclusão:** 2026-04-28
 
+#### Objetivo segundo o MANUAL-ALUNO.md
+
+Transformar `api-transacoes` em Pod multicontainer com sidecar lendo log de arquivo compartilhado e mover configuração para ConfigMaps/Secrets.
+
+#### Critérios de aceite do manual
+
+- Pod de `api-transacoes` mostra 2 containers.
+- `kubectl logs -c log-forwarder` mostra log estruturado da app.
+- Nenhuma variável sensível aparece chapada no Deployment; valores vêm de `secretKeyRef` e `configMapKeyRef`.
+
+#### Status dos critérios
+
+| Critério | Status | Evidência neste arquivo |
+|---|---|---|
+| 2 containers | **Atendido** | `kubectl get all -A` mostra pods `api-transacoes` como `2/2 Running`. |
+| Log do sidecar | **Atendido** | `kubectl logs -c log-forwarder` mostra log estruturado `bootstrap versao=v1`. |
+| Secret/ConfigMap | **Atendido** | Extrato JSON mostra `DB_URL` vindo de Secret e URLs/versão/log level vindos de ConfigMap. |
+
 #### Critério 1 — Pods com 2/2 containers Running
+
+Nesta etapa a `api-transacoes` passou a ter dois containers no mesmo Pod: o container principal da aplicação e um sidecar `log-forwarder`. O `2/2 Running` confirma que os dois containers subiram e compartilham o mesmo ciclo de vida do Pod.
 
 ```bash
 kubectl get all -A | grep tipsbank
@@ -656,6 +786,8 @@ tipsbank-transacoes   pod/api-transacoes-d4cdd957b-sbqsc             2/2     Run
 ---
 
 #### Critério 2 — Sidecar lê log estruturado da app
+
+O sidecar fica lendo o arquivo de log gerado pela aplicação. Isso separa responsabilidade: a API continua focada em regra de negócio, enquanto o segundo container cuida do encaminhamento/observação dos logs. Para o lab, o `tail` em BusyBox resolve; em produção, esse padrão poderia evoluir para Fluent Bit, Vector ou outro agente.
 
 ```bash
 kubectl logs -c log-forwarder <pod> -n tipsbank-transacoes
@@ -673,6 +805,8 @@ Aguardando o arquivo de log ser criado...
 
 #### Critério 3 — Nenhuma variável sensível no Deployment
 
+Também validei a separação entre configuração e segredo. URLs internas e versão da aplicação ficaram em `ConfigMap`; `DB_URL`, que contém credencial de banco, ficou em `Secret`. O Deployment passa a referenciar as chaves, sem deixar valor sensível chapado no manifesto.
+
 ```bash
 kubectl get deployment api-transacoes -n tipsbank-transacoes -o json | grep -A4 '"env"'
 ```
@@ -688,10 +822,33 @@ kubectl get deployment api-transacoes -n tipsbank-transacoes -o json | grep -A4 
 
 ---
 
+---
 
 ### Etapa 1.6 — PV NFS para a auditoria
 
 **Data de conclusão:** 2026-04-29
+
+#### Objetivo segundo o MANUAL-ALUNO.md
+
+Usar PV/PVC NFS RWX para a auditoria, permitindo que múltiplas réplicas escrevam/leiam o mesmo conjunto de eventos em `/data`.
+
+#### Critérios de aceite do manual
+
+- `kubectl get pv,pvc -A` mostra PV Bound ao PVC correto.
+- Dois pods da auditoria listam os mesmos arquivos em `/data`.
+- Após 100 transferências, o total de linhas bate com os eventos disparados.
+
+#### Status dos critérios
+
+| Critério | Status | Evidência neste arquivo |
+|---|---|---|
+| PV/PVC Bound | **Atendido** | `kubectl get pv,pvc` mostra `auditoria-pvc` Bound ao PV NFS. |
+| Mesmos arquivos entre pods | **Atendido com adaptação** | Como a imagem é Distroless, a listagem foi feita com `python3` e `kubectl debug`, não com `ls`. |
+| 100 transferências | **Atendido** | `wc -l` mostra 101 linhas: 100 do loop + 1 teste manual já documentado. |
+
+#### Observações de alinhamento com o manual
+
+- O manual pede `ls /data`, mas a imagem Distroless não tem `ls`; a evidência usa método equivalente e explica o motivo.
 
 **Setup de storage:**
 
@@ -735,10 +892,11 @@ kubectl exec auditoria-659555485f-r7hbw -n tipsbank-auditoria -- python3 -c "imp
 ['eventos-2026-04-28.jsonl', 'eventos-2026-04-29.jsonl']
 ```
 
-#### OBSERVAÇÕES: ####
+#### Observações
 
-Para conseguir acessar o conteúdo do PV, primeiramente eu criei um pod debug com a imagem `busybox` e criei um arquivo no barra no diretorio /data. Os arquivos foram lidos pelos pods da auditoria.
-Lembrando que todos os containers foram criados com usuário nonroot, o que é uma boa prática de segurança, contudo isso não impede de criar arquivos no PV, o que é esperado. O importante é que os arquivos criados sejam legíveis pelos pods da auditoria.
+Para validar o conteúdo do PV, primeiro usei um pod de debug com imagem `busybox` e criei um arquivo em `/data`. Depois confirmei que os pods da auditoria enxergavam o mesmo arquivo. Isso prova o comportamento RWX do volume NFS: múltiplas réplicas conseguem ler e escrever no mesmo armazenamento compartilhado.
+
+Todos os containers da aplicação foram criados com usuário nonroot, o que é uma boa prática de segurança. Isso não bloqueia escrita no PV quando o volume está com permissões corretas. O ponto importante é combinar usuário do container, permissões do volume e `fsGroup`, para que a aplicação escreva onde precisa sem rodar como root.
 
           spec:
             securityContext:
@@ -757,7 +915,7 @@ kubectl exec auditoria-659555485f-r7hbw -n tipsbank-auditoria -- python3 -c "imp
 ['eventos-2026-04-28.jsonl', 'eventos-2026-04-29.jsonl', 'teste-pv.txt']
 ```
 
-Achei preocupante usar um container montado no cluster para auditoria então procurei na documentação da chainguard como criar um container de debug e como ler adequadamente o conteúdo dos PV´s
+Como a imagem da auditoria é Distroless, ela não traz shell nem utilitários como `ls` e `cat`. Em vez de alterar a imagem só para depurar, usei ephemeral container com `kubectl debug`. O acesso via `/proc/1/root/data` permite inspecionar o filesystem do container alvo sem comprometer a proposta da imagem mínima.
 
 https://edu.chainguard.dev/chainguard/chainguard-images/troubleshooting/kubectl_cdebug/
 
@@ -815,4 +973,3 @@ kubectl exec -n tipsbank-auditoria debug-nfs -- wc -l /data/eventos-2026-04-29.j
 *NFS /data — arquivo de auditoria criado e lido pelo pod*
 
 ---
-

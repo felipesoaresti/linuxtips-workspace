@@ -1,7 +1,7 @@
 ---
 tags: [tipsbank, evidencias, semana-2, dk8s]
 created: 2026-05-01
-updated: 2026-05-06
+updated: 2026-05-13
 status: concluído
 semana: 2
 ---
@@ -14,6 +14,32 @@ semana: 2
 
 **Data de conclusão:** 2026-04-29
 
+#### Objetivo segundo o MANUAL-ALUNO.md
+
+Expor a SPA e as APIs pelo Ingress Nginx usando hostnames e roteamento por paths.
+
+#### Critérios de aceite do manual
+
+- `kubectl get ingress -A` mostra Ingress com address preenchido.
+- Host do app retorna HTML da SPA.
+- Host da API com `/contas/contas` lista contas.
+- `/etc/hosts` ou DNS local aponta os hosts para o controller.
+
+#### Status dos critérios
+
+| Critério | Status | Evidência neste arquivo |
+|---|---|---|
+| Ingress com address | **Parcialmente atendido** | Setup e screenshots mostram MetalLB/IP do controller; falta output direto de `kubectl get ingress -A`. |
+| HTML da SPA | **Atendido** | `curl` em `app.tipsbank.staypuff.info` retorna title/logo da SPA. |
+| API por path | **Atendido** | `curl` em `/contas/contas` retorna contas via Ingress. |
+| Resolução local | **Atendido com desvio documentado** | Foi usado Pi-hole/DNS real apontando para `192.168.3.110`, em vez de `/etc/hosts`. |
+
+#### Observações de alinhamento com o manual
+
+- O manual usa `*.tipsbank.local`; o lab usou `*.tipsbank.staypuff.info`, mantendo o mesmo objetivo técnico.
+
+Nesta etapa a aplicação saiu do acesso por `port-forward` e passou a ter entrada HTTP de verdade no cluster. O objetivo foi separar o host do frontend (`app`) do host das APIs (`api`) e deixar o Ingress Nginx fazer o roteamento por hostname e path.
+
 **Setup:**
 - MetalLB instalado via Helm · IP Pool: `192.168.3.200-209` · IP alocado: `192.168.3.110`
 - Ingress Nginx Controller instalado via Helm · `type: LoadBalancer` · EXTERNAL-IP: `192.168.3.110`
@@ -21,6 +47,8 @@ semana: 2
 - Ingresses criados: `tipsbank-web` (frontend), `tipsbank-contas`, `tipsbank-transacoes`, `tipsbank-auditoria`
 
 #### Critério 1 — Frontend SPA acessível via hostname
+
+Esse teste confirma que o DNS interno do homelab aponta para o LoadBalancer do Ingress e que o Nginx entrega a SPA corretamente.
 
 ```bash
 curl -s http://app.tipsbank.staypuff.info/ | grep -i "tipsbank\|title"
@@ -33,6 +61,8 @@ curl -s http://app.tipsbank.staypuff.info/ | grep -i "tipsbank\|title"
 ```
 
 #### Critério 2 — API contas via Ingress com path routing
+
+Aqui a validação é do roteamento por path. A requisição chega em `api.tipsbank.staypuff.info`, o Ingress identifica o prefixo `/contas` e encaminha para o Service da `api-contas`.
 
 ```bash
 curl -s http://api.tipsbank.staypuff.info/contas/contas | python3 -m json.tool
@@ -88,9 +118,35 @@ curl -s http://api.tipsbank.staypuff.info/auditoria/health/live
 
 ---
 
+---
+
 ### Etapa 2.2 — TLS + recursos avançados do Ingress
 
 **Data de conclusão:** 2026-05-01
+
+#### Objetivo segundo o MANUAL-ALUNO.md
+
+Adicionar HTTPS com cert-manager e recursos avançados do Ingress: Basic Auth, rate limit e affinity cookie.
+
+#### Critérios de aceite do manual
+
+- `curl -k https://app.tipsbank.local/` retorna 200.
+- `/contas/admin/contas` retorna 401 sem credencial e 200 com credencial.
+- Rajada com `hey`/`ab` mostra 429 após rate limit.
+
+#### Status dos critérios
+
+| Critério | Status | Evidência neste arquivo |
+|---|---|---|
+| HTTPS do app/API | **Atendido** | Certificado Let's Encrypt real, `certificate READY=True` e curl/browser sem erro. |
+| Basic Auth | **Atendido** | Sem credencial retorna 401; com `admin:senha123` retorna JSON das contas. |
+| Rate limit 429 | **Atendido** | `hey` mostra 261 respostas 200 e 739 respostas 429. |
+
+#### Observações de alinhamento com o manual
+
+- O manual aceita issuer self-signed/local; a evidência usa Let's Encrypt DNS-01 via Cloudflare, mais próximo de ambiente real.
+
+Depois do HTTP básico, o foco foi aproximar o lab de um cenário mais real: TLS válido, autenticação simples para rota administrativa, rate limit e afinidade por cookie. Não é para fingir que Basic Auth resolve segurança bancária, mas é um bom exercício de controle no Ingress.
 
 **Setup:**
 - TLS: cert-manager + ClusterIssuer `prod-letsencrypt-cloudflare` (Let's Encrypt DNS-01 via API Cloudflare)
@@ -100,6 +156,8 @@ curl -s http://api.tipsbank.staypuff.info/auditoria/health/live
 - Affinity Cookie: `TIPSBANK_AFFINITY` com `Max-Age=172800` no Ingress de transações
 
 #### Critério 1 — HTTPS funcionando com cert Let's Encrypt real
+
+O certificado foi emitido via DNS-01, então o Let's Encrypt não depende de acessar o cluster por HTTP para validar o domínio. Isso combina bem com homelab, NAT e ambientes onde o endpoint ainda está sendo organizado.
 
 ```bash
 curl https://app.tipsbank.staypuff.info/
@@ -136,6 +194,8 @@ Patch aplicado: `kubectl patch configmap ingress-nginx-controller -n ingress-ngi
 
 #### Critério 2 — Basic Auth: 401 sem credencial, 200 com credencial
 
+A rota administrativa foi separada para exigir credencial no próprio Ingress. Sem usuário e senha, o Nginx barra a chamada antes de ela chegar na aplicação; com credencial correta, o tráfego segue para a `api-contas`.
+
 ```bash
 curl -k https://api.tipsbank.staypuff.info/contas/admin/contas
 ```
@@ -162,6 +222,8 @@ curl -k -u admin:senha123 https://api.tipsbank.staypuff.info/contas/admin/contas
 
 #### Critério 3 — Rate limit 429 após rajada
 
+O teste com `hey` força uma rajada acima do limite configurado. A distribuição com respostas `200` e `429` mostra que o Ingress não derrubou o serviço; ele apenas passou a recusar o excesso de requisições, que é exatamente o comportamento esperado para proteger a aplicação.
+
 ```bash
 hey -n 1000 -c 10 https://app.tipsbank.staypuff.info/
 ```
@@ -183,9 +245,9 @@ O `limit-rps` funciona por rota, porque ele injeta o `limit_req` no bloco `locat
 
 Referência oficial: https://kubernetes.github.io/ingress-nginx/user-guide/nginx-configuration/configmap/
 
-| Chave | Tipo | Default | Descrição |
-|---|---|---|---|
-| `limit-req-status-code` | int | **503** | HTTP status code retornado quando o rate limit é excedido |
+| Chave                   | Tipo | Default | Descrição                                                 |
+| ----------------------- | ---- | ------- | --------------------------------------------------------- |
+| `limit-req-status-code` | int  | **503** | HTTP status code retornado quando o rate limit é excedido |
 
 Patch aplicado:
 ```bash
@@ -198,6 +260,8 @@ kubectl rollout restart deployment ingress-nginx-controller -n ingress-nginx
 
 
 #### Critério 4 — Affinity Cookie em transações
+
+A afinidade por cookie foi aplicada na rota de transações para manter o cliente preso ao mesmo backend por um período. Isso é útil quando existe estado local, cache quente ou comportamento que ainda não está totalmente stateless. Aqui o objetivo foi validar a mecânica no Ingress.
 
 ```bash
 curl -k -v https://api.tipsbank.staypuff.info/transacoes/health/live 2>&1 | grep -i set-cookie
@@ -236,9 +300,31 @@ set-cookie: TIPSBANK_AFFINITY=1777686728.211.645.931183|ce724c427397688022a6eba5
 
 ---
 
+---
+
 ### Etapa 2.3 — Cluster EKS Paralelo
 
 **Data de conclusão:** 2026-05-03
+
+#### Objetivo segundo o MANUAL-ALUNO.md
+
+Replicar o TipsBank em um cluster EKS criado via `eksctl`, com app e Ingress funcionando em DNS real.
+
+#### Critérios de aceite do manual
+
+- `kubectl config get-contexts` mostra dois contexts funcionando.
+- `kubectl --context eks-tipsbank get nodes` retorna nodes do EKS.
+- TipsBank acessível via HTTPS com DNS real.
+
+#### Status dos critérios
+
+| Critério | Status | Evidência neste arquivo |
+|---|---|---|
+| Dois contexts | **Atendido** | Output mostra `eks-tipsbank` e contextos locais no kubeconfig. |
+| Nodes EKS | **Atendido** | Dois nodes EKS Ready em `us-east-1`. |
+| HTTPS/DNS real | **Atendido** | Health checks HTTPS e certificados READY no EKS. |
+
+Aqui eu subi um EKS paralelo para provar que os manifestos e o desenho da aplicação não estavam presos ao homelab. A ideia foi levar o mesmo TipsBank para AWS, aceitar as diferenças de infraestrutura e documentar os ajustes necessários sem maquiar os tropeços.
 
 **Setup:**
 - Cluster EKS `tipsbank` provisionado via `eksctl create cluster` na região `us-east-1` (2 nodes managed, `t3.medium`)
@@ -275,6 +361,8 @@ O frontend ficou offline com `502` porque o Nginx ainda estava configurado com o
 
 #### Critério 1 — Dois contexts funcionando no kubeconfig
 
+O primeiro critério foi manter os dois mundos acessíveis no mesmo kubeconfig. Isso evita misturar evidências: cada comando deixa claro se está falando com homelab ou EKS.
+
 ```bash
 kubectl config get-contexts
 ```
@@ -292,6 +380,8 @@ CURRENT   NAME           CLUSTER                                    AUTHINFO    
 
 #### Critério 2 — Nodes do EKS com status Ready
 
+Com os nodes `Ready`, o plano de controle da AWS e os managed node groups estavam prontos para receber os workloads. Também validei versão do Kubernetes, runtime e IPs para registrar exatamente o ambiente usado.
+
 ```bash
 kubectl --context eks-tipsbank get nodes -o wide
 ```
@@ -306,6 +396,8 @@ ip-192-168-43-182.ec2.internal   Ready    <none>   8h    v1.31.14-eks-40737a8   
 ---
 
 #### Critério 3 — TipsBank acessível via HTTPS com DNS real
+
+Esse critério fecha o teste de portabilidade: aplicação acessível por DNS público, TLS válido, Services respondendo e storage persistente ligado no EKS. Ou seja, não foi só "subiu pod"; o fluxo externo da aplicação também funcionou.
 
 ```bash
 curl -s https://app.tipsbank.staypuff.info/healthz
@@ -422,9 +514,35 @@ Cluster destruído com `eksctl delete cluster --name tipsbank --region us-east-1
 
 ---
 
+---
+
 ### Etapa 2.4 — Canary de Transações
 
 **Data de conclusão:** 2026-05-04
+
+#### Objetivo segundo o MANUAL-ALUNO.md
+
+Publicar `api-transacoes:v2` e usar Canary Ingress para dividir tráfego, mantendo opção de direcionar por header.
+
+#### Critérios de aceite do manual
+
+- Health de transações retorna `version: v1` ou `version: v2` em proporção aproximada 9:1.
+- `kubectl rollout undo` funciona nos Deployments.
+- Header `X-Canary: true` direciona para v2 como extra.
+
+#### Status dos critérios
+
+| Critério | Status | Evidência neste arquivo |
+|---|---|---|
+| Split 9:1 | **Atendido** | Amostras de 100 requisições mostram distribuição próxima de 90/10. |
+| rollout undo | **Atendido** | `kubectl rollout undo deployment/api-transacoes-v2` executado e histórico exibido. |
+| Header canary | **Atendido** | `X-Canary: true` retorna `version: v2` e endpoint `/pix`. |
+
+#### Observações de alinhamento com o manual
+
+- O manual sugere 1000 requisições; a evidência usa amostras de 100. A proporção ficou estável, mas um teste de 1000 deixaria a amostra estatisticamente mais forte.
+
+Nesta etapa publiquei uma v2 da `api-transacoes` sem substituir a v1 de uma vez. O canary permitiu mandar uma fatia pequena do tráfego por peso e, ao mesmo tempo, forçar 100% para v2 com header. É o tipo de controle que ajuda a testar mudança com calma antes de abrir para todo mundo.
 
 **Setup:**
 - Deployment `api-transacoes-v2` (1 réplica) com imagem `felipestaypuff/tipsbank-api-transacoes:v2.0.0`
@@ -433,6 +551,8 @@ Cluster destruído com `eksctl delete cluster --name tipsbank --region us-east-1
 - Endpoint novo: `GET /pix` (mock) disponível apenas na v2
 
 #### Critério 1 — Split ~90/10 por peso
+
+O loop de 100 requisições dá uma amostra prática da distribuição. Não precisa bater exatamente 90/10 em toda rodada, porque é balanceamento probabilístico, mas as amostras ficaram próximas o suficiente para validar a configuração.
 
 ```bash
 for i in $(seq 1 100); do
@@ -452,6 +572,8 @@ Split dentro da faixa esperada (~90/10).
 
 #### Critério 2 — Header `X-Canary: true` força 100% para v2
 
+O header é o caminho controlado para teste funcional. Com ele, dá para validar a nova versão sem depender da sorte do peso do canary.
+
 ```bash
 curl -sk -H "X-Canary: true" https://api.tipsbank.staypuff.info/transacoes/health/live
 ```
@@ -462,6 +584,8 @@ curl -sk -H "X-Canary: true" https://api.tipsbank.staypuff.info/transacoes/healt
 ```
 
 #### Critério 3 — Endpoint `/pix` acessível via v2
+
+O endpoint `/pix` serviu como prova objetiva de que a requisição caiu na v2. Como esse endpoint não existe na v1, a resposta confirma que o roteamento por header está chegando no backend novo.
 
 ```bash
 curl -sk -H "X-Canary: true" https://api.tipsbank.staypuff.info/transacoes/pix
@@ -533,9 +657,35 @@ Depois teve o header do canary. Como eu configurei `canary-by-header-value: "tru
 
 ---
 
+---
+
 ### Etapa 2.5 — NetworkPolicy Zero-Trust
 
 **Data de conclusão:** 2026-05-05
+
+#### Objetivo segundo o MANUAL-ALUNO.md
+
+Aplicar default-deny nos namespaces e liberar somente os fluxos necessários para a aplicação funcionar.
+
+#### Critérios de aceite do manual
+
+- Auditoria tentando acessar `api-contas` recebe timeout.
+- `api-transacoes` acessa `api-contas` com 200.
+- Saída para IP não permitido é bloqueada.
+
+#### Status dos critérios
+
+| Critério | Status | Evidência neste arquivo |
+|---|---|---|
+| auditoria -> api-contas bloqueado | **Atendido** | Testes por ClusterIP e DNS terminam em timeout. |
+| transacoes -> api-contas liberado | **Atendido** | Curl a partir de `api-transacoes` retorna `{"status":"ok"}`. |
+| Egress externo bloqueado | **Atendido no homelab** | Teste para IP externo do homelab retorna timeout; no EKS o manual sugere também `169.254.169.254`. |
+
+#### Observações de alinhamento com o manual
+
+- A evidência documenta refinamento importante de DNS: regra restrita a CoreDNS via `namespaceSelector + podSelector`, em vez de liberar porta 53 para qualquer destino.
+
+A proposta aqui foi trocar o modelo "todo mundo fala com todo mundo" por allowlist explícita entre namespaces. Depois do `default-deny`, só os fluxos necessários para o TipsBank continuaram liberados. É segurança de rede com o mínimo de conversa permitida, do jeito que um ambiente sensível pede.
 
 **Setup:**
 - CNI: Calico v3.31.4 (Felix + iptables) — NetworkPolicy suportada nativamente
@@ -568,7 +718,7 @@ curl: (28) Connection timed out after 5003 milliseconds
 
 NetworkPolicy bloqueou o TCP:8080 — auditoria não está na whitelist de ingress do tipsbank-contas.
 
-#### Critério 2 — transacoes ACESSA api-contas (200 esperado)
+#### Critério 2 — transações ACESSA api-contas (200 esperado)
 
 ```bash
 kubectl debug -it api-transacoes-d4cdd957b-pbhmw \
@@ -582,7 +732,7 @@ kubectl debug -it api-transacoes-d4cdd957b-pbhmw \
 {"status":"ok"}
 ```
 
-allow-transacoes-to-contas liberou o egress TCP:8080.
+`allow-transacoes-to-contas` liberou o egress TCP:8080. Esse é o caminho esperado: transações precisa consultar contas para validar origem, destino e saldo antes de concluir a operação.
 
 #### Critério 3 — pods NÃO acessam IPs externos (timeout esperado)
 
@@ -604,6 +754,8 @@ curl: (28) Connection timed out after 5002 milliseconds
 default-deny bloqueou egress para IPs externos não permitidos.
 
 #### Smoke test — aplicação continua funcionando após as policies
+
+Esse smoke test é importante porque política de rede boa não é a que bloqueia tudo e quebra a aplicação. Ela precisa bloquear o tráfego indevido e preservar o caminho crítico do produto.
 
 ```bash
 curl -s -o /dev/null -w "%{http_code}" https://app.tipsbank.staypuff.info
