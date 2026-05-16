@@ -13,10 +13,10 @@ spec:
       interval: 30s
       rules:
         - alert: TipsBankApiDown
-          expr: up{namespace=~"tipsbank-.*"} == 0
+          expr: up{namespace=~"api-.*"} == 0
           for: 2m
           labels:
             severity: critical
           annotations:
             summary: "API TipsBank indisponível"
-            description: "The error rate for API Contas has exceeded 5% over the last 2 minutes. Namespace: {{ $labels.namespace }}"
+            description: "O job {{ $labels.job }} está down há mais de 2 minutos. Namespace: {{ $labels.namespace }}"
