@@ -1,0 +1,22 @@
+apiVersion: monitoring.coreos.com/v1
+kind: PrometheusRule
+metadata:
+  name: tipsbank-slo-alerts
+  namespace: tipsbank-monitoring
+  labels:
+    release: kube-prometheus-stack
+    app.kubernetes.io/name: tipsbank-slo-alerts
+    app.kubernetes.io/part-of: tipsbank
+spec:
+  groups:
+    - name: tipsbank.availability
+      interval: 30s
+      rules:
+        - alert: TipsBankApiDown
+          expr: up{job=~"tipsbank-.*"} == 0
+          for: 2m
+          labels:
+            severity: critical
+          annotations:
+            summary: "API TipsBank indisponível"
+            description: "The error rate for API Contas has exceeded 5% over the last 2 minutes. Namespace: {{ $labels.namespace }}"
