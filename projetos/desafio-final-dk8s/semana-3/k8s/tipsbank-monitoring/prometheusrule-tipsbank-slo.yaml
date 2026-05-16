@@ -13,7 +13,7 @@ spec:
       interval: 30s
       rules:
         - alert: TipsBankApiDown
-          expr: up{job=~"tipsbank-.*"} == 0
+          expr: up{namespace=~"tipsbank-.*"} == 0
           for: 2m
           labels:
             severity: critical
