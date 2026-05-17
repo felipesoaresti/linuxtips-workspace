@@ -13,14 +13,20 @@ spec:
       interval: 30s
       rules:
         - alert: TipsBankApiDown
-          expr: up{namespace=~"tipsbank-.*"} == 0
+          # kube-state-metrics: sempre existe mesmo com 0 réplicas
+          expr: |
+            kube_deployment_status_replicas_available{
+              namespace=~"tipsbank-.*",
+              deployment=~"api-contas|api-transacoes|auditoria"
+            } == 0
           for: 2m
           labels:
             severity: critical
             team: tipsbank
           annotations:
-            summary: "API TipsBank indisponível"
-            description: "O job {{ $labels.job }} está down há mais de 2 minutos. Namespace: {{ $labels.namespace }}"
+            summary: "API TipsBank sem réplicas disponíveis"
+            description: "Deployment {{ $labels.deployment }} no namespace {{ $labels.namespace }} está com 0 réplicas disponíveis há mais de 2 minutos."
+
     - name: tipsbank.latency
       interval: 30s
       rules:
@@ -37,18 +43,21 @@ spec:
             team: tipsbank
           annotations:
             summary: "Latência p99 acima de 500ms"
-            description: "p99 de {{ $labels.job }} ({{ $labels.namespace }}) = {{ $value | humanizeDuration }}. SLO violado."
+            description: "p99 de {{ $labels.job }} ({{ $labels.namespace }}) está em {{ $value | humanizeDuration }}. SLO violado."
+
     - name: tipsbank.errors
       interval: 30s
       rules:
         - alert: TipsBankErroAltoApi
           expr: |
-            sum by (job, namespace) (
-              rate(http_requests_total{namespace=~"tipsbank-.*", status=~"5.."}[3m])
-            )
-            /
-            sum by (job, namespace) (
-              rate(http_requests_total{namespace=~"tipsbank-.*"}[3m])
+            (
+              sum by (job, namespace) (
+                rate(http_requests_total{namespace=~"tipsbank-.*", status=~"5.."}[3m])
+              )
+              /
+              sum by (job, namespace) (
+                rate(http_requests_total{namespace=~"tipsbank-.*"}[3m])
+              )
             ) > 0.05
           for: 3m
           labels:
@@ -57,6 +66,7 @@ spec:
           annotations:
             summary: "Taxa de erros 5xx acima de 5%"
             description: "{{ $labels.job }} com {{ $value | humanizePercentage }} de erros 5xx nos últimos 3 minutos."
+
     - name: tipsbank.stability
       interval: 30s
       rules:
