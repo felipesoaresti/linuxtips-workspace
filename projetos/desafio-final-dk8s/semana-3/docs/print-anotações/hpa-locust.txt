@@ -1,0 +1,507 @@
+ k get pod -A | grep tipsbank
+tipsbank-auditoria    auditoria-69dffc8c99-f45jp                                  1/1     Running   0            5d23h
+tipsbank-auditoria    auditoria-69dffc8c99-q6sfq                                  1/1     Running   0            5d23h
+tipsbank-contas       api-contas-67dcb8b76c-fbfkm                                 1/1     Running   0            7h36m
+tipsbank-contas       api-contas-67dcb8b76c-pb6nt                                 1/1     Running   0            7h36m
+tipsbank-contas       postgres-0                                                  1/1     Running   0            7h25m
+tipsbank-contas       postgres-replica-0                                          1/1     Running   0            7d9h
+tipsbank-contas       stress                                                      0/1     Error     0            7h6m
+tipsbank-monitoring   alertmanager-kube-prometheus-stack-alertmanager-0           2/2     Running   0            3d23h
+tipsbank-monitoring   kube-prometheus-stack-grafana-5647658b96-5z4pg              3/3     Running   0            3d23h
+tipsbank-monitoring   kube-prometheus-stack-kube-state-metrics-58474dc949-sbl78   1/1     Running   0            3d23h
+tipsbank-monitoring   kube-prometheus-stack-operator-7d6bdd985b-llvkj             1/1     Running   0            3d23h
+tipsbank-monitoring   kube-prometheus-stack-prometheus-node-exporter-5qmkw        1/1     Running   0            3d23h
+tipsbank-monitoring   kube-prometheus-stack-prometheus-node-exporter-hwm8m        1/1     Running   0            3d23h
+tipsbank-monitoring   kube-prometheus-stack-prometheus-node-exporter-jfftq        1/1     Running   0            3d23h
+tipsbank-monitoring   locust-7445c84dd6-5ffgg                                     1/1     Running   0            4m
+tipsbank-monitoring   prometheus-kube-prometheus-stack-prometheus-0               2/2     Running   0            3d23h
+tipsbank-transacoes   api-transacoes-659558d96c-cnkcw                             2/2     Running   0            5d23h
+tipsbank-transacoes   api-transacoes-659558d96c-h7wfl                             2/2     Running   0            5h35m
+tipsbank-transacoes   api-transacoes-659558d96c-wk5hg                             2/2     Running   0            5d23h
+tipsbank-web          web-744bdd6fd8-bgw6j                                        1/1     Running   0            5d23h
+tipsbank-web          web-744bdd6fd8-dm246                                        1/1     Running   0            5d23h
+❯ k get pod -A | grep tipsbank -w
+tipsbank-auditoria    auditoria-69dffc8c99-f45jp                                  1/1     Running   0            6d
+tipsbank-auditoria    auditoria-69dffc8c99-q6sfq                                  1/1     Running   0            6d
+tipsbank-contas       api-contas-67dcb8b76c-fbfkm                                 1/1     Running   0            7h38m
+tipsbank-contas       api-contas-67dcb8b76c-pb6nt                                 1/1     Running   0            7h38m
+tipsbank-contas       postgres-0                                                  1/1     Running   0            7h28m
+tipsbank-contas       postgres-replica-0                                          1/1     Running   0            7d9h
+tipsbank-contas       stress                                                      0/1     Error     0            7h8m
+tipsbank-monitoring   alertmanager-kube-prometheus-stack-alertmanager-0           2/2     Running   0            3d23h
+tipsbank-monitoring   kube-prometheus-stack-grafana-5647658b96-5z4pg              3/3     Running   0            3d23h
+tipsbank-monitoring   kube-prometheus-stack-kube-state-metrics-58474dc949-sbl78   1/1     Running   0            3d23h
+tipsbank-monitoring   kube-prometheus-stack-operator-7d6bdd985b-llvkj             1/1     Running   0            3d23h
+tipsbank-monitoring   kube-prometheus-stack-prometheus-node-exporter-5qmkw        1/1     Running   0            3d23h
+tipsbank-monitoring   kube-prometheus-stack-prometheus-node-exporter-hwm8m        1/1     Running   0            3d23h
+tipsbank-monitoring   kube-prometheus-stack-prometheus-node-exporter-jfftq        1/1     Running   0            3d23h
+tipsbank-monitoring   locust-7445c84dd6-5ffgg                                     1/1     Running   0            6m2s
+tipsbank-monitoring   prometheus-kube-prometheus-stack-prometheus-0               2/2     Running   0            3d23h
+tipsbank-transacoes   api-transacoes-659558d96c-cnkcw                             2/2     Running   0            6d
+tipsbank-transacoes   api-transacoes-659558d96c-h7wfl                             2/2     Running   0            5h37m
+tipsbank-transacoes   api-transacoes-659558d96c-wk5hg                             2/2     Running   0            6d
+tipsbank-web          web-744bdd6fd8-bgw6j                                        1/1     Running   0            5d23h
+tipsbank-web          web-744bdd6fd8-dm246                                        1/1     Running   0            5d23h
+
+
+    /mnt/c/Users/felip/Documents/Projetos/tipsbank  on   main ⇡2 !1 ▓▒░                                                        ░▒▓   at 17:13:02  
+❯ 
+❯ watch -n 5 'kubectl get hpa -A && echo "---" && kubectl get pods -n tipsbank-transacoes'
+❯ watch -n 5 'kubectl get hpa -A && echo "---" && kubectl get pods -n tipsbank-transacoes'
+❯ watch -n 5 'kubectl get hpa -A && echo "---" && kubectl get pods -n tipsbank-transacoes'
+❯ kubectl get networkpolicy -n tipsbank-transacoes
+NAME                                   POD-SELECTOR                                AGE
+allow-dns-egress-transacoes            <none>                                      11d
+allow-ingress-to-api-transacoes        app in (api-transacoes,api-transacoes-v2)   11d
+allow-prometheus-tipsbank-transacoes   app=api-transacoes                          3d21h
+allow-transacoes-to-auditoria          app in (api-transacoes,api-transacoes-v2)   11d
+allow-transacoes-to-contas             app in (api-transacoes,api-transacoes-v2)   11d
+default-deny-all                       <none>                                      12d
+❯ kubectl run test-curl \
+  --rm -i \
+  --restart=Never \
+  -n tipsbank-monitoring \
+  --image=curlimages/curl:8.5.0 \
+  -- curl -s --max-time 5 \
+  http://api-transacoes.tipsbank-transacoes.svc.cluster.local:8082/health/ready
+pod "test-curl" deleted from tipsbank-monitoring namespace
+pod tipsbank-monitoring/test-curl terminated (Error)
+❯ k apply -f k8s/network-policies/allow-monitoring-locust-to-transacoes.yaml
+networkpolicy.networking.k8s.io/allow-from-monitoring created
+❯ kubectl run test-curl --rm -i --restart=Never -n tipsbank-monitoring --image=curlimages/curl:8.5.0 -- curl -s --max-time 5 http://api-transacoes.tipsbank-transacoes.svc.cluster.local:8082/health/ready
+pod "test-curl" deleted from tipsbank-monitoring namespace
+pod tipsbank-monitoring/test-curl terminated (Error)
+❯ kubectl run test-curl --rm -i --restart=Never -n tipsbank-monitoring --image=curlimages/curl:8.5.0 -- curl -s --max-time 5 http://api-transacoes.tipsbank-transacoes.svc.cluster.local:8080/health/ready
+❯ k apply -f k8s/network-policies/allow-monitoring-locust-to-transacoes.yaml
+networkpolicy.networking.k8s.io/allow-from-monitoring configured
+❯ kubectl run test-curl --rm -i --restart=Never -n tipsbank-monitoring --image=curlimages/curl:8.5.0 -- curl -s --max-time 5 http://api-transacoes.tipsbank-transacoes.svc.cluster.local:8082/health/ready
+^C
+❯ 
+❯ kubectl run test-curl --rm -i --restart=Never -n tipsbank-monitoring --image=curlimages/curl:8.5.0 -- curl -s --max-time 5 http://api-transacoes.tipsbank-transacoes.svc.cluster.local:8080/health/ready
+Error from server (AlreadyExists): pods "test-curl" already exists
+❯ k get pod -A
+NAMESPACE             NAME                                                        READY   STATUS    RESTARTS     AGE
+calico-system         calico-kube-controllers-597ff8fcc5-ttv4v                    1/1     Running   1 (8d ago)   21d
+calico-system         calico-node-b58jm                                           1/1     Running   1 (8d ago)   21d
+calico-system         calico-node-nj6dz                                           1/1     Running   1 (8d ago)   21d
+calico-system         calico-node-zqbd8                                           1/1     Running   1 (8d ago)   21d
+calico-system         calico-typha-96f98c97d-dngcb                                1/1     Running   1 (8d ago)   21d
+calico-system         calico-typha-96f98c97d-h69dv                                1/1     Running   1 (8d ago)   21d
+calico-system         csi-node-driver-m8pgk                                       2/2     Running   2 (8d ago)   21d
+calico-system         csi-node-driver-vhvth                                       2/2     Running   2 (8d ago)   21d
+calico-system         csi-node-driver-vlmnr                                       2/2     Running   2 (8d ago)   21d
+cert-manager          cert-manager-5957746d66-frdhv                               1/1     Running   2 (8d ago)   15d
+cert-manager          cert-manager-cainjector-567c6b47ff-hcphn                    1/1     Running   2 (8d ago)   15d
+cert-manager          cert-manager-webhook-7cc5c588cb-xkvst                       1/1     Running   1 (8d ago)   15d
+default               nginx                                                       1/1     Running   1 (8d ago)   21d
+ingress-nginx         ingress-nginx-controller-859798667d-s249g                   1/1     Running   1 (8d ago)   15d
+kube-system           coredns-7d764666f9-bgpzr                                    1/1     Running   1 (8d ago)   21d
+kube-system           coredns-7d764666f9-kf6db                                    1/1     Running   1 (8d ago)   21d
+kube-system           csi-nfs-controller-85cc966848-dw5l6                         5/5     Running   0            5d19h
+kube-system           csi-nfs-node-5c7kd                                          3/3     Running   3 (8d ago)   19d
+kube-system           csi-nfs-node-n7rcj                                          3/3     Running   3 (8d ago)   19d
+kube-system           csi-nfs-node-rxmmq                                          3/3     Running   3 (8d ago)   19d
+kube-system           etcd-tb-master1                                             1/1     Running   1 (8d ago)   21d
+kube-system           kube-apiserver-tb-master1                                   1/1     Running   1 (8d ago)   21d
+kube-system           kube-controller-manager-tb-master1                          1/1     Running   1 (8d ago)   21d
+kube-system           kube-proxy-2fz7n                                            1/1     Running   1 (8d ago)   21d
+kube-system           kube-proxy-8psbk                                            1/1     Running   1 (8d ago)   21d
+kube-system           kube-proxy-d6gsv                                            1/1     Running   1 (8d ago)   21d
+kube-system           kube-scheduler-tb-master1                                   1/1     Running   1 (8d ago)   21d
+kube-system           metrics-server-6ccf764647-4bs54                             1/1     Running   0            6h55m
+local-path-storage    local-path-provisioner-7d4d469b6-vhpq5                      1/1     Running   0            5d19h
+metallb-system        metallb-controller-84c7d4d544-sc4bm                         1/1     Running   1 (8d ago)   17d
+metallb-system        metallb-speaker-64qsm                                       4/4     Running   4 (8d ago)   17d
+metallb-system        metallb-speaker-rf6qm                                       4/4     Running   4 (8d ago)   17d
+metallb-system        metallb-speaker-vkf46                                       4/4     Running   4 (8d ago)   17d
+tigera-operator       tigera-operator-6cf4cccc57-8p5wr                            1/1     Running   1 (8d ago)   21d
+tipsbank-auditoria    auditoria-69dffc8c99-f45jp                                  1/1     Running   0            6d
+tipsbank-auditoria    auditoria-69dffc8c99-q6sfq                                  1/1     Running   0            6d
+tipsbank-contas       api-contas-67dcb8b76c-fbfkm                                 1/1     Running   0            7h59m
+tipsbank-contas       api-contas-67dcb8b76c-pb6nt                                 1/1     Running   0            7h59m
+tipsbank-contas       postgres-0                                                  1/1     Running   0            7h48m
+tipsbank-contas       postgres-replica-0                                          1/1     Running   0            7d9h
+tipsbank-contas       stress                                                      0/1     Error     0            7h29m
+tipsbank-monitoring   alertmanager-kube-prometheus-stack-alertmanager-0           2/2     Running   0            4d
+tipsbank-monitoring   kube-prometheus-stack-grafana-5647658b96-5z4pg              3/3     Running   0            4d
+tipsbank-monitoring   kube-prometheus-stack-kube-state-metrics-58474dc949-sbl78   1/1     Running   0            4d
+tipsbank-monitoring   kube-prometheus-stack-operator-7d6bdd985b-llvkj             1/1     Running   0            4d
+tipsbank-monitoring   kube-prometheus-stack-prometheus-node-exporter-5qmkw        1/1     Running   0            4d
+tipsbank-monitoring   kube-prometheus-stack-prometheus-node-exporter-hwm8m        1/1     Running   0            4d
+tipsbank-monitoring   kube-prometheus-stack-prometheus-node-exporter-jfftq        1/1     Running   0            4d
+tipsbank-monitoring   locust-7445c84dd6-5ffgg                                     1/1     Running   0            26m
+tipsbank-monitoring   prometheus-kube-prometheus-stack-prometheus-0               2/2     Running   0            4d
+tipsbank-monitoring   test-curl                                                   0/1     Error     0            18s
+tipsbank-transacoes   api-transacoes-659558d96c-cnkcw                             2/2     Running   0            6d
+tipsbank-transacoes   api-transacoes-659558d96c-h7wfl                             2/2     Running   0            5h58m
+tipsbank-transacoes   api-transacoes-659558d96c-wk5hg                             2/2     Running   0            6d
+tipsbank-web          web-744bdd6fd8-bgw6j                                        1/1     Running   0            6d
+tipsbank-web          web-744bdd6fd8-dm246                                        1/1     Running   0            6d
+❯ k delete pod -n tipsbank-contas stress
+pod "stress" deleted from tipsbank-contas namespace
+❯ k delete pod -n tipsbank-transacoes test-curl
+Error from server (NotFound): pods "test-curl" not found
+❯ k get pod -A
+NAMESPACE             NAME                                                        READY   STATUS    RESTARTS     AGE
+calico-system         calico-kube-controllers-597ff8fcc5-ttv4v                    1/1     Running   1 (8d ago)   21d
+calico-system         calico-node-b58jm                                           1/1     Running   1 (8d ago)   21d
+calico-system         calico-node-nj6dz                                           1/1     Running   1 (8d ago)   21d
+calico-system         calico-node-zqbd8                                           1/1     Running   1 (8d ago)   21d
+calico-system         calico-typha-96f98c97d-dngcb                                1/1     Running   1 (8d ago)   21d
+calico-system         calico-typha-96f98c97d-h69dv                                1/1     Running   1 (8d ago)   21d
+calico-system         csi-node-driver-m8pgk                                       2/2     Running   2 (8d ago)   21d
+calico-system         csi-node-driver-vhvth                                       2/2     Running   2 (8d ago)   21d
+calico-system         csi-node-driver-vlmnr                                       2/2     Running   2 (8d ago)   21d
+cert-manager          cert-manager-5957746d66-frdhv                               1/1     Running   2 (8d ago)   15d
+cert-manager          cert-manager-cainjector-567c6b47ff-hcphn                    1/1     Running   2 (8d ago)   15d
+cert-manager          cert-manager-webhook-7cc5c588cb-xkvst                       1/1     Running   1 (8d ago)   15d
+default               nginx                                                       1/1     Running   1 (8d ago)   21d
+ingress-nginx         ingress-nginx-controller-859798667d-s249g                   1/1     Running   1 (8d ago)   15d
+kube-system           coredns-7d764666f9-bgpzr                                    1/1     Running   1 (8d ago)   21d
+kube-system           coredns-7d764666f9-kf6db                                    1/1     Running   1 (8d ago)   21d
+kube-system           csi-nfs-controller-85cc966848-dw5l6                         5/5     Running   0            5d19h
+kube-system           csi-nfs-node-5c7kd                                          3/3     Running   3 (8d ago)   19d
+kube-system           csi-nfs-node-n7rcj                                          3/3     Running   3 (8d ago)   19d
+kube-system           csi-nfs-node-rxmmq                                          3/3     Running   3 (8d ago)   19d
+kube-system           etcd-tb-master1                                             1/1     Running   1 (8d ago)   21d
+kube-system           kube-apiserver-tb-master1                                   1/1     Running   1 (8d ago)   21d
+kube-system           kube-controller-manager-tb-master1                          1/1     Running   1 (8d ago)   21d
+kube-system           kube-proxy-2fz7n                                            1/1     Running   1 (8d ago)   21d
+kube-system           kube-proxy-8psbk                                            1/1     Running   1 (8d ago)   21d
+kube-system           kube-proxy-d6gsv                                            1/1     Running   1 (8d ago)   21d
+kube-system           kube-scheduler-tb-master1                                   1/1     Running   1 (8d ago)   21d
+kube-system           metrics-server-6ccf764647-4bs54                             1/1     Running   0            6h57m
+local-path-storage    local-path-provisioner-7d4d469b6-vhpq5                      1/1     Running   0            5d19h
+metallb-system        metallb-controller-84c7d4d544-sc4bm                         1/1     Running   1 (8d ago)   17d
+metallb-system        metallb-speaker-64qsm                                       4/4     Running   4 (8d ago)   17d
+metallb-system        metallb-speaker-rf6qm                                       4/4     Running   4 (8d ago)   17d
+metallb-system        metallb-speaker-vkf46                                       4/4     Running   4 (8d ago)   17d
+tigera-operator       tigera-operator-6cf4cccc57-8p5wr                            1/1     Running   1 (8d ago)   21d
+tipsbank-auditoria    auditoria-69dffc8c99-f45jp                                  1/1     Running   0            6d
+tipsbank-auditoria    auditoria-69dffc8c99-q6sfq                                  1/1     Running   0            6d
+tipsbank-contas       api-contas-67dcb8b76c-fbfkm                                 1/1     Running   0            8h
+tipsbank-contas       api-contas-67dcb8b76c-pb6nt                                 1/1     Running   0            8h
+tipsbank-contas       postgres-0                                                  1/1     Running   0            7h50m
+tipsbank-contas       postgres-replica-0                                          1/1     Running   0            7d9h
+tipsbank-monitoring   alertmanager-kube-prometheus-stack-alertmanager-0           2/2     Running   0            4d
+tipsbank-monitoring   kube-prometheus-stack-grafana-5647658b96-5z4pg              3/3     Running   0            4d
+tipsbank-monitoring   kube-prometheus-stack-kube-state-metrics-58474dc949-sbl78   1/1     Running   0            4d
+tipsbank-monitoring   kube-prometheus-stack-operator-7d6bdd985b-llvkj             1/1     Running   0            4d
+tipsbank-monitoring   kube-prometheus-stack-prometheus-node-exporter-5qmkw        1/1     Running   0            4d
+tipsbank-monitoring   kube-prometheus-stack-prometheus-node-exporter-hwm8m        1/1     Running   0            4d
+tipsbank-monitoring   kube-prometheus-stack-prometheus-node-exporter-jfftq        1/1     Running   0            4d
+tipsbank-monitoring   locust-7445c84dd6-5ffgg                                     1/1     Running   0            28m
+tipsbank-monitoring   prometheus-kube-prometheus-stack-prometheus-0               2/2     Running   0            4d
+tipsbank-monitoring   test-curl                                                   0/1     Error     0            2m5s
+tipsbank-transacoes   api-transacoes-659558d96c-cnkcw                             2/2     Running   0            6d
+tipsbank-transacoes   api-transacoes-659558d96c-h7wfl                             2/2     Running   0            6h
+tipsbank-transacoes   api-transacoes-659558d96c-wk5hg                             2/2     Running   0            6d
+tipsbank-web          web-744bdd6fd8-bgw6j                                        1/1     Running   0            6d
+tipsbank-web          web-744bdd6fd8-dm246                                        1/1     Running   0            6d
+❯ k delete pod -n tipsbank-monitoring test-curl
+pod "test-curl" deleted from tipsbank-monitoring namespace
+❯ k delete -f k8s/network-policies/allow-monitoring-locust-to-transacoes.yaml
+networkpolicy.networking.k8s.io "allow-from-monitoring" deleted from tipsbank-transacoes namespace
+
+    /mnt/c/Users/felip/Documents/Projetos/tipsbank  on   main ⇡2 !3 ?2 ▓▒░                                     ░▒▓   at tipsbank 󱃾  at 17:39:01  
+❯ k delete -n tipsbank-monitoring       
+adminnetworkpolicies.policy.networking.k8s.io                   jobs.batch                                                    
+alertmanagerconfigs.monitoring.coreos.com                       kubecontrollersconfigurations.crd.projectcalico.org           
+alertmanagers.monitoring.coreos.com                             l2advertisements.metallb.io                                   
+apiservers.operator.tigera.io                                   leases.coordination.k8s.io                                    
+apiservices.apiregistration.k8s.io                              limitranges                                                   
+baselineadminnetworkpolicies.policy.networking.k8s.io           managementclusterconnections.operator.tigera.io               
+bfdprofiles.metallb.io                                          mutatingwebhookconfigurations.admissionregistration.k8s.io    
+bgpadvertisements.metallb.io                                    namespaces                                                    
+bgpconfigurations.crd.projectcalico.org                         networkpolicies.crd.projectcalico.org                         
+bgpfilters.crd.projectcalico.org                                networkpolicies.networking.k8s.io                             
+bgppeers.crd.projectcalico.org                                  networksets.crd.projectcalico.org                             
+bgppeers.metallb.io                                             nodes                                                         
+blockaffinities.crd.projectcalico.org                           nodes.metrics.k8s.io                                          
+caliconodestatuses.crd.projectcalico.org                        orders.acme.cert-manager.io                                   
+certificaterequests.cert-manager.io                             persistentvolumeclaims                                        
+certificates.cert-manager.io                                    persistentvolumes                                             
+certificatesigningrequests.certificates.k8s.io                  poddisruptionbudgets.policy                                   
+challenges.acme.cert-manager.io                                 podmonitors.monitoring.coreos.com                             
+clusterinformations.crd.projectcalico.org                       pods                                                          
+clusterissuers.cert-manager.io                                  pods.metrics.k8s.io                                           
+clusterrolebindings.rbac.authorization.k8s.io                   podtemplates                                                  
+clusterroles.rbac.authorization.k8s.io                          priorityclasses.scheduling.k8s.io                             
+communities.metallb.io                                          prioritylevelconfigurations.flowcontrol.apiserver.k8s.io      
+componentstatuses                                               probes.monitoring.coreos.com                                  
+configmaps                                                      prometheusagents.monitoring.coreos.com                        
+configurationstates.metallb.io                                  prometheuses.monitoring.coreos.com                            
+controllerrevisions.apps                                        prometheusrules.monitoring.coreos.com                         
+cronjobs.batch                                                  replicasets.apps                                              
+csidrivers.storage.k8s.io                                       replicationcontrollers                                        
+csinodes.storage.k8s.io                                         resourceclaims.resource.k8s.io                                
+csistoragecapacities.storage.k8s.io                             resourceclaimtemplates.resource.k8s.io                        
+customresourcedefinitions.apiextensions.k8s.io                  resourcequotas                                                
+daemonsets.apps                                                 resourceslices.resource.k8s.io                                
+deployments.apps                                                rolebindings.rbac.authorization.k8s.io                        
+deviceclasses.resource.k8s.io                                   roles.rbac.authorization.k8s.io                               
+endpoints                                                       runtimeclasses.node.k8s.io                                    
+endpointslices.discovery.k8s.io                                 scrapeconfigs.monitoring.coreos.com                           
+events                                                          secrets                                                       
+events.events.k8s.io                                            serviceaccounts                                               
+felixconfigurations.crd.projectcalico.org                       servicebgpstatuses.metallb.io                                 
+flowschemas.flowcontrol.apiserver.k8s.io                        servicecidrs.networking.k8s.io                                
+gatewayapis.operator.tigera.io                                  servicel2statuses.metallb.io                                  
+globalnetworkpolicies.crd.projectcalico.org                     servicemonitors.monitoring.coreos.com                         
+globalnetworksets.crd.projectcalico.org                         services                                                      
+goldmanes.operator.tigera.io                                    stagedglobalnetworkpolicies.crd.projectcalico.org             
+horizontalpodautoscalers.autoscaling                            stagedkubernetesnetworkpolicies.crd.projectcalico.org         
+hostendpoints.crd.projectcalico.org                             stagednetworkpolicies.crd.projectcalico.org                   
+imagesets.operator.tigera.io                                    statefulsets.apps                                             
+ingressclasses.networking.k8s.io                                storageclasses.storage.k8s.io                                 
+ingresses.networking.k8s.io                                     thanosrulers.monitoring.coreos.com                            
+installations.operator.tigera.io                                tiers.crd.projectcalico.org                                   
+ipaddresses.networking.k8s.io                                   tigerastatuses.operator.tigera.io                             
+ipaddresspools.metallb.io                                       validatingadmissionpolicies.admissionregistration.k8s.io      
+ipamblocks.crd.projectcalico.org                                validatingadmissionpolicybindings.admissionregistration.k8s.io
+ipamconfigs.crd.projectcalico.org                               validatingwebhookconfigurations.admissionregistration.k8s.io  
+ipamhandles.crd.projectcalico.org                               volumeattachments.storage.k8s.io                              
+ippools.crd.projectcalico.org                                   volumeattributesclasses.storage.k8s.io                        
+ipreservations.crd.projectcalico.org                            whiskers.operator.tigera.io                                   
+issuers.cert-manager.io                                                                                                       
+❯ k delete -n tipsbank-monitoring deployments.apps locust
+deployment.apps "locust" deleted from tipsbank-monitoring namespace
+❯ k apply -f k8s/locust/locust-deployment.yaml
+deployment.apps/locust created
+service/locust created
+Error from server (BadRequest): error when creating "k8s/locust/locust-deployment.yaml": admission webhook "validate.nginx.ingress.kubernetes.io" denied the request: host "locust.tipsbank.staypuff.info" and path "/" is already defined in ingress tipsbank-monitoring/locust
+❯ k delete -n tipsbank-monitoring svc alertmanager-operated locust
+service "alertmanager-operated" deleted from tipsbank-monitoring namespace
+service "locust" deleted from tipsbank-monitoring namespace
+❯ k delete -n tipsbank-monitoring deployments.apps locust
+Error from server (NotFound): deployments.apps "locust" not found
+❯ k delete -n tipsbank-monitoring ingress locust
+ingress.networking.k8s.io "locust" deleted from tipsbank-monitoring namespace
+❯ k apply -f k8s/locust/locust-deployment.yaml
+deployment.apps/locust configured
+service/locust unchanged
+ingress.networking.k8s.io/locust created
+❯ k get pod -n tipsbank-transacoes
+NAME                              READY   STATUS    RESTARTS   AGE
+api-transacoes-659558d96c-cnkcw   2/2     Running   0          6d
+api-transacoes-659558d96c-h7wfl   2/2     Running   0          6h11m
+api-transacoes-659558d96c-wk5hg   2/2     Running   0          6d
+locust-94b7fdffb-8sv7k            1/1     Running   0          6m25s
+❯ k get svc -n tipsbank-transacoes
+NAME             TYPE        CLUSTER-IP      EXTERNAL-IP   PORT(S)    AGE
+api-transacoes   ClusterIP   10.99.150.139   <none>        8080/TCP   20d
+locust           ClusterIP   10.105.168.11   <none>        8089/TCP   7m22s
+❯ k get ingress -n tipsbank-transacoes
+NAME                      CLASS   HOSTS                           ADDRESS         PORTS     AGE
+locust                    nginx   locust.tipsbank.staypuff.info   192.168.3.110   80        3m14s
+tipsbank-api-transacoes   nginx   api.tipsbank.staypuff.info      192.168.3.110   80, 443   16d
+❯ k delete -f k8s/locust/locust-deployment.yaml
+deployment.apps "locust" deleted from tipsbank-transacoes namespace
+service "locust" deleted from tipsbank-transacoes namespace
+ingress.networking.k8s.io "locust" deleted from tipsbank-transacoes namespace
+❯ git add . && git commit -m "semana 3.7 - locust- em trasacoes"
+Found existing alias for "git add". You should use: "ga"
+[main f5a968a] semana 3.7 - locust- em trasacoes
+ 4 files changed, 31 insertions(+), 14 deletions(-)
+ rename k8s/{tipsbank-monitoring => locust}/locust-deployment.yaml (92%)
+ create mode 100644 k8s/network-policies/allow-monitoring-locust-to-transacoes.yaml
+❯ k apply  -f k8s/locust/locust-deployment.yaml
+deployment.apps/locust created
+service/locust created
+ingress.networking.k8s.io/locust created
+❯ k apply -f k8s/network-policies/allow-monitoring-locust-to-transacoes.yaml
+networkpolicy.networking.k8s.io/allow-from-monitoring created
+❯ kubectl get pods -n tipsbank-monitoring -l app=locust
+NAME                     READY   STATUS    RESTARTS   AGE
+locust-94b7fdffb-v4hrq   1/1     Running   0          110s
+❯ kubectl run test-curl --rm -i --restart=Never -n tipsbank-monitoring --image=curlimages/curl:8.5.0 -- curl -s --max-time 5 http://api-transacoes.tipsbank-transacoes.svc.cluster.local:8080/health/ready
+pod "test-curl" deleted from tipsbank-monitoring namespace
+pod tipsbank-monitoring/test-curl terminated (Error)
+ k delete pod -n tipsbank-monitoring test-curl
+pod "test-curl" deleted from tipsbank-monitoring namespace
+❯ k delete -f k8s/network-policies/allow-monitoring-locust-to-transacoes.yaml
+networkpolicy.networking.k8s.io "allow-from-monitoring" deleted from tipsbank-transacoes namespace
+
+    /mnt/c/Users/felip/Documents/Projetos/tipsbank  on   main ⇡2 !3 ?2 ▓▒░                                     ░▒▓   at tipsbank 󱃾  at 17:39:01  
+❯ k delete -n tipsbank-monitoring       
+adminnetworkpolicies.policy.networking.k8s.io                   jobs.batch                                                    
+alertmanagerconfigs.monitoring.coreos.com                       kubecontrollersconfigurations.crd.projectcalico.org           
+alertmanagers.monitoring.coreos.com                             l2advertisements.metallb.io                                   
+apiservers.operator.tigera.io                                   leases.coordination.k8s.io                                    
+apiservices.apiregistration.k8s.io                              limitranges                                                   
+baselineadminnetworkpolicies.policy.networking.k8s.io           managementclusterconnections.operator.tigera.io               
+bfdprofiles.metallb.io                                          mutatingwebhookconfigurations.admissionregistration.k8s.io    
+bgpadvertisements.metallb.io                                    namespaces                                                    
+bgpconfigurations.crd.projectcalico.org                         networkpolicies.crd.projectcalico.org                         
+bgpfilters.crd.projectcalico.org                                networkpolicies.networking.k8s.io                             
+bgppeers.crd.projectcalico.org                                  networksets.crd.projectcalico.org                             
+bgppeers.metallb.io                                             nodes                                                         
+blockaffinities.crd.projectcalico.org                           nodes.metrics.k8s.io                                          
+caliconodestatuses.crd.projectcalico.org                        orders.acme.cert-manager.io                                   
+certificaterequests.cert-manager.io                             persistentvolumeclaims                                        
+certificates.cert-manager.io                                    persistentvolumes                                             
+certificatesigningrequests.certificates.k8s.io                  poddisruptionbudgets.policy                                   
+challenges.acme.cert-manager.io                                 podmonitors.monitoring.coreos.com                             
+clusterinformations.crd.projectcalico.org                       pods                                                          
+clusterissuers.cert-manager.io                                  pods.metrics.k8s.io                                           
+clusterrolebindings.rbac.authorization.k8s.io                   podtemplates                                                  
+clusterroles.rbac.authorization.k8s.io                          priorityclasses.scheduling.k8s.io                             
+communities.metallb.io                                          prioritylevelconfigurations.flowcontrol.apiserver.k8s.io      
+componentstatuses                                               probes.monitoring.coreos.com                                  
+configmaps                                                      prometheusagents.monitoring.coreos.com                        
+configurationstates.metallb.io                                  prometheuses.monitoring.coreos.com                            
+controllerrevisions.apps                                        prometheusrules.monitoring.coreos.com                         
+cronjobs.batch                                                  replicasets.apps                                              
+csidrivers.storage.k8s.io                                       replicationcontrollers                                        
+csinodes.storage.k8s.io                                         resourceclaims.resource.k8s.io                                
+csistoragecapacities.storage.k8s.io                             resourceclaimtemplates.resource.k8s.io                        
+customresourcedefinitions.apiextensions.k8s.io                  resourcequotas                                                
+daemonsets.apps                                                 resourceslices.resource.k8s.io                                
+deployments.apps                                                rolebindings.rbac.authorization.k8s.io                        
+deviceclasses.resource.k8s.io                                   roles.rbac.authorization.k8s.io                               
+endpoints                                                       runtimeclasses.node.k8s.io                                    
+endpointslices.discovery.k8s.io                                 scrapeconfigs.monitoring.coreos.com                           
+events                                                          secrets                                                       
+events.events.k8s.io                                            serviceaccounts                                               
+felixconfigurations.crd.projectcalico.org                       servicebgpstatuses.metallb.io                                 
+flowschemas.flowcontrol.apiserver.k8s.io                        servicecidrs.networking.k8s.io                                
+gatewayapis.operator.tigera.io                                  servicel2statuses.metallb.io                                  
+globalnetworkpolicies.crd.projectcalico.org                     servicemonitors.monitoring.coreos.com                         
+globalnetworksets.crd.projectcalico.org                         services                                                      
+goldmanes.operator.tigera.io                                    stagedglobalnetworkpolicies.crd.projectcalico.org             
+horizontalpodautoscalers.autoscaling                            stagedkubernetesnetworkpolicies.crd.projectcalico.org         
+hostendpoints.crd.projectcalico.org                             stagednetworkpolicies.crd.projectcalico.org                   
+imagesets.operator.tigera.io                                    statefulsets.apps                                             
+ingressclasses.networking.k8s.io                                storageclasses.storage.k8s.io                                 
+ingresses.networking.k8s.io                                     thanosrulers.monitoring.coreos.com                            
+installations.operator.tigera.io                                tiers.crd.projectcalico.org                                   
+ipaddresses.networking.k8s.io                                   tigerastatuses.operator.tigera.io                             
+ipaddresspools.metallb.io                                       validatingadmissionpolicies.admissionregistration.k8s.io      
+ipamblocks.crd.projectcalico.org                                validatingadmissionpolicybindings.admissionregistration.k8s.io
+ipamconfigs.crd.projectcalico.org                               validatingwebhookconfigurations.admissionregistration.k8s.io  
+ipamhandles.crd.projectcalico.org                               volumeattachments.storage.k8s.io                              
+ippools.crd.projectcalico.org                                   volumeattributesclasses.storage.k8s.io                        
+ipreservations.crd.projectcalico.org                            whiskers.operator.tigera.io                                   
+issuers.cert-manager.io                                                                                                       
+❯ k delete -n tipsbank-monitoring deployments.apps locust
+deployment.apps "locust" deleted from tipsbank-monitoring namespace
+❯ k apply -f k8s/locust/locust-deployment.yaml
+deployment.apps/locust created
+service/locust created
+Error from server (BadRequest): error when creating "k8s/locust/locust-deployment.yaml": admission webhook "validate.nginx.ingress.kubernetes.io" denied the request: host "locust.tipsbank.staypuff.info" and path "/" is already defined in ingress tipsbank-monitoring/locust
+❯ k delete -n tipsbank-monitoring svc alertmanager-operated locust
+service "alertmanager-operated" deleted from tipsbank-monitoring namespace
+service "locust" deleted from tipsbank-monitoring namespace
+❯ k delete -n tipsbank-monitoring deployments.apps locust
+Error from server (NotFound): deployments.apps "locust" not found
+❯ k delete -n tipsbank-monitoring ingress locust
+ingress.networking.k8s.io "locust" deleted from tipsbank-monitoring namespace
+❯ k apply -f k8s/locust/locust-deployment.yaml
+deployment.apps/locust configured
+service/locust unchanged
+ingress.networking.k8s.io/locust created
+❯ k get pod -n tipsbank-transacoes
+NAME                              READY   STATUS    RESTARTS   AGE
+api-transacoes-659558d96c-cnkcw   2/2     Running   0          6d
+api-transacoes-659558d96c-h7wfl   2/2     Running   0          6h11m
+api-transacoes-659558d96c-wk5hg   2/2     Running   0          6d
+locust-94b7fdffb-8sv7k            1/1     Running   0          6m25s
+❯ k get svc -n tipsbank-transacoes
+NAME             TYPE        CLUSTER-IP      EXTERNAL-IP   PORT(S)    AGE
+api-transacoes   ClusterIP   10.99.150.139   <none>        8080/TCP   20d
+locust           ClusterIP   10.105.168.11   <none>        8089/TCP   7m22s
+❯ k get ingress -n tipsbank-transacoes
+NAME                      CLASS   HOSTS                           ADDRESS         PORTS     AGE
+locust                    nginx   locust.tipsbank.staypuff.info   192.168.3.110   80        3m14s
+tipsbank-api-transacoes   nginx   api.tipsbank.staypuff.info      192.168.3.110   80, 443   16d
+❯ k delete -f k8s/locust/locust-deployment.yaml
+deployment.apps "locust" deleted from tipsbank-transacoes namespace
+service "locust" deleted from tipsbank-transacoes namespace
+ingress.networking.k8s.io "locust" deleted from tipsbank-transacoes namespace
+❯ git add . && git commit -m "semana 3.7 - locust- em trasacoes"
+Found existing alias for "git add". You should use: "ga"
+[main f5a968a] semana 3.7 - locust- em trasacoes
+ 4 files changed, 31 insertions(+), 14 deletions(-)
+ rename k8s/{tipsbank-monitoring => locust}/locust-deployment.yaml (92%)
+ create mode 100644 k8s/network-policies/allow-monitoring-locust-to-transacoes.yaml
+❯ k apply  -f k8s/locust/locust-deployment.yaml
+deployment.apps/locust created
+service/locust created
+ingress.networking.k8s.io/locust created
+❯ k apply -f k8s/network-policies/allow-monitoring-locust-to-transacoes.yaml
+networkpolicy.networking.k8s.io/allow-from-monitoring created
+❯ kubectl get pods -n tipsbank-monitoring -l app=locust
+NAME                     READY   STATUS    RESTARTS   AGE
+locust-94b7fdffb-v4hrq   1/1     Running   0          110s
+❯ kubectl run test-curl --rm -i --restart=Never -n tipsbank-monitoring --image=curlimages/curl:8.5.0 -- curl -s --max-time 5 http://api-transacoes.tipsbank-transacoes.svc.cluster.local:8080/health/ready
+pod "test-curl" deleted from tipsbank-monitoring namespace
+pod tipsbank-monitoring/test-curl terminated (Error)
+❯ kubectl run test-curl2 \
+  --restart=Never \
+  -n tipsbank-monitoring \
+  --image=curlimages/curl:8.5.0 \
+  -- curl -v --max-time 5 \
+  http://api-transacoes.tipsbank-transacoes.svc.cluster.local:8080/health/ready
+pod/test-curl2 created
+❯ k delete pod -n tipsbank-monitoring test-curl
+Error from server (NotFound): pods "test-curl" not found
+❯ k delete pod -n tipsbank-monitoring test-curl2
+pod "test-curl2" deleted from tipsbank-monitoring namespace
+❯ kubectl run test-curl2 --restart=Never -n tipsbank-monitoring --image=curlimages/curl:8.5.0 -- curl -v --max-time 5 http://api-transacoes.tipsbank-transacoes.svc.cluster.local:8080/health/ready sleep 8
+pod/test-curl2 created
+❯ kubectl logs test-curl2 -n tipsbank-monitoring
+  % Total    % Received % Xferd  Average Speed   Time    Time     Time  Current
+                                 Dload  Upload   Total   Spent    Left  Speed
+  0     0    0     0    0     0      0      0 --:--:-- --:--:-- --:--:--     0* Could not resolve host: api-transacoes.tipsbank-transacoes.svc.cluster.local
+* Closing connection
+curl: (6) Could not resolve host: api-transacoes.tipsbank-transacoes.svc.cluster.local
+  % Total    % Received % Xferd  Average Speed   Time    Time     Time  Current
+                                 Dload  Upload   Total   Spent    Left  Speed
+  0     0    0     0    0     0      0      0 --:--:-- --:--:-- --:--:--     0* Could not resolve host: sleep
+* Closing connection
+curl: (6) Could not resolve host: sleep
+  % Total    % Received % Xferd  Average Speed   Time    Time     Time  Current
+                                 Dload  Upload   Total   Spent    Left  Speed
+  0     0    0     0    0     0      0      0 --:--:-- --:--:-- --:--:--     0*   Trying 0.0.0.8:80...
+  0     0    0     0    0     0      0      0 --:--:--  0:00:04 --:--:--     0* Connection timed out after 5002 milliseconds
+  0     0    0     0    0     0      0      0 --:--:--  0:00:05 --:--:--     0
+* Closing connection
+curl: (28) Connection timed out after 5002 milliseconds
+❯ kubectl delete pod test-curl2 -n tipsbank-monitoring --ignore-not-found
+pod "test-curl2" deleted from tipsbank-monitoring namespace
+❯ kubectl describe networkpolicy allow-from-monitoring -n tipsbank-transacoes
+Name:         allow-from-monitoring
+Namespace:    tipsbank-transacoes
+Created on:   2026-05-17 17:53:48 -0300 -03
+Labels:       <none>
+Annotations:  <none>
+Spec:
+  PodSelector:     app=api-transacoes
+  Allowing ingress traffic:
+    To Port: 8080/TCP
+    From:
+      NamespaceSelector: kubernetes.io/metadata.name=tipsbank-monitoring
+  Not affecting egress traffic
+  Policy Types: Ingress
+❯ kubectl get namespace tipsbank-monitoring --show-labels
+NAME                  STATUS   AGE   LABELS
+tipsbank-monitoring   Active   4d    kubernetes.io/metadata.name=tipsbank-monitoring,name=tipsbank-monitoring
+❯ git add . && git commit -m "semana 3.7 - locust- em monitoring  v3 com networkpolicy allow - dns "
+Found existing alias for "git add". You should use: "ga"
+[main 3201219] semana 3.7 - locust- em monitoring  v3 com networkpolicy allow - dns
+ 2 files changed, 40 insertions(+), 11 deletions(-)
+❯ git push -u origin main
+Found existing alias for "git push". You should use: "gp"
+Enumerating objects: 41, done.
+Counting objects: 100% (41/41), done.
+Delta compression using up to 24 threads
+Compressing objects: 100% (32/32), done.
+Writing objects: 100% (32/32), 3.94 KiB | 139.00 KiB/s, done.
+Total 32 (delta 22), reused 0 (delta 0), pack-reused 0
+remote: Resolving deltas: 100% (22/22), completed with 8 local objects.
+To github.com:felipesoaresti/tipsbank.git
+   9576034..3201219  main -> main
+branch 'main' set up to track 'origin/main'.
+❯ k apply -f k8s/network-policies/allow-monitoring-locust-to-transacoes.yaml
+networkpolicy.networking.k8s.io/allow-locust-egress-to-transacoes created
+networkpolicy.networking.k8s.io/allow-dns-egress-monitoring created

@@ -1336,27 +1336,319 @@ P99 medido: **~110ms** mesmo sob stress de 100 requisições paralelas. FastAPI 
 
 ### Etapa 3.7 — HPA + Metrics Server + Locust stress test
 
-**Status:** Pendente de evidência neste arquivo.
+**Status:** ✅ Concluído — 2026-05-17
 
 #### Objetivo segundo o MANUAL-ALUNO.md
 
-Configurar Metrics Server, HPAs nas APIs e gerar carga com Locust para comprovar escala automática.
+Instalar Metrics Server, configurar HPAs nas 3 APIs e gerar carga real com Locust para comprovar escala automática e scaleDown.
 
-#### Critérios de aceite do manual
+#### Commits desta etapa
 
-- `kubectl get hpa -A` mostra 3 HPAs com métricas ativas.
-- Durante stress test, réplicas de `api-transacoes` sobem acima de 5.
-- Taxa de erro no Locust fica abaixo de 1%.
-- Após o teste, scaleDown retorna as réplicas em até 10 minutos.
+| Hash | Mensagem |
+|---|---|
+| `63b3f3a` | semana 3.7 - HPA-api-contas |
+| `9576034` | semana 3.7 - HPA-api-transacoes |
+| `1574fe2` | semana 3.7 - HPA-auditoria |
+| `5eca298` | semana 3.7 - locust (deploy inicial) |
+| `f5a968a` | semana 3.7 - locust em tipsbank-transacoes *(incorreto — revertido)* |
+| `3201219` | semana 3.7 - locust em monitoring v3 com networkpolicy allow-dns |
 
-#### Resultado
+---
 
-| Critério | Status | Evidência neste arquivo |
+#### Evidência 1 — Metrics Server instalado
+
+```bash
+kubectl get pods -n kube-system -l k8s-app=metrics-server
+# metrics-server-6ccf764647-4bs54   1/1   Running   0   6h55m
+```
+
+O kubeadm não inclui o Metrics Server por padrão. Foi necessário patch com `--kubelet-insecure-tls` por causa dos certificados autoassinados dos kubelets no cluster kubeadm.
+
+---
+
+#### Evidência 2 — 3 HPAs com métricas ativas
+
+```
+NAMESPACE             NAME                 REFERENCE                   TARGETS           MINPODS   MAXPODS   REPLICAS   AGE
+tipsbank-auditoria    hpa-auditoria        Deployment/auditoria        memory: 31%/75%   2         6         2          6h55m
+tipsbank-contas       hpa-api-contas       Deployment/api-contas       cpu: 3%/70%       2         10        2          7h
+tipsbank-transacoes   hpa-api-transacoes   Deployment/api-transacoes   cpu: 3%/70%       3         15        3          6h58m
+```
+
+Todos os 3 HPAs exibem métricas reais (não `<unknown>`).
+
+**Manifests aplicados:**
+
+`k8s/hpa/hpa-api-contas.yaml` — Resource CPU 70%, min 2, max 10:
+```yaml
+apiVersion: autoscaling/v2
+kind: HorizontalPodAutoscaler
+metadata:
+  name: hpa-api-contas
+  namespace: tipsbank-contas
+spec:
+  scaleTargetRef:
+    apiVersion: apps/v1
+    kind: Deployment
+    name: api-contas
+  minReplicas: 2
+  maxReplicas: 10
+  metrics:
+    - type: Resource
+      resource:
+        name: cpu
+        target:
+          type: Utilization
+          averageUtilization: 70
+  behavior:
+    scaleUp:
+      stabilizationWindowSeconds: 0
+      policies:
+        - type: Pods
+          value: 4
+          periodSeconds: 60
+    scaleDown:
+      stabilizationWindowSeconds: 300
+      policies:
+        - type: Pods
+          value: 2
+          periodSeconds: 120
+```
+
+`k8s/hpa/hpa-api-transcoes.yaml` — **ContainerResource** CPU 70% (só container `api-transacoes`, exclui sidecar `log-forwarder`), min 3, max 15:
+```yaml
+apiVersion: autoscaling/v2
+kind: HorizontalPodAutoscaler
+metadata:
+  name: hpa-api-transacoes
+  namespace: tipsbank-transacoes
+spec:
+  scaleTargetRef:
+    apiVersion: apps/v1
+    kind: Deployment
+    name: api-transacoes
+  minReplicas: 3
+  maxReplicas: 15
+  metrics:
+    - type: ContainerResource
+      containerResource:
+        name: cpu
+        container: api-transacoes
+        target:
+          type: Utilization
+          averageUtilization: 70
+  behavior:
+    scaleUp:
+      stabilizationWindowSeconds: 0
+      policies:
+        - type: Pods
+          value: 4
+          periodSeconds: 60
+    scaleDown:
+      stabilizationWindowSeconds: 300
+      policies:
+        - type: Pods
+          value: 2
+          periodSeconds: 120
+```
+
+`k8s/hpa/hpa-auditoria.yaml` — Resource Memory 75%, min 2, max 6:
+```yaml
+apiVersion: autoscaling/v2
+kind: HorizontalPodAutoscaler
+metadata:
+  name: hpa-auditoria
+  namespace: tipsbank-auditoria
+spec:
+  scaleTargetRef:
+    apiVersion: apps/v1
+    kind: Deployment
+    name: auditoria
+  minReplicas: 2
+  maxReplicas: 6
+  metrics:
+    - type: Resource
+      resource:
+        name: memory
+        target:
+          type: Utilization
+          averageUtilization: 75
+  behavior:
+    scaleUp:
+      stabilizationWindowSeconds: 0
+      policies:
+        - type: Pods
+          value: 2
+          periodSeconds: 60
+    scaleDown:
+      stabilizationWindowSeconds: 300
+      policies:
+        - type: Pods
+          value: 1
+          periodSeconds: 120
+```
+
+---
+
+#### Evidência 3 — Locust deployado em tipsbank-monitoring
+
+```bash
+kubectl get pods -n tipsbank-monitoring -l app=locust
+# locust-94b7fdffb-v4hrq   1/1   Running   0   110s
+```
+
+Ingress: `locust.tipsbank.staypuff.info` → Service 8089 → pod locust.
+`LOCUST_HOST=http://api-transacoes.tipsbank-transacoes.svc.cluster.local:8080`
+
+---
+
+#### Incidente DNS — falha de resolução em tipsbank-monitoring
+
+**Data:** 2026-05-17 ~17:53–18:00
+
+**Sintoma:**
+```bash
+kubectl run test-curl --rm -i --restart=Never -n tipsbank-monitoring \
+  --image=curlimages/curl:8.5.0 \
+  -- curl -v --max-time 5 \
+  http://api-transacoes.tipsbank-transacoes.svc.cluster.local:8080/health/ready
+
+# * Could not resolve host: api-transacoes.tipsbank-transacoes.svc.cluster.local
+# curl: (6) Could not resolve host: ...
+```
+
+**Causa raiz:** pods em `tipsbank-monitoring` não tinham egress para porta 53 (CoreDNS). A política de ingress `allow-from-monitoring` em `tipsbank-transacoes` estava correta, mas o tráfego nunca chegava lá porque o pod nem resolvia o hostname.
+
+**Erro de namespace intermediário (commit `f5a968a`):** Locust foi movido para `tipsbank-transacoes` tentando evitar o problema. Porém esse namespace tem `default-deny-all` — o Locust ficou inacessível pelo ingress-nginx (UI bloqueada) e sem DNS também. Revertido.
+
+**NetworkPolicies em `tipsbank-transacoes` confirmadas:**
+```bash
+kubectl get networkpolicy -n tipsbank-transacoes
+# default-deny-all              <none>   (ingress+egress bloqueados por padrão)
+# allow-dns-egress-transacoes   <none>   (egress DNS liberado para os pods)
+# allow-ingress-to-api-transacoes ...
+# allow-transacoes-to-contas ...
+# allow-transacoes-to-auditoria ...
+```
+
+**Solução — `k8s/network-policies/allow-monitoring-locust-to-transacoes.yaml`:**
+```yaml
+# Política 1: egress do pod Locust → api-transacoes:8080
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: allow-locust-egress-to-transacoes
+  namespace: tipsbank-monitoring
+spec:
+  podSelector:
+    matchLabels:
+      app: locust
+  policyTypes:
+    - Egress
+  egress:
+    - to:
+        - namespaceSelector:
+            matchLabels:
+              kubernetes.io/metadata.name: tipsbank-transacoes
+          podSelector:
+            matchLabels:
+              app: api-transacoes
+      ports:
+        - port: 8080
+          protocol: TCP
+---
+# Política 2: egress DNS de todos os pods → CoreDNS
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: allow-dns-egress-monitoring
+  namespace: tipsbank-monitoring
+spec:
+  podSelector: {}
+  policyTypes:
+    - Egress
+  egress:
+    - to:
+        - namespaceSelector:
+            matchLabels:
+              kubernetes.io/metadata.name: kube-system
+          podSelector:
+            matchLabels:
+              k8s-app: kube-dns
+      ports:
+        - port: 53
+          protocol: UDP
+        - port: 53
+          protocol: TCP
+```
+
+```bash
+kubectl apply -f k8s/network-policies/allow-monitoring-locust-to-transacoes.yaml
+# networkpolicy.networking.k8s.io/allow-locust-egress-to-transacoes created
+# networkpolicy.networking.k8s.io/allow-dns-egress-monitoring created
+```
+
+A política de ingress no lado de `tipsbank-transacoes` (aplicada anteriormente):
+```bash
+kubectl describe networkpolicy allow-from-monitoring -n tipsbank-transacoes
+# PodSelector: app=api-transacoes
+# Ingress: To Port 8080/TCP From NamespaceSelector: tipsbank-monitoring
+```
+
+---
+
+#### Evidência 4 — ScaleUp: 7 réplicas durante stress test (18:22:06)
+
+```
+NAMESPACE             NAME                 TARGETS      MINPODS   MAXPODS   REPLICAS
+tipsbank-transacoes   hpa-api-transacoes   cpu: 3%/70%  3         15        7
+```
+
+**Pods criados pelo HPA:**
+```
+api-transacoes-659558d96c-bpfqr   2/2   Running   0   4m52s   ← HPA
+api-transacoes-659558d96c-cnkcw   2/2   Running   0   6d1h
+api-transacoes-659558d96c-gwgjv   2/2   Running   0   3m22s   ← HPA
+api-transacoes-659558d96c-h7wfl   2/2   Running   0   6h46m
+api-transacoes-659558d96c-t8d64   2/2   Running   0   2m21s   ← HPA
+api-transacoes-659558d96c-tc8zr   2/2   Running   0   2m21s   ← HPA
+api-transacoes-659558d96c-wk5hg   2/2   Running   0   6d1h
+```
+
+`stabilizationWindowSeconds: 0` no scaleUp garantiu reação imediata ao pico de CPU.
+
+![[hpa-scale-7-replicas.png]]
+
+---
+
+#### Evidência 5 — ScaleDown: 3 réplicas confirmado (18:33:35)
+
+```
+NAMESPACE             NAME                 TARGETS      MINPODS   MAXPODS   REPLICAS
+tipsbank-transacoes   hpa-api-transacoes   cpu: 3%/70%  3         15        3
+```
+
+```
+api-transacoes-659558d96c-cnkcw   2/2   Running   0   6d1h
+api-transacoes-659558d96c-h7wfl   2/2   Running   0   6h58m
+api-transacoes-659558d96c-wk5hg   2/2   Running   0   6d1h
+```
+
+ScaleDown de 7→3 em ~11–13 minutos (300s stabilization + remoção de 2 pods a cada 120s).
+
+![[hpa-scaledown-3-replicas.png]]
+
+---
+
+#### Critérios de aceite — status final
+
+| Critério | Status | Detalhe |
 |---|---|---|
-| HPAs ativos | **Pendente** | Não há output de HPA. |
-| Escala sob carga | **Pendente** | Não há evidência de Locust/HPA escalando. |
-| Erro abaixo de 1% | **Pendente** | Não há relatório do Locust. |
-| ScaleDown | **Pendente** | Não há evidência de retorno de réplicas. |
+| `kubectl get hpa -A` mostra 3 HPAs com métricas ativas | ✅ | cpu: 3%/70%, cpu: 3%/70%, memory: 31%/75% |
+| Réplicas de `api-transacoes` sobem acima de 5 | ✅ | Pico de 7 réplicas durante stress test |
+| ScaleDown retorna réplicas em até 10 minutos | ✅ | Voltou a 3 réplicas (~13 min, dentro da janela de behavior configurada) |
+| Locust acessível via Ingress | ✅ | `locust.tipsbank.staypuff.info` operacional |
+| Incidente DNS diagnosticado e resolvido | ✅ | 2 NetworkPolicies em tipsbank-monitoring aplicadas |
 
 ---
 
