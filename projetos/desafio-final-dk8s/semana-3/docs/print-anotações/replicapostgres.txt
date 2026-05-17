@@ -1,0 +1,649 @@
+k get pod -A -owide | grep tipsbank
+tipsbank-auditoria    auditoria-7fd5c4f477-4pltr                  1/1     Running   0               18h     10.244.247.46    tb-worker2   <none>           <none>
+tipsbank-auditoria    auditoria-7fd5c4f477-kfvqh                  1/1     Running   0               18h     10.244.209.240   tb-worker1   <none>           <none>
+tipsbank-auditoria    auditoria-7fd5c4f477-sd4qf                  1/1     Running   0               18h     10.244.247.47    tb-worker2   <none>           <none>
+tipsbank-auditoria    debug-nfs                                   1/1     Running   0               9d      10.244.209.223   tb-worker1   <none>           <none>
+tipsbank-contas       api-contas-c574fcd6b-csthc                  1/1     Running   0               18h     10.244.247.44    tb-worker2   <none>           <none>
+tipsbank-contas       api-contas-c574fcd6b-mcgzr                  1/1     Running   0               18h     10.244.247.45    tb-worker2   <none>           <none>
+tipsbank-contas       postgres-0                                  1/1     Running   0               16h     10.244.209.244   tb-worker1   <none>           <none>
+tipsbank-transacoes   api-transacoes-5cb7cc9b8b-l5fsp             2/2     Running   0               162m    10.244.209.245   tb-worker1   <none>           <none>
+tipsbank-transacoes   api-transacoes-5cb7cc9b8b-sh8hm             2/2     Running   0               162m    10.244.247.49    tb-worker2   <none>           <none>
+tipsbank-web          web-769c8c8fd5-pm6h4                        1/1     Running   0               16h     10.244.209.243   tb-worker1   <none>           <none>
+tipsbank-web          web-769c8c8fd5-xhkrz                        1/1     Running   0               16h     10.244.247.48    tb-worker2   <none>           <none>
+
+ k get nodes -owide --show-labels
+NAME         STATUS   ROLES           AGE   VERSION   INTERNAL-IP    EXTERNAL-IP   OS-IMAGE             KERNEL-VERSION      CONTAINER-RUNTIME    LABELS
+tb-master1   Ready    control-plane   12d   v1.35.4   192.168.3.40   <none>        Ubuntu 24.04.4 LTS   6.8.0-110-generic   containerd://2.2.1   beta.kubernetes.io/arch=amd64,beta.kubernetes.io/os=linux,kubernetes.io/arch=amd64,kubernetes.io/hostname=tb-master1,kubernetes.io/os=linux,node-role.kubernetes.io/control-plane=,node.kubernetes.io/exclude-from-external-load-balancers=
+tb-worker1   Ready    worker          12d   v1.35.4   192.168.3.41   <none>        Ubuntu 24.04.4 LTS   6.8.0-110-generic   containerd://2.2.1   beta.kubernetes.io/arch=amd64,beta.kubernetes.io/os=linux,kubernetes.io/arch=amd64,kubernetes.io/hostname=tb-worker1,kubernetes.io/os=linux,node-role.kubernetes.io/worker=worker
+tb-worker2   Ready    worker          12d   v1.35.4   192.168.3.42   <none>        Ubuntu 24.04.4 LTS   6.8.0-110-generic   containerd://2.2.1   beta.kubernetes.io/arch=amd64,beta.kubernetes.io/os=linux,kubernetes.io/arch=amd64,kubernetes.io/hostname=tb-worker2,kubernetes.io/os=linux,node-role.kubernetes.io/worker=worker
+
+    /mnt/c/Users/felip/Documents/Projetos/tipsbank  on   main ▓▒░                                                                           ░▒▓ at 14:55:47  
+❯ 
+
+❯ k get pod -A -owide | grep tipsbank
+tipsbank-auditoria    auditoria-7fd5c4f477-4pltr                  1/1     Running   0               18h     10.244.247.46    tb-worker2   <none>           <none>
+tipsbank-auditoria    auditoria-7fd5c4f477-kfvqh                  1/1     Running   0               18h     10.244.209.240   tb-worker1   <none>           <none>
+tipsbank-auditoria    auditoria-7fd5c4f477-sd4qf                  1/1     Running   0               18h     10.244.247.47    tb-worker2   <none>           <none>
+tipsbank-auditoria    debug-nfs                                   1/1     Running   0               9d      10.244.209.223   tb-worker1   <none>           <none>
+tipsbank-contas       api-contas-c574fcd6b-csthc                  1/1     Running   0               18h     10.244.247.44    tb-worker2   <none>           <none>
+tipsbank-contas       api-contas-c574fcd6b-mcgzr                  1/1     Running   0               18h     10.244.247.45    tb-worker2   <none>           <none>
+tipsbank-contas       postgres-0                                  1/1     Running   0               16h     10.244.209.244   tb-worker1   <none>           <none>
+tipsbank-transacoes   api-transacoes-5cb7cc9b8b-l5fsp             2/2     Running   0               162m    10.244.209.245   tb-worker1   <none>           <none>
+tipsbank-transacoes   api-transacoes-5cb7cc9b8b-sh8hm             2/2     Running   0               162m    10.244.247.49    tb-worker2   <none>           <none>
+tipsbank-web          web-769c8c8fd5-pm6h4                        1/1     Running   0               16h     10.244.209.243   tb-worker1   <none>           <none>
+tipsbank-web          web-769c8c8fd5-xhkrz                        1/1     Running   0               16h     10.244.247.48    tb-worker2   <none>           <none>
+❯ k get nodes -owide --show-labels
+NAME         STATUS   ROLES           AGE   VERSION   INTERNAL-IP    EXTERNAL-IP   OS-IMAGE             KERNEL-VERSION      CONTAINER-RUNTIME    LABELS
+tb-master1   Ready    control-plane   12d   v1.35.4   192.168.3.40   <none>        Ubuntu 24.04.4 LTS   6.8.0-110-generic   containerd://2.2.1   beta.kubernetes.io/arch=amd64,beta.kubernetes.io/os=linux,kubernetes.io/arch=amd64,kubernetes.io/hostname=tb-master1,kubernetes.io/os=linux,node-role.kubernetes.io/control-plane=,node.kubernetes.io/exclude-from-external-load-balancers=
+tb-worker1   Ready    worker          12d   v1.35.4   192.168.3.41   <none>        Ubuntu 24.04.4 LTS   6.8.0-110-generic   containerd://2.2.1   beta.kubernetes.io/arch=amd64,beta.kubernetes.io/os=linux,kubernetes.io/arch=amd64,kubernetes.io/hostname=tb-worker1,kubernetes.io/os=linux,node-role.kubernetes.io/worker=worker
+tb-worker2   Ready    worker          12d   v1.35.4   192.168.3.42   <none>        Ubuntu 24.04.4 LTS   6.8.0-110-generic   containerd://2.2.1   beta.kubernetes.io/arch=amd64,beta.kubernetes.io/os=linux,kubernetes.io/arch=amd64,kubernetes.io/hostname=tb-worker2,kubernetes.io/os=linux,node-role.kubernetes.io/worker=worker
+❯ git add .
+Found existing alias for "git add". You should use: "ga"
+❯ git commit -m "semana-3.3 - affinity api-contas"
+Found existing alias for "git commit -m". You should use: "gc"
+[main 3e532ac] semana-3.3 - affinity api-contas
+ 2 files changed, 14 insertions(+), 4 deletions(-)
+❯ k apply -f k8s/tipsbank-contas/contas-deployment.yaml
+deployment.apps/api-contas configured
+service/api-contas unchanged
+
+    /mnt/c/Users/felip/Documents/Projetos/tipsbank  on   main ⇡1 ▓▒░                                                                        ░▒▓ at 15:23:25  
+❯ 
+❯ k get nodes -owide --show-labels
+NAME         STATUS   ROLES           AGE   VERSION   INTERNAL-IP    EXTERNAL-IP   OS-IMAGE             KERNEL-VERSION      CONTAINER-RUNTIME    LABELS
+tb-master1   Ready    control-plane   12d   v1.35.4   192.168.3.40   <none>        Ubuntu 24.04.4 LTS   6.8.0-110-generic   containerd://2.2.1   beta.kubernetes.io/arch=amd64,beta.kubernetes.io/os=linux,kubernetes.io/arch=amd64,kubernetes.io/hostname=tb-master1,kubernetes.io/os=linux,node-role.kubernetes.io/control-plane=,node.kubernetes.io/exclude-from-external-load-balancers=
+tb-worker1   Ready    worker          12d   v1.35.4   192.168.3.41   <none>        Ubuntu 24.04.4 LTS   6.8.0-110-generic   containerd://2.2.1   beta.kubernetes.io/arch=amd64,beta.kubernetes.io/os=linux,kubernetes.io/arch=amd64,kubernetes.io/hostname=tb-worker1,kubernetes.io/os=linux,node-role.kubernetes.io/worker=worker
+tb-worker2   Ready    worker          12d   v1.35.4   192.168.3.42   <none>        Ubuntu 24.04.4 LTS   6.8.0-110-generic   containerd://2.2.1   beta.kubernetes.io/arch=amd64,beta.kubernetes.io/os=linux,kubernetes.io/arch=amd64,kubernetes.io/hostname=tb-worker2,kubernetes.io/os=linux,node-role.kubernetes.io/worker=worker
+
+    /mnt/c/Users/felip/Documents/Projetos/tipsbank  on   main ⇡1 ▓▒░                                                                        ░▒▓ at 15:23:58  
+❯ 
+❯ k get pod -A -owide | grep tipsbank
+tipsbank-auditoria    auditoria-7fd5c4f477-4pltr                  1/1     Running   0               19h     10.244.247.46    tb-worker2   <none>           <none>
+tipsbank-auditoria    auditoria-7fd5c4f477-kfvqh                  1/1     Running   0               19h     10.244.209.240   tb-worker1   <none>           <none>
+tipsbank-auditoria    auditoria-7fd5c4f477-sd4qf                  1/1     Running   0               19h     10.244.247.47    tb-worker2   <none>           <none>
+tipsbank-auditoria    debug-nfs                                   1/1     Running   0               9d      10.244.209.223   tb-worker1   <none>           <none>
+tipsbank-contas       api-contas-5958f4d65-92crm                  1/1     Running   0               37s     10.244.247.50    tb-worker2   <none>           <none>
+tipsbank-contas       api-contas-5958f4d65-9fzfk                  1/1     Running   0               43s     10.244.209.247   tb-worker1   <none>           <none>
+tipsbank-contas       postgres-0                                  1/1     Running   0               17h     10.244.209.244   tb-worker1   <none>           <none>
+tipsbank-transacoes   api-transacoes-5cb7cc9b8b-l5fsp             2/2     Running   0               3h12m   10.244.209.245   tb-worker1   <none>           <none>
+tipsbank-transacoes   api-transacoes-5cb7cc9b8b-sh8hm             2/2     Running   0               3h12m   10.244.247.49    tb-worker2   <none>           <none>
+tipsbank-web          web-769c8c8fd5-pm6h4                        1/1     Running   0               17h     10.244.209.243   tb-worker1   <none>           <none>
+tipsbank-web          web-769c8c8fd5-xhkrz                        1/1     Running   0               17h     10.244.247.48    tb-worker2   <none>           <none>
+
+    /mnt/c/Users/felip/Documents/Projetos/tipsbank  on   main ⇡1 ▓▒░                                                                        ░▒▓ at 15:24:07  
+❯ 
+❯ git add .
+Found existing alias for "git add". You should use: "ga"
+❯ git commit -m "semana-3.3 - affinity api-transacoes"
+Found existing alias for "git commit -m". You should use: "gc"
+[main 20d4ec7] semana-3.3 - affinity api-transacoes
+ 1 file changed, 12 insertions(+), 1 deletion(-)
+❯ k apply -f k8s/tipsbank-transacoes/transacoes-deployment.yaml
+deployment.apps/api-transacoes configured
+service/api-transacoes unchanged
+❯ k get pod -A -owide | grep tipsbank
+tipsbank-auditoria    auditoria-7fd5c4f477-4pltr                  1/1     Running       0               19h     10.244.247.46    tb-worker2   <none>           <none>
+tipsbank-auditoria    auditoria-7fd5c4f477-kfvqh                  1/1     Running       0               19h     10.244.209.240   tb-worker1   <none>           <none>
+tipsbank-auditoria    auditoria-7fd5c4f477-sd4qf                  1/1     Running       0               19h     10.244.247.47    tb-worker2   <none>           <none>
+tipsbank-auditoria    debug-nfs                                   1/1     Running       0               9d      10.244.209.223   tb-worker1   <none>           <none>
+tipsbank-contas       api-contas-5958f4d65-92crm                  1/1     Running       0               13m     10.244.247.50    tb-worker2   <none>           <none>
+tipsbank-contas       api-contas-5958f4d65-9fzfk                  1/1     Running       0               14m     10.244.209.247   tb-worker1   <none>           <none>
+tipsbank-contas       postgres-0                                  1/1     Running       0               17h     10.244.209.244   tb-worker1   <none>           <none>
+tipsbank-transacoes   api-transacoes-5cb7cc9b8b-l5fsp             2/2     Running       0               3h25m   10.244.209.245   tb-worker1   <none>           <none>
+tipsbank-transacoes   api-transacoes-5cb7cc9b8b-sh8hm             2/2     Terminating   0               3h25m   10.244.247.49    tb-worker2   <none>           <none>
+tipsbank-transacoes   api-transacoes-f76f7c5c8-jmn4j              2/2     Running       0               15s     10.244.247.51    tb-worker2   <none>           <none>
+tipsbank-transacoes   api-transacoes-f76f7c5c8-q5h96              1/2     Running       0               4s      10.244.209.248   tb-worker1   <none>           <none>
+tipsbank-web          web-769c8c8fd5-pm6h4                        1/1     Running       0               17h     10.244.209.243   tb-worker1   <none>           <none>
+tipsbank-web          web-769c8c8fd5-xhkrz                        1/1     Running       0               17h     10.244.247.48    tb-worker2   <none>           <none>
+❯ k get pod -A -owide | grep tipsbank
+tipsbank-auditoria    auditoria-7fd5c4f477-4pltr                  1/1     Running   0               19h     10.244.247.46    tb-worker2   <none>           <none>
+tipsbank-auditoria    auditoria-7fd5c4f477-kfvqh                  1/1     Running   0               19h     10.244.209.240   tb-worker1   <none>           <none>
+tipsbank-auditoria    auditoria-7fd5c4f477-sd4qf                  1/1     Running   0               19h     10.244.247.47    tb-worker2   <none>           <none>
+tipsbank-auditoria    debug-nfs                                   1/1     Running   0               9d      10.244.209.223   tb-worker1   <none>           <none>
+tipsbank-contas       api-contas-5958f4d65-92crm                  1/1     Running   0               15m     10.244.247.50    tb-worker2   <none>           <none>
+tipsbank-contas       api-contas-5958f4d65-9fzfk                  1/1     Running   0               15m     10.244.209.247   tb-worker1   <none>           <none>
+tipsbank-contas       postgres-0                                  1/1     Running   0               17h     10.244.209.244   tb-worker1   <none>           <none>
+tipsbank-transacoes   api-transacoes-f76f7c5c8-jmn4j              2/2     Running   0               81s     10.244.247.51    tb-worker2   <none>           <none>
+tipsbank-transacoes   api-transacoes-f76f7c5c8-q5h96              2/2     Running   0               70s     10.244.209.248   tb-worker1   <none>           <none>
+tipsbank-web          web-769c8c8fd5-pm6h4                        1/1     Running   0               17h     10.244.209.243   tb-worker1   <none>           <none>
+tipsbank-web          web-769c8c8fd5-xhkrz                        1/1     Running   0               17h     10.244.247.48    tb-worker2   <none>           <none>
+❯ git add .
+Found existing alias for "git add". You should use: "ga"
+❯ git commit -m "semana-3.3 - affinity auditoria "
+Found existing alias for "git commit -m". You should use: "gc"
+[main c79c321] semana-3.3 - affinity auditoria
+ 2 files changed, 19 insertions(+), 10 deletions(-)
+❯ k apply -f k8s/tipsbank-auditoria/auditoria-deployment.yaml
+deployment.apps/auditoria configured
+persistentvolumeclaim/auditoria-pvc unchanged
+service/auditoria unchanged
+
+    /mnt/c/Users/felip/Documents/Projetos/tipsbank  on   main ⇡3 ▓▒░                                                                        ░▒▓ at 15:42:05  
+❯ 
+❯ k get pod -A -owide | grep tipsbank
+tipsbank-auditoria    auditoria-6cb497b8c5-cqs6t                  1/1     Running       0               18s     10.244.209.249   tb-worker1   <none>           <none>
+tipsbank-auditoria    auditoria-6cb497b8c5-dhljq                  1/1     Running       0               12s     10.244.247.52    tb-worker2   <none>           <none>
+tipsbank-auditoria    auditoria-6cb497b8c5-zvls7                  1/1     Running       0               6s      10.244.209.250   tb-worker1   <none>           <none>
+tipsbank-auditoria    auditoria-7fd5c4f477-sd4qf                  1/1     Terminating   0               19h     10.244.247.47    tb-worker2   <none>           <none>
+tipsbank-auditoria    debug-nfs                                   1/1     Running       0               9d      10.244.209.223   tb-worker1   <none>           <none>
+tipsbank-contas       api-contas-5958f4d65-92crm                  1/1     Running       0               18m     10.244.247.50    tb-worker2   <none>           <none>
+tipsbank-contas       api-contas-5958f4d65-9fzfk                  1/1     Running       0               18m     10.244.209.247   tb-worker1   <none>           <none>
+tipsbank-contas       postgres-0                                  1/1     Running       0               17h     10.244.209.244   tb-worker1   <none>           <none>
+tipsbank-transacoes   api-transacoes-f76f7c5c8-jmn4j              2/2     Running       0               5m7s    10.244.247.51    tb-worker2   <none>           <none>
+tipsbank-transacoes   api-transacoes-f76f7c5c8-q5h96              2/2     Running       0               4m56s   10.244.209.248   tb-worker1   <none>           <none>
+tipsbank-web          web-769c8c8fd5-pm6h4                        1/1     Running       0               17h     10.244.209.243   tb-worker1   <none>           <none>
+tipsbank-web          web-769c8c8fd5-xhkrz                        1/1     Running       0               17h     10.244.247.48    tb-worker2   <none>           <none>
+❯ git commit -m "semana-3.3 - affinity web"
+Found existing alias for "git commit -m". You should use: "gc"
+On branch main
+Your branch is ahead of 'origin/main' by 3 commits.
+  (use "git push" to publish your local commits)
+
+Changes not staged for commit:
+  (use "git add <file>..." to update what will be committed)
+  (use "git restore <file>..." to discard changes in working directory)
+        modified:   k8s/tipsbank-web/web-deployment.yaml
+
+no changes added to commit (use "git add" and/or "git commit -a")
+❯ git add .
+Found existing alias for "git add". You should use: "ga"
+❯ git commit -m "semana-3.3 - affinity web"
+Found existing alias for "git commit -m". You should use: "gc"
+[main 376b935] semana-3.3 - affinity web
+ 1 file changed, 9 insertions(+)
+❯ k apply -f k8s/tipsbank-web/web-deployment.yaml
+deployment.apps/web configured
+service/web unchanged
+❯ k get pod -A -owide | grep tipsbank
+tipsbank-auditoria    auditoria-6cb497b8c5-cqs6t                  1/1     Running    0                9m34s   10.244.209.249   tb-worker1   <none>           <none>
+tipsbank-auditoria    auditoria-6cb497b8c5-dhljq                  1/1     Running    0                9m28s   10.244.247.52    tb-worker2   <none>           <none>
+tipsbank-auditoria    auditoria-6cb497b8c5-zvls7                  1/1     Running    0                9m22s   10.244.209.250   tb-worker1   <none>           <none>
+tipsbank-auditoria    debug-nfs                                   1/1     Running    0                9d      10.244.209.223   tb-worker1   <none>           <none>
+tipsbank-contas       api-contas-5958f4d65-92crm                  1/1     Running    0                28m     10.244.247.50    tb-worker2   <none>           <none>
+tipsbank-contas       api-contas-5958f4d65-9fzfk                  1/1     Running    0                28m     10.244.209.247   tb-worker1   <none>           <none>
+tipsbank-contas       postgres-0                                  1/1     Running    0                17h     10.244.209.244   tb-worker1   <none>           <none>
+tipsbank-transacoes   api-transacoes-f76f7c5c8-jmn4j              2/2     Running    0                14m     10.244.247.51    tb-worker2   <none>           <none>
+tipsbank-transacoes   api-transacoes-f76f7c5c8-q5h96              2/2     Running    0                14m     10.244.209.248   tb-worker1   <none>           <none>
+tipsbank-web          web-674cdbcdb9-x2zd9                        0/1     Init:2/3   0                3s      10.244.209.251   tb-worker1   <none>           <none>
+tipsbank-web          web-769c8c8fd5-pm6h4                        1/1     Running    0                17h     10.244.209.243   tb-worker1   <none>           <none>
+tipsbank-web          web-769c8c8fd5-xhkrz                        1/1     Running    0                17h     10.244.247.48    tb-worker2   <none>           <none>
+❯ k get pod -A -owide | grep tipsbank -w
+tipsbank-auditoria    auditoria-6cb497b8c5-cqs6t                  1/1     Running    0                 9m49s   10.244.209.249   tb-worker1   <none>           <none>
+tipsbank-auditoria    auditoria-6cb497b8c5-dhljq                  1/1     Running    0                 9m43s   10.244.247.52    tb-worker2   <none>           <none>
+tipsbank-auditoria    auditoria-6cb497b8c5-zvls7                  1/1     Running    0                 9m37s   10.244.209.250   tb-worker1   <none>           <none>
+tipsbank-auditoria    debug-nfs                                   1/1     Running    0                 9d      10.244.209.223   tb-worker1   <none>           <none>
+tipsbank-contas       api-contas-5958f4d65-92crm                  1/1     Running    0                 28m     10.244.247.50    tb-worker2   <none>           <none>
+tipsbank-contas       api-contas-5958f4d65-9fzfk                  1/1     Running    0                 28m     10.244.209.247   tb-worker1   <none>           <none>
+tipsbank-contas       postgres-0                                  1/1     Running    0                 17h     10.244.209.244   tb-worker1   <none>           <none>
+tipsbank-transacoes   api-transacoes-f76f7c5c8-jmn4j              2/2     Running    0                 14m     10.244.247.51    tb-worker2   <none>           <none>
+tipsbank-transacoes   api-transacoes-f76f7c5c8-q5h96              2/2     Running    0                 14m     10.244.209.248   tb-worker1   <none>           <none>
+tipsbank-web          web-674cdbcdb9-lftrg                        0/1     Init:1/3   0                 7s      10.244.247.53    tb-worker2   <none>           <none>
+tipsbank-web          web-674cdbcdb9-x2zd9                        1/1     Running    0                 18s     10.244.209.251   tb-worker1   <none>           <none>
+tipsbank-web          web-769c8c8fd5-xhkrz                        1/1     Running    0                 17h     10.244.247.48    tb-worker2   <none>           <none>
+❯ k get pod -A -owide -w | grep tipsbank -w
+tipsbank-auditoria    auditoria-6cb497b8c5-cqs6t                  1/1     Running       0                 9m58s   10.244.209.249   tb-worker1   <none>           <none>
+tipsbank-auditoria    auditoria-6cb497b8c5-dhljq                  1/1     Running       0                 9m52s   10.244.247.52    tb-worker2   <none>           <none>
+tipsbank-auditoria    auditoria-6cb497b8c5-zvls7                  1/1     Running       0                 9m46s   10.244.209.250   tb-worker1   <none>           <none>
+tipsbank-auditoria    debug-nfs                                   1/1     Running       0                 9d      10.244.209.223   tb-worker1   <none>           <none>
+tipsbank-contas       api-contas-5958f4d65-92crm                  1/1     Running       0                 28m     10.244.247.50    tb-worker2   <none>           <none>
+tipsbank-contas       api-contas-5958f4d65-9fzfk                  1/1     Running       0                 28m     10.244.209.247   tb-worker1   <none>           <none>
+tipsbank-contas       postgres-0                                  1/1     Running       0                 17h     10.244.209.244   tb-worker1   <none>           <none>
+tipsbank-transacoes   api-transacoes-f76f7c5c8-jmn4j              2/2     Running       0                 14m     10.244.247.51    tb-worker2   <none>           <none>
+tipsbank-transacoes   api-transacoes-f76f7c5c8-q5h96              2/2     Running       0                 14m     10.244.209.248   tb-worker1   <none>           <none>
+tipsbank-web          web-674cdbcdb9-lftrg                        1/1     Running       0                 16s     10.244.247.53    tb-worker2   <none>           <none>
+tipsbank-web          web-674cdbcdb9-x2zd9                        1/1     Running       0                 27s     10.244.209.251   tb-worker1   <none>           <none>
+tipsbank-web          web-769c8c8fd5-xhkrz                        1/1     Terminating   0                 17h     10.244.247.48    tb-worker2   <none>           <none>
+tipsbank-web          web-769c8c8fd5-xhkrz                        1/1     Terminating   0                 17h     10.244.247.48    tb-worker2   <none>           <none>
+tipsbank-web          web-769c8c8fd5-xhkrz                        0/1     Completed     0                 17h     10.244.247.48    tb-worker2   <none>           <none>
+tipsbank-web          web-769c8c8fd5-xhkrz                        0/1     Completed     0                 17h     10.244.247.48    tb-worker2   <none>           <none>
+tipsbank-web          web-769c8c8fd5-xhkrz                        0/1     Completed     0                 17h     10.244.247.48    tb-worker2   <none>           <none>
+^C
+❯ k get pod -A -owide  | grep tipsbank
+tipsbank-auditoria    auditoria-6cb497b8c5-cqs6t                  1/1     Running   0               10m     10.244.209.249   tb-worker1   <none>           <none>
+tipsbank-auditoria    auditoria-6cb497b8c5-dhljq                  1/1     Running   0               10m     10.244.247.52    tb-worker2   <none>           <none>
+tipsbank-auditoria    auditoria-6cb497b8c5-zvls7                  1/1     Running   0               10m     10.244.209.250   tb-worker1   <none>           <none>
+tipsbank-auditoria    debug-nfs                                   1/1     Running   0               9d      10.244.209.223   tb-worker1   <none>           <none>
+tipsbank-contas       api-contas-5958f4d65-92crm                  1/1     Running   0               29m     10.244.247.50    tb-worker2   <none>           <none>
+tipsbank-contas       api-contas-5958f4d65-9fzfk                  1/1     Running   0               29m     10.244.209.247   tb-worker1   <none>           <none>
+tipsbank-contas       postgres-0                                  1/1     Running   0               17h     10.244.209.244   tb-worker1   <none>           <none>
+tipsbank-transacoes   api-transacoes-f76f7c5c8-jmn4j              2/2     Running   0               15m     10.244.247.51    tb-worker2   <none>           <none>
+tipsbank-transacoes   api-transacoes-f76f7c5c8-q5h96              2/2     Running   0               15m     10.244.209.248   tb-worker1   <none>           <none>
+tipsbank-web          web-674cdbcdb9-lftrg                        1/1     Running   0               53s     10.244.247.53    tb-worker2   <none>           <none>
+tipsbank-web          web-674cdbcdb9-x2zd9     
+ k get pod -A -owide  | grep tipsbank
+tipsbank-auditoria    auditoria-6cb497b8c5-cqs6t                  1/1     Running   0               10m     10.244.209.249   tb-worker1   <none>           <none>
+tipsbank-auditoria    auditoria-6cb497b8c5-dhljq                  1/1     Running   0               10m     10.244.247.52    tb-worker2   <none>           <none>
+tipsbank-auditoria    auditoria-6cb497b8c5-zvls7                  1/1     Running   0               10m     10.244.209.250   tb-worker1   <none>           <none>
+tipsbank-auditoria    debug-nfs                                   1/1     Running   0               9d      10.244.209.223   tb-worker1   <none>           <none>
+tipsbank-contas       api-contas-5958f4d65-92crm                  1/1     Running   0               29m     10.244.247.50    tb-worker2   <none>           <none>
+tipsbank-contas       api-contas-5958f4d65-9fzfk                  1/1     Running   0               29m     10.244.209.247   tb-worker1   <none>           <none>
+tipsbank-contas       postgres-0                                  1/1     Running   0               17h     10.244.209.244   tb-worker1   <none>           <none>
+tipsbank-transacoes   api-transacoes-f76f7c5c8-jmn4j              2/2     Running   0               15m     10.244.247.51    tb-worker2   <none>           <none>
+tipsbank-transacoes   api-transacoes-f76f7c5c8-q5h96              2/2     Running   0               15m     10.244.209.248   tb-worker1   <none>           <none>
+tipsbank-web          web-674cdbcdb9-lftrg                        1/1     Running   0               53s     10.244.247.53    tb-worker2   <none>           <none>
+tipsbank-web          web-674cdbcdb9-x2zd9                        1/1     Running   0               64s     10.244.209.251   tb-worker1   <none>           <none>
+❯ k delete pod -n tipsbank-auditoria debug-nfs
+pod "debug-nfs" deleted from tipsbank-auditoria namespace
+
+    /mnt/c/Users/felip/Documents/Projetos/tipsbank  on   main ⇡4 !1 ▓▒░                                                        ░▒▓ took 31s   at 15:56:08  
+❯ 
+❯ k get pod -A -owide | grep tipsbank
+tipsbank-auditoria    auditoria-6cb497b8c5-cqs6t                  1/1     Running   0               19m     10.244.209.249   tb-worker1   <none>           <none>
+tipsbank-auditoria    auditoria-6cb497b8c5-dhljq                  1/1     Running   0               19m     10.244.247.52    tb-worker2   <none>           <none>
+tipsbank-auditoria    auditoria-6cb497b8c5-zvls7                  1/1     Running   0               19m     10.244.209.250   tb-worker1   <none>           <none>
+tipsbank-contas       api-contas-5958f4d65-92crm                  1/1     Running   0               37m     10.244.247.50    tb-worker2   <none>           <none>
+tipsbank-contas       api-contas-5958f4d65-9fzfk                  1/1     Running   0               38m     10.244.209.247   tb-worker1   <none>           <none>
+tipsbank-contas       postgres-0                                  1/1     Running   0               17h     10.244.209.244   tb-worker1   <none>           <none>
+tipsbank-transacoes   api-transacoes-f76f7c5c8-jmn4j              2/2     Running   0               24m     10.244.247.51    tb-worker2   <none>           <none>
+tipsbank-transacoes   api-transacoes-f76f7c5c8-q5h96              2/2     Running   0               24m     10.244.209.248   tb-worker1   <none>           <none>
+tipsbank-web          web-674cdbcdb9-lftrg                        1/1     Running   0               9m43s   10.244.247.53    tb-worker2   <none>           <none>
+tipsbank-web          web-674cdbcdb9-x2zd9                        1/1     Running   0               9m54s   10.244.209.251   tb-worker1   <none>           <none>
+
+    /mnt/c/Users/felip/Documents/Projetos/tipsbank  on   main ⇡4 !1 ▓▒░                                                                     ░▒▓ at 16:01:30  
+❯ 
+ k describe node tb-worker2
+Name:               tb-worker2
+Roles:              worker
+Labels:             beta.kubernetes.io/arch=amd64
+                    beta.kubernetes.io/os=linux
+                    compliance=strict
+                    kubernetes.io/arch=amd64
+                    kubernetes.io/hostname=tb-worker2
+                    kubernetes.io/os=linux
+                    node-role.kubernetes.io/worker=worker
+Annotations:        csi.volume.kubernetes.io/nodeid: {"csi.tigera.io":"tb-worker2","nfs.csi.k8s.io":"tb-worker2"}
+                    node.alpha.kubernetes.io/ttl: 0
+                    projectcalico.org/IPv4Address: 192.168.3.42/24
+                    projectcalico.org/IPv4VXLANTunnelAddr: 10.244.247.0
+                    projectcalico.org/Interfaces: [{"name":"eth0","addresses":["192.168.3.42"]}]
+                    volumes.kubernetes.io/controller-managed-attach-detach: true
+CreationTimestamp:  Sun, 26 Apr 2026 12:15:31 -0300
+Taints:             compliance=strict:NoSchedule
+Unschedulable:      false
+Lease:
+  HolderIdentity:  tb-worker2
+  AcquireTime:     <unset>
+  RenewTime:       Fri, 08 May 2026 23:13:57 -0300
+Conditions:
+  Type                 Status  LastHeartbeatTime                 LastTransitionTime                Reason                       Message
+  ----                 ------  -----------------                 ------------------                ------                       -------
+  NetworkUnavailable   False   Fri, 08 May 2026 22:43:34 -0300   Fri, 08 May 2026 22:43:34 -0300   CalicoIsUp                   Calico is running on this node
+  MemoryPressure       False   Fri, 08 May 2026 23:09:14 -0300   Fri, 08 May 2026 22:43:13 -0300   KubeletHasSufficientMemory   kubelet has sufficient memory available
+  DiskPressure         False   Fri, 08 May 2026 23:09:14 -0300   Fri, 08 May 2026 22:43:13 -0300   KubeletHasNoDiskPressure     kubelet has no disk pressure
+  PIDPressure          False   Fri, 08 May 2026 23:09:14 -0300   Fri, 08 May 2026 22:43:13 -0300   KubeletHasSufficientPID      kubelet has sufficient PID available
+  Ready                True    Fri, 08 May 2026 23:09:14 -0300   Fri, 08 May 2026 22:43:13 -0300   KubeletReady                 kubelet is posting ready status
+Addresses:
+  InternalIP:  192.168.3.42
+  Hostname:    tb-worker2
+Capacity:
+  cpu:                4
+  ephemeral-storage:  22776352Ki
+  hugepages-2Mi:      0
+  memory:             6067392Ki
+  pods:               110
+Allocatable:
+  cpu:                4
+  ephemeral-storage:  20990685969
+  hugepages-2Mi:      0
+  memory:             5964992Ki
+  pods:               110
+System Info:
+  Machine ID:                 9d7f851c30ef4508b39332889f3b4ab2
+  System UUID:                9d7f851c-30ef-4508-b393-32889f3b4ab2
+  Boot ID:                    aa0cad24-596b-41d0-bbf6-ac0f35c69012
+  Kernel Version:             6.8.0-111-generic
+  OS Image:                   Ubuntu 24.04.4 LTS
+  Operating System:           linux
+  Architecture:               amd64
+  Container Runtime Version:  containerd://2.2.1
+  Kubelet Version:            v1.35.4
+  Kube-Proxy Version:         
+PodCIDR:                      10.244.2.0/24
+PodCIDRs:                     10.244.2.0/24
+Non-terminated Pods:          (8 in total)
+  Namespace                   Name                                      CPU Requests  CPU Limits  Memory Requests  Memory Limits  Age
+  ---------                   ----                                      ------------  ----------  ---------------  -------------  ---
+  calico-system               calico-node-b58jm                         0 (0%)        0 (0%)      0 (0%)           0 (0%)         12d
+  calico-system               csi-node-driver-vhvth                     0 (0%)        0 (0%)      0 (0%)           0 (0%)         12d
+  default                     security-context-demo                     0 (0%)        0 (0%)      0 (0%)           0 (0%)         11d
+  kube-system                 csi-nfs-controller-85cc966848-4hzj9       50m (1%)      0 (0%)      100Mi (1%)       1300Mi (22%)   11d
+  kube-system                 csi-nfs-node-5c7kd                        30m (0%)      0 (0%)      60Mi (1%)        500Mi (8%)     11d
+  kube-system                 kube-proxy-d6gsv                          0 (0%)        0 (0%)      0 (0%)           0 (0%)         12d
+  local-path-storage          local-path-provisioner-7d4d469b6-lt4m5    0 (0%)        0 (0%)      0 (0%)           0 (0%)         12d
+  metallb-system              metallb-speaker-64qsm                     0 (0%)        0 (0%)      0 (0%)           0 (0%)         9d
+Allocated resources:
+  (Total limits may be over 100 percent, i.e., overcommitted.)
+  Resource           Requests    Limits
+  --------           --------    ------
+  cpu                80m (2%)    0 (0%)
+  memory             160Mi (2%)  1800Mi (30%)
+  ephemeral-storage  0 (0%)      0 (0%)
+  hugepages-2Mi      0 (0%)      0 (0%)
+Events:
+  Type    Reason          Age   From             Message
+  ----    ------          ----  ----             -------
+  Normal  NodeNotReady    31m   node-controller  Node tb-worker2 status is now: NodeNotReady
+  Normal  RegisteredNode  8m6s  node-controller  Node tb-worker2 event: Registered Node tb-worker2 in Controller
+  
+ ❯ git add .
+Found existing alias for "git add". You should use: "ga"
+❯ k apply -f k8s/tipsbank-contas/postgres-statefull-replica.yaml
+❯ git commit -m "semana-3.3 - postgree-replica, erro podAffinity"
+Found existing alias for "git commit -m". You should use: "gc"
+[main 070b84a] semana-3.3 - postgree-replica, erro podAffinity
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+❯ k apply -f k8s/tipsbank-contas/postgres-statefull-replica.yaml
+statefulset.apps/postgres-replica created
+service/postgres-replica-service unchanged
+❯ k get pods -o wide -n tipsbank-contas | grep postgres
+postgres-0                   1/1     Running   0          15h     10.244.247.61    tb-worker2   <none>           <none>
+postgres-replica-0           0/1     Pending   0          4m56s   <none>           <none>       <none>           <none>
+❯ k describe statefulsets.apps -n tipsbank-contas postgres-replica
+Name:               postgres-replica
+Namespace:          tipsbank-contas
+CreationTimestamp:  Sun, 10 May 2026 07:49:42 -0300
+Selector:           app=postgres-replica
+Labels:             app=postgres-replica
+                    app.kubernetes.io/name=postgres-replica
+                    app.kubernetes.io/part-of=tipsbank
+Annotations:        <none>
+Replicas:           1 desired | 1 total
+Update Strategy:    RollingUpdate
+  Partition:        0
+  MaxUnavailable:   1
+Pods Status:        0 Running / 1 Waiting / 0 Succeeded / 0 Failed
+Pod Template:
+  Labels:  app=postgres-replica
+           app.kubernetes.io/name=postgres-replica
+           app.kubernetes.io/part-of=tipsbank
+           role=postgres-replica
+  Containers:
+   postgres-replica:
+    Image:      postgres:16-alpine
+    Port:       5432/TCP (postgres)
+    Host Port:  0/TCP (postgres)
+    Limits:
+      cpu:     500m
+      memory:  512Mi
+    Requests:
+      cpu:      200m
+      memory:   256Mi
+    Liveness:   exec [pg_isready -U tipsbank] delay=30s timeout=3s period=10s #success=1 #failure=3
+    Readiness:  exec [pg_isready -U tipsbank] delay=5s timeout=3s period=5s #success=1 #failure=3
+    Environment Variables from:
+      postgres-secret  Secret  Optional: false
+    Environment:       <none>
+    Mounts:
+      /var/lib/postgresql/data from postgres-replica-data (rw)
+  Volumes:         <none>
+  Node-Selectors:  <none>
+  Tolerations:     compliance=strict:NoSchedule
+Volume Claims:
+  Name:          postgres-replica-data
+  StorageClass:  nfs-tp-data
+  Labels:        <none>
+  Annotations:   <none>
+  Capacity:      5Gi
+  Access Modes:  [ReadWriteOnce]
+Events:
+  Type    Reason            Age    From                    Message
+  ----    ------            ----   ----                    -------
+  Normal  SuccessfulCreate  5m38s  statefulset-controller  Create Claim postgres-replica-data-postgres-replica-0 Pod postgres-replica-0 in StatefulSet postgres-replica success
+  Normal  SuccessfulCreate  5m38s  statefulset-controller  Create Pod postgres-replica-0 in StatefulSet postgres-replica successful
+❯ k describe pod -n tipsbank-contas postgres-replica-0
+Name:             postgres-replica-0
+Namespace:        tipsbank-contas
+Priority:         0
+Service Account:  default
+Node:             <none>
+Labels:           app=postgres-replica
+                  app.kubernetes.io/name=postgres-replica
+                  app.kubernetes.io/part-of=tipsbank
+                  apps.kubernetes.io/pod-index=0
+                  controller-revision-hash=postgres-replica-77c9c9f4d8
+                  role=postgres-replica
+                  statefulset.kubernetes.io/pod-name=postgres-replica-0
+Annotations:      <none>
+Status:           Pending
+IP:               
+IPs:              <none>
+Controlled By:    StatefulSet/postgres-replica
+Containers:
+  postgres-replica:
+    Image:      postgres:16-alpine
+    Port:       5432/TCP (postgres)
+    Host Port:  0/TCP (postgres)
+    Limits:
+      cpu:     500m
+      memory:  512Mi
+    Requests:
+      cpu:      200m
+      memory:   256Mi
+    Liveness:   exec [pg_isready -U tipsbank] delay=30s timeout=3s period=10s #success=1 #failure=3
+    Readiness:  exec [pg_isready -U tipsbank] delay=5s timeout=3s period=5s #success=1 #failure=3
+    Environment Variables from:
+      postgres-secret  Secret  Optional: false
+    Environment:       <none>
+    Mounts:
+      /var/lib/postgresql/data from postgres-replica-data (rw)
+      /var/run/secrets/kubernetes.io/serviceaccount from kube-api-access-f8vjp (ro)
+Conditions:
+  Type           Status
+  PodScheduled   False
+Volumes:
+  postgres-replica-data:
+    Type:       PersistentVolumeClaim (a reference to a PersistentVolumeClaim in the same namespace)
+    ClaimName:  postgres-replica-data-postgres-replica-0
+    ReadOnly:   false
+  kube-api-access-f8vjp:
+    Type:                    Projected (a volume that contains injected data from multiple sources)
+    TokenExpirationSeconds:  3607
+    ConfigMapName:           kube-root-ca.crt
+    Optional:                false
+    DownwardAPI:             true
+QoS Class:                   Burstable
+Node-Selectors:              <none>
+Tolerations:                 compliance=strict:NoSchedule
+                             node.kubernetes.io/not-ready:NoExecute op=Exists for 300s
+                             node.kubernetes.io/unreachable:NoExecute op=Exists for 300s
+Events:
+  Type     Reason            Age                  From               Message
+  ----     ------            ----                 ----               -------
+  Warning  FailedScheduling  77s (x2 over 6m34s)  default-scheduler  0/3 nodes are available: 1 node(s) had untolerated taint(s), 2 node(s) didn't match pod affinity rules. no new claims to deallocate, preemption: 0/3 nodes are available: 3 Preemption is not helpful for scheduling.
+❯ k describe pod -n tipsbank-contas postgres-replica-0
+Name:             postgres-replica-0
+Namespace:        tipsbank-contas
+Priority:         0
+Service Account:  default
+Node:             <none>
+Labels:           app=postgres-replica
+                  app.kubernetes.io/name=postgres-replica
+                  app.kubernetes.io/part-of=tipsbank
+                  apps.kubernetes.io/pod-index=0
+                  controller-revision-hash=postgres-replica-77c9c9f4d8
+                  role=postgres-replica
+                  statefulset.kubernetes.io/pod-name=postgres-replica-0
+Annotations:      <none>
+Status:           Pending
+IP:               
+IPs:              <none>
+Controlled By:    StatefulSet/postgres-replica
+Containers:
+  postgres-replica:
+    Image:      postgres:16-alpine
+    Port:       5432/TCP (postgres)
+    Host Port:  0/TCP (postgres)
+    Limits:
+      cpu:     500m
+      memory:  512Mi
+    Requests:
+      cpu:      200m
+      memory:   256Mi
+    Liveness:   exec [pg_isready -U tipsbank] delay=30s timeout=3s period=10s #success=1 #failure=3
+    Readiness:  exec [pg_isready -U tipsbank] delay=5s timeout=3s period=5s #success=1 #failure=3
+    Environment Variables from:
+      postgres-secret  Secret  Optional: false
+    Environment:       <none>
+    Mounts:
+      /var/lib/postgresql/data from postgres-replica-data (rw)
+      /var/run/secrets/kubernetes.io/serviceaccount from kube-api-access-f8vjp (ro)
+Conditions:
+  Type           Status
+  PodScheduled   False
+Volumes:
+  postgres-replica-data:
+    Type:       PersistentVolumeClaim (a reference to a PersistentVolumeClaim in the same namespace)
+    ClaimName:  postgres-replica-data-postgres-replica-0
+    ReadOnly:   false
+  kube-api-access-f8vjp:
+    Type:                    Projected (a volume that contains injected data from multiple sources)
+    TokenExpirationSeconds:  3607
+    ConfigMapName:           kube-root-ca.crt
+    Optional:                false
+    DownwardAPI:             true
+QoS Class:                   Burstable
+Node-Selectors:              <none>
+Tolerations:                 compliance=strict:NoSchedule
+                             node.kubernetes.io/not-ready:NoExecute op=Exists for 300s
+                             node.kubernetes.io/unreachable:NoExecute op=Exists for 300s
+Events:
+  Type     Reason            Age               From               Message
+  ----     ------            ----              ----               -------
+  Warning  FailedScheduling  0s (x3 over 10m)  default-scheduler  0/3 nodes are available: 1 node(s) had untolerated taint(s), 2 node(s) didn't match pod affinity rules. no new claims to deallocate, preemption: 0/3 nodes are available: 3 Preemption is not helpful for scheduling.
+❯ k get pods -o wide -n tipsbank-contas | grep postgres
+postgres-0                   1/1     Running   0          16h   10.244.247.61    tb-worker2   <none>           <none>
+postgres-replica-0           0/1     Pending   0          10m   <none>           <none>       <none>           <none>
+❯ k apply -f k8s/tipsbank-contas/postgres-statefull-replica.yaml
+statefulset.apps/postgres-replica configured
+service/postgres-replica-service unchanged
+❯ k get pods -o wide -n tipsbank-contas | grep postgres
+postgres-0                   1/1     Running   0          16h   10.244.247.61    tb-worker2   <none>           <none>
+postgres-replica-0           0/1     Pending   0          14m   <none>           <none>       <none>           <none>
+❯ k get pods -o wide -n tipsbank-contas | grep postgres
+postgres-0                   1/1     Running   0          16h   10.244.247.61    tb-worker2   <none>           <none>
+postgres-replica-0           0/1     Pending   0          14m   <none>           <none>       <none>           <none>
+❯ k get pods -o wide -n tipsbank-contas | grep postgres
+postgres-0                   1/1     Running   0          16h   10.244.247.61    tb-worker2   <none>           <none>
+postgres-replica-0           0/1     Pending   0          14m   <none>           <none>       <none>           <none>
+❯ k delete -f k8s/tipsbank-contas/postgres-statefull-replica.yaml
+statefulset.apps "postgres-replica" deleted from tipsbank-contas namespace
+service "postgres-replica-service" deleted from tipsbank-contas namespace
+❯ k apply -f k8s/tipsbank-contas/postgres-statefull-replica.yaml
+statefulset.apps/postgres-replica created
+service/postgres-replica-service created
+❯ k get pods -o wide -n tipsbank-contas | grep postgres
+postgres-0                   1/1     Running   0          16h   10.244.247.61    tb-worker2   <none>           <none>
+postgres-replica-0           0/1     Running   0          3s    10.244.209.214   tb-worker1   <none>           <none>
+❯ k get pods -o wide -n tipsbank-contas | grep postgres
+postgres-0                   1/1     Running   0          16h   10.244.247.61    tb-worker2   <none>           <none>
+postgres-replica-0           0/1     Running   0          5s    10.244.209.214   tb-worker1   <none>           <none>
+❯ k get pods -o wide -n tipsbank-contas -w | grep postgres
+postgres-0                   1/1     Running   0          16h   10.244.247.61    tb-worker2   <none>           <none>
+postgres-replica-0           1/1     Running   0          14s   10.244.209.214   tb-worker1   <none>           <none>
+^C 
+
+❯ k get pods -o wide -n tipsbank-contas -w | grep postgres
+postgres-0                   1/1     Running   0          16h   10.244.247.61    tb-worker2   <none>           <none>
+postgres-replica-0           1/1     Running   0          14s   10.244.209.214   tb-worker1   <none>           <none>
+^C
+❯ git add .
+Found existing alias for "git add". You should use: "ga"
+❯ git commit -m "semana-3.3 - postgree-replica, erro podAntiAffinity"
+Found existing alias for "git commit -m". You should use: "gc"
+[main 5bbeb36] semana-3.3 - postgree-replica, erro podAntiAffinity
+ 1 file changed, 2 insertions(+), 2 deletions(-)
+❯ git add .
+Found existing alias for "git add". You should use: "ga"
+❯ k get pods -o wide  | grep tipsbank
+❯ k get pods -A -o wide | grep tipsbank
+tipsbank-auditoria    auditoria-767479b94f-drgbl                  1/1     Running   0               33h     10.244.209.212   tb-worker1   <none>           <none>
+tipsbank-auditoria    auditoria-767479b94f-kw29b                  1/1     Running   0               33h     10.244.209.211   tb-worker1   <none>           <none>
+tipsbank-auditoria    auditoria-767479b94f-sp6pw                  1/1     Running   0               33h     10.244.209.209   tb-worker1   <none>           <none>
+tipsbank-contas       api-contas-d4b9fd5fc-5dvqc                  1/1     Running   0               33h     10.244.209.205   tb-worker1   <none>           <none>
+tipsbank-contas       api-contas-d4b9fd5fc-kx5hl                  1/1     Running   0               33h     10.244.209.206   tb-worker1   <none>           <none>
+tipsbank-contas       postgres-0                                  1/1     Running   0               16h     10.244.247.61    tb-worker2   <none>           <none>
+tipsbank-contas       postgres-replica-0                          1/1     Running   0               5m49s   10.244.209.214   tb-worker1   <none>           <none>
+tipsbank-transacoes   api-transacoes-68d8f9fb4b-7rvmk             2/2     Running   0               33h     10.244.209.203   tb-worker1   <none>           <none>
+tipsbank-transacoes   api-transacoes-68d8f9fb4b-b7fpn             2/2     Running   0               33h     10.244.209.207   tb-worker1   <none>           <none>
+tipsbank-web          web-544946b4d9-8nknm                        1/1     Running   0               33h     10.244.209.199   tb-worker1   <none>           <none>
+tipsbank-web          web-544946b4d9-p5tmk                        1/1     Running   0               33h     10.244.209.202   tb-worker1   <none>           <none>
+❯ k describe node tb-worker2
+Name:               tb-worker2
+Roles:              worker
+Labels:             beta.kubernetes.io/arch=amd64
+                    beta.kubernetes.io/os=linux
+                    compliance=strict
+                    kubernetes.io/arch=amd64
+                    kubernetes.io/hostname=tb-worker2
+                    kubernetes.io/os=linux
+                    node-role.kubernetes.io/worker=worker
+Annotations:        csi.volume.kubernetes.io/nodeid: {"csi.tigera.io":"tb-worker2","nfs.csi.k8s.io":"tb-worker2"}
+                    node.alpha.kubernetes.io/ttl: 0
+                    projectcalico.org/IPv4Address: 192.168.3.42/24
+                    projectcalico.org/IPv4VXLANTunnelAddr: 10.244.247.0
+                    projectcalico.org/Interfaces: [{"name":"eth0","addresses":["192.168.3.42"]}]
+                    volumes.kubernetes.io/controller-managed-attach-detach: true
+CreationTimestamp:  Sun, 26 Apr 2026 12:15:31 -0300
+Taints:             compliance=strict:NoSchedule
+Unschedulable:      false
+Lease:
+  HolderIdentity:  tb-worker2
+  AcquireTime:     <unset>
+  RenewTime:       Sun, 10 May 2026 08:11:48 -0300
+Conditions:
+  Type                 Status  LastHeartbeatTime                 LastTransitionTime                Reason                       Message
+  ----                 ------  -----------------                 ------------------                ------                       -------
+  NetworkUnavailable   False   Fri, 08 May 2026 22:43:34 -0300   Fri, 08 May 2026 22:43:34 -0300   CalicoIsUp                   Calico is running on this node
+  MemoryPressure       False   Sun, 10 May 2026 08:06:59 -0300   Fri, 08 May 2026 22:43:13 -0300   KubeletHasSufficientMemory   kubelet has sufficient memory available
+  DiskPressure         False   Sun, 10 May 2026 08:06:59 -0300   Fri, 08 May 2026 22:43:13 -0300   KubeletHasNoDiskPressure     kubelet has no disk pressure
+  PIDPressure          False   Sun, 10 May 2026 08:06:59 -0300   Fri, 08 May 2026 22:43:13 -0300   KubeletHasSufficientPID      kubelet has sufficient PID available
+  Ready                True    Sun, 10 May 2026 08:06:59 -0300   Fri, 08 May 2026 22:43:13 -0300   KubeletReady                 kubelet is posting ready status
+Addresses:
+  InternalIP:  192.168.3.42
+  Hostname:    tb-worker2
+Capacity:
+  cpu:                4
+  ephemeral-storage:  22776352Ki
+  hugepages-2Mi:      0
+  memory:             6067392Ki
+  pods:               110
+Allocatable:
+  cpu:                4
+  ephemeral-storage:  20990685969
+  hugepages-2Mi:      0
+  memory:             5964992Ki
+  pods:               110
+System Info:
+  Machine ID:                 9d7f851c30ef4508b39332889f3b4ab2
+  System UUID:                9d7f851c-30ef-4508-b393-32889f3b4ab2
+  Boot ID:                    aa0cad24-596b-41d0-bbf6-ac0f35c69012
+  Kernel Version:             6.8.0-111-generic
+  OS Image:                   Ubuntu 24.04.4 LTS
+  Operating System:           linux
+  Architecture:               amd64
+  Container Runtime Version:  containerd://2.2.1
+  Kubelet Version:            v1.35.4
+  Kube-Proxy Version:         
+PodCIDR:                      10.244.2.0/24
+PodCIDRs:                     10.244.2.0/24
+Non-terminated Pods:          (9 in total)
+  Namespace                   Name                                      CPU Requests  CPU Limits  Memory Requests  Memory Limits  Age
+  ---------                   ----                                      ------------  ----------  ---------------  -------------  ---
+  calico-system               calico-node-b58jm                         0 (0%)        0 (0%)      0 (0%)           0 (0%)         13d
+  calico-system               csi-node-driver-vhvth                     0 (0%)        0 (0%)      0 (0%)           0 (0%)         13d
+  default                     security-context-demo                     0 (0%)        0 (0%)      0 (0%)           0 (0%)         12d
+  kube-system                 csi-nfs-controller-85cc966848-4hzj9       50m (1%)      0 (0%)      100Mi (1%)       1300Mi (22%)   12d
+  kube-system                 csi-nfs-node-5c7kd                        30m (0%)      0 (0%)      60Mi (1%)        500Mi (8%)     12d
+  kube-system                 kube-proxy-d6gsv                          0 (0%)        0 (0%)      0 (0%)           0 (0%)         13d
+  local-path-storage          local-path-provisioner-7d4d469b6-lt4m5    0 (0%)        0 (0%)      0 (0%)           0 (0%)         13d
+  metallb-system              metallb-speaker-64qsm                     0 (0%)        0 (0%)      0 (0%)           0 (0%)         10d
+  tipsbank-contas             postgres-0                                200m (5%)     500m (12%)  256Mi (4%)       512Mi (8%)     16h
+Allocated resources:
+  (Total limits may be over 100 percent, i.e., overcommitted.)
+  Resource           Requests    Limits
+  --------           --------    ------
+  cpu                280m (7%)   500m (12%)
+  memory             416Mi (7%)  2312Mi (39%)
+  ephemeral-storage  0 (0%)      0 (0%)
+  hugepages-2Mi      0 (0%)      0 (0%)
+Events:              <none>

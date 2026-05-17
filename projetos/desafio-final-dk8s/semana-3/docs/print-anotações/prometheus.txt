@@ -1,0 +1,179 @@
+❯ helm install kube-prometheus-stack prometheus-community/kube-prometheus-stack \
+  --namespace tipsbank-monitoring \
+  --create-namespace \
+  -f tipsbank-monitoring/values-kube-prometheus-stack.yaml
+NAME: kube-prometheus-stack
+LAST DEPLOYED: Wed May 13 17:12:53 2026
+NAMESPACE: tipsbank-monitoring
+STATUS: deployed
+REVISION: 1
+TEST SUITE: None
+NOTES:
+kube-prometheus-stack has been installed. Check its status by running:
+  kubectl --namespace tipsbank-monitoring get pods -l "release=kube-prometheus-stack"
+
+Get Grafana 'admin' user password by running:
+
+  kubectl --namespace tipsbank-monitoring get secrets kube-prometheus-stack-grafana -o jsonpath="{.data.admin-password}" | base64 -d ; echo
+
+Access Grafana local instance:
+
+  export POD_NAME=$(kubectl --namespace tipsbank-monitoring get pod -l "app.kubernetes.io/name=grafana,app.kubernetes.io/instance=kube-prometheus-stack" -oname)
+  kubectl --namespace tipsbank-monitoring port-forward $POD_NAME 3000
+
+Get your grafana admin user password by running:
+
+  kubectl get secret --namespace tipsbank-monitoring -l app.kubernetes.io/component=admin-secret -o jsonpath="{.items[0].data.admin-password}" | base64 --decode ; echo
+
+
+Visit https://github.com/prometheus-operator/kube-prometheus for instructions on how to create & configure Alertmanager and Prometheus instances using the Operator.
+
+❯ kubectl --namespace tipsbank-monitoring get pods -l "release=kube-prometheus-stack"
+NAME                                                        READY   STATUS    RESTARTS   AGE
+kube-prometheus-stack-kube-state-metrics-58474dc949-sbl78   1/1     Running   0          98s
+kube-prometheus-stack-operator-7d6bdd985b-llvkj             1/1     Running   0          98s
+kube-prometheus-stack-prometheus-node-exporter-5qmkw        1/1     Running   0          98s
+kube-prometheus-stack-prometheus-node-exporter-hwm8m        1/1     Running   0          98s
+kube-prometheus-stack-prometheus-node-exporter-jfftq        1/1     Running   0          98s
+❯ export POD_NAME=$(kubectl --namespace tipsbank-monitoring get pod -l "app.kubernetes.io/name=grafana,app.kubernetes.io/instance=kube-prometheus-stack" -oname)
+❯ kubectl --namespace tipsbank-monitoring port-forward $POD_NAME 3000
+Forwarding from 127.0.0.1:3000 -> 3000
+Forwarding from [::1]:3000 -> 3000
+
+ kubectl --namespace tipsbank-monitoring get pods -l "release=kube-prometheus-stack"
+NAME                                                        READY   STATUS    RESTARTS   AGE
+kube-prometheus-stack-kube-state-metrics-58474dc949-sbl78   1/1     Running   0          98s
+kube-prometheus-stack-operator-7d6bdd985b-llvkj             1/1     Running   0          98s
+kube-prometheus-stack-prometheus-node-exporter-5qmkw        1/1     Running   0          98s
+kube-prometheus-stack-prometheus-node-exporter-hwm8m        1/1     Running   0          98s
+kube-prometheus-stack-prometheus-node-exporter-jfftq        1/1     Running   0          98s
+❯ export POD_NAME=$(kubectl --namespace tipsbank-monitoring get pod -l "app.kubernetes.io/name=grafana,app.kubernetes.io/instance=kube-prometheus-stack" -oname)
+❯ kubectl --namespace tipsbank-monitoring port-forward $POD_NAME 3000
+Forwarding from 127.0.0.1:3000 -> 3000
+Forwarding from [::1]:3000 -> 3000
+Handling connection for 3000
+Handling connection for 3000
+Handling connection for 3000
+Handling connection for 3000
+Handling connection for 3000
+Handling connection for 3000
+Handling connection for 3000
+^C
+❯ echo $POD_NAME 3000
+pod/kube-prometheus-stack-grafana-5647658b96-5z4pg 3000
+❯ kubectl get secret --namespace tipsbank-monitoring -l app.kubernetes.io/component=admin-secret -o jsonpath="{.items[0].data.admin-password}" | base64 --decode ; echo
+tipsbank@puff
+
+k get pods -A | tipsbank-monitoring
+(pwd now: /mnt/c/Users/felip/Documents/Projetos/TipsBank/k8s/tipsbank-monitoring)
+❯ k get pods -A | grep tipsbank-monitoring
+tipsbank-monitoring   alertmanager-kube-prometheus-stack-alertmanager-0           2/2     Running   0               104m
+tipsbank-monitoring   kube-prometheus-stack-grafana-5647658b96-5z4pg              3/3     Running   0               105m
+tipsbank-monitoring   kube-prometheus-stack-kube-state-metrics-58474dc949-sbl78   1/1     Running   0               105m
+tipsbank-monitoring   kube-prometheus-stack-operator-7d6bdd985b-llvkj             1/1     Running   0               105m
+tipsbank-monitoring   kube-prometheus-stack-prometheus-node-exporter-5qmkw        1/1     Running   0               105m
+tipsbank-monitoring   kube-prometheus-stack-prometheus-node-exporter-hwm8m        1/1     Running   0               105m
+tipsbank-monitoring   kube-prometheus-stack-prometheus-node-exporter-jfftq        1/1     Running   0               105m
+tipsbank-monitoring   prometheus-kube-prometheus-stack-prometheus-0               2/2     Running   0               104m
+❯ git add . && git commit -m "network-policy api-contas "
+Found existing alias for "git add". You should use: "ga"
+On branch main
+Your branch is up to date with 'origin/main'.
+
+Changes not staged for commit:
+  (use "git add <file>..." to update what will be committed)
+  (use "git restore <file>..." to discard changes in working directory)
+        modified:   ../../.obsidian/workspace.json
+
+Untracked files:
+  (use "git add <file>..." to include in what will be committed)
+        ../network-policies/allow-promethesu-tipsbank-contas.yaml
+
+no changes added to commit (use "git add" and/or "git commit -a")
+❯ pwd
+/mnt/c/Users/felip/Documents/Projetos/TipsBank/k8s/tipsbank-monitoring
+❯ cd ..
+❯ k apply -f network-policies/allow-promethesu-tipsbank-contas.yaml
+networkpolicy.networking.k8s.io/allow-prometheus-tipsbank-contas created
+❯ k get servicemonitors.monitoring.coreos.com -A grep tipsbank
+error: a resource cannot be retrieved by name across all namespaces
+❯ k get servicemonitors.monitoring.coreos.com -A | grep tipsbank
+tipsbank-contas       api-contas-monitor                               12m
+tipsbank-monitoring   kube-prometheus-stack-alertmanager               110m
+tipsbank-monitoring   kube-prometheus-stack-apiserver                  110m
+tipsbank-monitoring   kube-prometheus-stack-coredns                    110m
+tipsbank-monitoring   kube-prometheus-stack-grafana                    110m
+tipsbank-monitoring   kube-prometheus-stack-kube-controller-manager    110m
+tipsbank-monitoring   kube-prometheus-stack-kube-etcd                  110m
+tipsbank-monitoring   kube-prometheus-stack-kube-proxy                 110m
+tipsbank-monitoring   kube-prometheus-stack-kube-scheduler             110m
+tipsbank-monitoring   kube-prometheus-stack-kube-state-metrics         110m
+tipsbank-monitoring   kube-prometheus-stack-kubelet                    110m
+tipsbank-monitoring   kube-prometheus-stack-operator                   110m
+tipsbank-monitoring   kube-prometheus-stack-prometheus                 110m
+tipsbank-monitoring   kube-prometheus-stack-prometheus-node-exporter   110m
+❯ k describe -n tipsbank-contas servicemonitors api-contas-monitor
+Name:         api-contas-monitor
+Namespace:    tipsbank-contas
+Labels:       app.kubernetes.io/name=api-contas
+              app.kubernetes.io/part-of=tipsbank
+              release=kube-prometheus-stack
+Annotations:  <none>
+API Version:  monitoring.coreos.com/v1
+Kind:         ServiceMonitor
+Metadata:
+  Creation Timestamp:  2026-05-13T21:51:26Z
+  Generation:          1
+  Resource Version:    4120501
+  UID:                 40afd536-da1d-45d6-9540-bc8edb8ffa48
+Spec:
+  Endpoints:
+    Interval:  30s
+    Path:      /metrics
+    Port:      api-contas
+  Namespace Selector:
+    Match Names:
+      tipsbank-contas
+  Selector:
+    Match Labels:
+      App:  api-contas
+Events:     <none>
+❯ k port-forward -n tipsbank-monitoring svc/kube-prometheus-stack-prometheus 9090:9090
+Forwarding from 127.0.0.1:9090 -> 9090
+Forwarding from [::1]:9090 -> 9090
+Handling connection for 9090
+Handling connection for 9090
+Handling connection for 9090
+^C
+❯ k port-forward -n tipsbank-monitoring svc/kube-prometheus-stack-grafana  3000:80
+Forwarding from 127.0.0.1:3000 -> 3000
+Forwarding from [::1]:3000 -> 3000
+Handling connection for 3000
+Handling connection for 3000
+Handling connection for 3000
+Handling connection for 3000
+Handling connection for 3000
+Handling connection for 3000
+Handling connection for 3000
+Handling connection for 3000
+Handling connection for 3000
+Handling connection for 3000
+Handling connection for 3000
+E0513 19:15:21.376770   68770 portforward.go:391] "Unhandled Error" err="error copying from remote stream to local connection: readfrom tcp6 [::1]:3000->[::1]:49684: write tcp6 [::1]:3000->[::1]:49684: write: broken pipe"
+E0513 19:15:21.382266   68770 portforward.go:391] "Unhandled Error" err="error copying from remote stream to local connection: readfrom tcp4 127.0.0.1:3000->127.0.0.1:52408: write tcp4 127.0.0.1:3000->127.0.0.1:52408: write: broken pipe"
+Handling connection for 3000
+Handling connection for 3000
+Handling connection for 3000
+Handling connection for 3000
+Handling connection for 3000
+Handling connection for 3000
+Handling connection for 3000
+Handling connection for 3000
+Handling connection for 3000
+Handling connection for 3000
+Handling connection for 3000
+Handling connection for 3000
+^C
+
+    /mnt/c/Users/felip/Documents/Projetos/TipsBank/k8s  on   main !1 ?1 ▓▒░                                              ░▒▓ INT ✘  took 15m 34s   at 19:27:56  
+❯ 

@@ -1,0 +1,116 @@
+ k describe pod -n tipsbank-contas api-contas-6c4cbcc8b9-c449g
+Name:             api-contas-6c4cbcc8b9-c449g
+Namespace:        tipsbank-contas
+Priority:         0
+Service Account:  default
+Node:             tb-worker1/192.168.3.41
+Start Time:       Mon, 11 May 2026 17:12:42 -0300
+Labels:           app=api-contas
+                  app.kubernetes.io/name=api-contas
+                  app.kubernetes.io/part-of=tipsbank
+                  pod-template-hash=6c4cbcc8b9
+Annotations:      cni.projectcalico.org/containerID: 4217ff3a9dffb78dab5af1f12ea36850509658568eb3f2b8a2b7ec1800fd79f3
+                  cni.projectcalico.org/podIP: 10.244.209.216/32
+                  cni.projectcalico.org/podIPs: 10.244.209.216/32
+                  kubectl.kubernetes.io/restartedAt: 2026-05-08T23:10:36-03:00
+Status:           Running
+IP:               10.244.209.216
+IPs:
+  IP:           10.244.209.216
+Controlled By:  ReplicaSet/api-contas-6c4cbcc8b9
+Init Containers:
+  init-postgres:
+    Container ID:  containerd://f5f396c1495769b7743e0409fda6ba6bb3662c008f5fffb4a525b4fa8af052b5
+    Image:         busybox:1.36
+    Image ID:      docker.io/library/busybox@sha256:73aaf090f3d85aa34ee199857f03fa3a95c8ede2ffd4cc2cdb5b94e566b11662
+    Port:          <none>
+    Host Port:     <none>
+    Command:
+      sh
+      -c
+      until nc -z postgres-service.tipsbank-contas.svc.cluster.local 5432; do
+        echo "Verificando conexão com Postgres..."
+        sleep 3
+      done
+      
+    State:          Terminated
+      Reason:       Completed
+      Exit Code:    0
+      Started:      Mon, 11 May 2026 17:12:43 -0300
+      Finished:     Mon, 11 May 2026 17:12:43 -0300
+    Ready:          True
+    Restart Count:  0
+    Environment:    <none>
+    Mounts:
+      /var/run/secrets/kubernetes.io/serviceaccount from kube-api-access-gd5d4 (ro)
+Containers:
+  api-contas:
+    Container ID:   containerd://6b735e0da7bd2c04042cf7f9e015aa66fbc252157aeb34244ff976e7ad97709f
+    Image:          felipestaypuff/tipsbank-api-contas:v1.0.0
+    Image ID:       docker.io/felipestaypuff/tipsbank-api-contas@sha256:05c5f3b2c81d39a45bab14705176337f3c303375707ed060f58b98060b4fe18c
+    Port:           8080/TCP (api-contas)
+    Host Port:      0/TCP (api-contas)
+    State:          Running
+      Started:      Mon, 11 May 2026 17:12:44 -0300
+    Ready:          True
+    Restart Count:  0
+    Limits:
+      cpu:     500m
+      memory:  256Mi
+    Requests:
+      cpu:      100m
+      memory:   128Mi
+    Liveness:   http-get http://:8080/health/live delay=0s timeout=3s period=10s #success=1 #failure=3
+    Readiness:  http-get http://:8080/health/ready delay=0s timeout=3s period=5s #success=1 #failure=3
+    Startup:    http-get http://:8080/health/startup delay=0s timeout=1s period=5s #success=1 #failure=30
+    Environment Variables from:
+      contas-secret  Secret  Optional: false
+    Environment:     <none>
+    Mounts:
+      /var/run/secrets/kubernetes.io/serviceaccount from kube-api-access-gd5d4 (ro)
+Conditions:
+  Type                        Status
+  PodReadyToStartContainers   True
+  Initialized                 True
+  Ready                       True
+  ContainersReady             True
+  PodScheduled                True
+Volumes:
+  kube-api-access-gd5d4:
+    Type:                    Projected (a volume that contains injected data from multiple sources)
+    TokenExpirationSeconds:  3607
+    ConfigMapName:           kube-root-ca.crt
+    Optional:                false
+    DownwardAPI:             true
+QoS Class:                   Burstable
+Node-Selectors:              <none>
+Tolerations:                 node.kubernetes.io/not-ready:NoExecute op=Exists for 300s
+                             node.kubernetes.io/unreachable:NoExecute op=Exists for 300s
+Events:
+  Type    Reason     Age   From               Message
+  ----    ------     ----  ----               -------
+  Normal  Scheduled  99s   default-scheduler  Successfully assigned tipsbank-contas/api-contas-6c4cbcc8b9-c449g to tb-worker1
+  Normal  Pulled     98s   kubelet            Container image "busybox:1.36" already present on machine and can be accessed by the pod
+  Normal  Created    98s   kubelet            Container created
+  Normal  Started    98s   kubelet            Container started
+  Normal  Pulled     97s   kubelet            Container image "felipestaypuff/tipsbank-api-contas:v1.0.0" already present on machine and can be accessed by the pod
+  Normal  Created    97s   kubelet            Container created
+  Normal  Started    97s   kubelet            Container started
+❯ k describe pod -n tipsbank-contas api-contas-6c4cbcc8b9-ppb45| grep QoS
+QoS Class:                   Burstable
+❯ k describe pod -n tipsbank-contas postgres-0| grep QoS
+QoS Class:                   Burstable
+❯ k describe pod -n tipsbank-contas postgres-replica-0| grep QoS
+QoS Class:                   Burstable
+❯ k describe pod -n tipsbank-auditoria auditoria-69dffc8c99-f45jp| grep QoS
+QoS Class:                   Burstable
+❯ k describe pod -n tipsbank-auditoria auditoria-69dffc8c99-q6sfq| grep QoS
+QoS Class:                   Burstable
+❯ k describe pod -n tipsbank-transacoes api-transacoes-659558d96c-cnkcw | grep QoS
+QoS Class:                   Burstable
+❯ k describe pod -n tipsbank-transacoes api-transacoes-659558d96c-wk5hg | grep QoS
+QoS Class:                   Burstable
+❯ k describe pod -n tipsbank-web web-744bdd6fd8-bgw6j | grep QoS
+QoS Class:                   Burstable
+❯ k describe pod -n tipsbank-web web-744bdd6fd8-dm246 | grep QoS
+QoS Class:                   Burstable

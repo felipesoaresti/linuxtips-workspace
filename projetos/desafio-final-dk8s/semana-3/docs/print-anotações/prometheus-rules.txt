@@ -1,0 +1,241 @@
+❯ kubectl get prometheusrule -A
+NAMESPACE             NAME                                                              AGE
+tipsbank-monitoring   kube-prometheus-stack-alertmanager.rules                          3d15h
+tipsbank-monitoring   kube-prometheus-stack-config-reloaders                            3d15h
+tipsbank-monitoring   kube-prometheus-stack-etcd                                        3d15h
+tipsbank-monitoring   kube-prometheus-stack-general.rules                               3d15h
+tipsbank-monitoring   kube-prometheus-stack-k8s.rules.container-cpu-usage-seconds-tot   3d15h
+tipsbank-monitoring   kube-prometheus-stack-k8s.rules.container-memory-cache            3d15h
+tipsbank-monitoring   kube-prometheus-stack-k8s.rules.container-memory-rss              3d15h
+tipsbank-monitoring   kube-prometheus-stack-k8s.rules.container-memory-swap             3d15h
+tipsbank-monitoring   kube-prometheus-stack-k8s.rules.container-memory-working-set-by   3d15h
+tipsbank-monitoring   kube-prometheus-stack-k8s.rules.container-resource                3d15h
+tipsbank-monitoring   kube-prometheus-stack-k8s.rules.pod-owner                         3d15h
+tipsbank-monitoring   kube-prometheus-stack-kube-apiserver-availability.rules           3d15h
+tipsbank-monitoring   kube-prometheus-stack-kube-apiserver-burnrate.rules               3d15h
+tipsbank-monitoring   kube-prometheus-stack-kube-apiserver-histogram.rules              3d15h
+tipsbank-monitoring   kube-prometheus-stack-kube-apiserver-slos                         3d15h
+tipsbank-monitoring   kube-prometheus-stack-kube-prometheus-general.rules               3d15h
+tipsbank-monitoring   kube-prometheus-stack-kube-prometheus-node-recording.rules        3d15h
+tipsbank-monitoring   kube-prometheus-stack-kube-scheduler.rules                        3d15h
+tipsbank-monitoring   kube-prometheus-stack-kube-state-metrics                          3d15h
+tipsbank-monitoring   kube-prometheus-stack-kubelet.rules                               3d15h
+tipsbank-monitoring   kube-prometheus-stack-kubernetes-apps                             3d15h
+tipsbank-monitoring   kube-prometheus-stack-kubernetes-resources                        3d15h
+tipsbank-monitoring   kube-prometheus-stack-kubernetes-storage                          3d15h
+tipsbank-monitoring   kube-prometheus-stack-kubernetes-system                           3d15h
+tipsbank-monitoring   kube-prometheus-stack-kubernetes-system-apiserver                 3d15h
+tipsbank-monitoring   kube-prometheus-stack-kubernetes-system-controller-manager        3d15h
+tipsbank-monitoring   kube-prometheus-stack-kubernetes-system-kube-proxy                3d15h
+tipsbank-monitoring   kube-prometheus-stack-kubernetes-system-kubelet                   3d15h
+tipsbank-monitoring   kube-prometheus-stack-kubernetes-system-scheduler                 3d15h
+tipsbank-monitoring   kube-prometheus-stack-node-exporter                               3d15h
+tipsbank-monitoring   kube-prometheus-stack-node-exporter.rules                         3d15h
+tipsbank-monitoring   kube-prometheus-stack-node-network                                3d15h
+tipsbank-monitoring   kube-prometheus-stack-node.rules                                  3d15h
+tipsbank-monitoring   kube-prometheus-stack-prometheus                                  3d15h
+tipsbank-monitoring   kube-prometheus-stack-prometheus-operator                         3d15h
+tipsbank-monitoring   tipsbank-slo-alerts                                               95s
+
+
+up{job!~"alertmanager.*|prometheus.*|kube.*|node.*|coredns.*"}
+Evaluation time
+Load time: 16ms   Result series: 5
+
+up{endpoint="https", instance="192.168.3.40:6443", job="apiserver", namespace="default", service="kubernetes"}	1
+up{container="auditoria", endpoint="auditoria", instance="10.244.209.217:8080", job="auditoria", namespace="tipsbank-auditoria", pod="auditoria-69dffc8c99-f45jp", service="auditoria"}	1
+up{container="api-transacoes", endpoint="api-transacoes", instance="10.244.209.225:8080", job="api-transacoes", namespace="tipsbank-transacoes", pod="api-transacoes-659558d96c-wk5hg", service="api-transacoes"}	1
+up{container="auditoria", endpoint="auditoria", instance="10.244.209.218:8080", job="auditoria", namespace="tipsbank-auditoria", pod="auditoria-69dffc8c99-q6sfq", service="auditoria"}	1
+up{container="api-transacoes", endpoint="api-transacoes", instance="10.244.209.221:8080", job="api-transacoes", namespace="tipsbank-transacoes", pod="api-transacoes-659558d96c-cnkcw", service="api-transacoes"}	1
+
+
+http_requests_total
+Evaluation time
+Load time: 17ms   Result series: 12
+
+http_requests_total{container="api-transacoes", endpoint="api-transacoes", instance="10.244.209.225:8080", job="api-transacoes", method="GET", namespace="tipsbank-transacoes", path="/health/startup", pod="api-transacoes-659558d96c-wk5hg", service="api-transacoes", status="200"}	1
+http_requests_total{container="api-transacoes", endpoint="api-transacoes", instance="10.244.209.225:8080", job="api-transacoes", method="GET", namespace="tipsbank-transacoes", path="/health/ready", pod="api-transacoes-659558d96c-wk5hg", service="api-transacoes", status="200"}	83426
+http_requests_total{container="api-transacoes", endpoint="api-transacoes", instance="10.244.209.225:8080", job="api-transacoes", method="GET", namespace="tipsbank-transacoes", path="/health/live", pod="api-transacoes-659558d96c-wk5hg", service="api-transacoes", status="200"}	50242
+http_requests_total{container="api-transacoes", endpoint="api-transacoes", instance="10.244.209.225:8080", job="api-transacoes", method="GET", namespace="tipsbank-transacoes", path="/health/ready", pod="api-transacoes-659558d96c-wk5hg", service="api-transacoes", status="503"}	14523
+http_requests_total{container="api-transacoes", endpoint="api-transacoes", instance="10.244.209.221:8080", job="api-transacoes", method="GET", namespace="tipsbank-transacoes", path="/health/startup", pod="api-transacoes-659558d96c-cnkcw", service="api-transacoes", status="200"}	1
+http_requests_total{container="api-transacoes", endpoint="api-transacoes", instance="10.244.209.221:8080", job="api-transacoes", method="GET", namespace="tipsbank-transacoes", path="/health/ready", pod="api-transacoes-659558d96c-cnkcw", service="api-transacoes", status="200"}	83429
+http_requests_total{container="api-transacoes", endpoint="api-transacoes", instance="10.244.209.221:8080", job="api-transacoes", method="GET", namespace="tipsbank-transacoes", path="/health/live", pod="api-transacoes-659558d96c-cnkcw", service="api-transacoes", status="200"}	50256
+http_requests_total{container="api-transacoes", endpoint="api-transacoes", instance="10.244.209.221:8080", job="api-transacoes", method="GET", namespace="tipsbank-transacoes", path="/health/ready", pod="api-transacoes-659558d96c-cnkcw", service="api-transacoes", status="503"}	14516
+http_requests_total{container="api-transacoes", endpoint="api-transacoes", instance="10.244.209.221:8080", job="api-transacoes", method="GET", namespace="tipsbank-transacoes", path="/metrics", pod="api-transacoes-659558d96c-cnkcw", service="api-transacoes", status="200"}	10147
+http_requests_total{container="api-transacoes", endpoint="api-transacoes", instance="10.244.209.225:8080", job="api-transacoes", method="GET", namespace="tipsbank-transacoes", path="/metrics", pod="api-transacoes-659558d96c-wk5hg", service="api-transacoes", status="200"}	10147
+http_requests_total{container="api-transacoes", endpoint="api-transacoes", instance="10.244.209.221:8080", job="api-transacoes", method="GET", namespace="tipsbank-transacoes", path="/extrato/727298f4-a47b-4f35-8013-5bddac932f1a", pod="api-transacoes-659558d96c-cnkcw", service="api-transacoes", status="200"}	1
+http_requests_total{container="api-transacoes", endpoint="api-transacoes", instance="10.244.209.225:8080", job="api-transacoes", method="GET", namespace="tipsbank-transacoes", path="/extrato/727298f4-a47b-4f35-8013-5bddac932f1a", pod="api-transacoes-659558d96c-wk5hg", service="api-transacoes", status="200"}	3
+
+
+❯ k rollout restart deployment -n tipsbank-contas api-contas
+deployment.apps/api-contas restarted
+❯ kubectl get pods -n tipsbank-contas
+NAME                 READY   STATUS    RESTARTS   AGE
+postgres-0           1/1     Running   0          4d3h
+postgres-replica-0   1/1     Running   0          7d
+❯ kubectl get pods -n tipsbank-contas
+NAME                 READY   STATUS    RESTARTS   AGE
+postgres-0           1/1     Running   0          4d3h
+postgres-replica-0   1/1     Running   0          7d
+❯ k scale deployment -n tipsbank-contas api-contas --replicas=2
+deployment.apps/api-contas scaled
+❯ kubectl get pods -n tipsbank-contas
+NAME                        READY   STATUS    RESTARTS   AGE
+api-contas-64554bbd-gjtzr   0/1     Running   0          6s
+api-contas-64554bbd-w68d8   0/1     Running   0          6s
+postgres-0                  1/1     Running   0          4d3h
+postgres-replica-0          1/1     Running   0          7d
+
+    /mnt/c/Users/felip/Documents/Projetos/tipsbank  on   main ⇡5 ▓▒░                                                           ░▒▓   at 09:01:39  
+❯ Handling connection for 9090
+Handling connection for 9090
+❯ git status
+Found existing alias for "git status". You should use: "gst"
+On branch main
+Your branch is ahead of 'origin/main' by 5 commits.
+  (use "git push" to publish your local commits)
+
+nothing to commit, working tree clean
+❯ kubectl scale deployment api-contas -n tipsbank-contas --replicas=0
+deployment.apps/api-contas scaled
+
+    /mnt/c/Users/felip/Documents/Projetos/tipsbank  on   main ⇡5 ▓▒░                                                           ░▒▓   at 09:07:58  
+❯ Handling connection for 9090
+Handling connection for 9090
+Handling connection for 9090
+❯ kubectl scale deployment api-contas -n tipsbank-contas --replicas=2
+deployment.apps/api-contas scaled
+❯  kubectl delete pod -n tipsbank-contas -l app=api-contas
+Found existing alias for "kubecolor". You should use: "kubectl"
+pod "api-contas-64554bbd-dj4ft" deleted from tipsbank-contas namespace
+pod "api-contas-64554bbd-xph7p" deleted from tipsbank-contas namespace
+
+    /mnt/c/Users/felip/Documents/Projetos/tipsbank  on   main ⇡5 !2 ▓▒░                                            ░▒▓ took 5s     at 09:24:18  
+❯ Handling connection for 9090
+Handling connection for 9090
+❯  kubectl delete pod -n tipsbank-contas -l app=api-contas
+Found existing alias for "kubecolor". You should use: "kubectl"
+pod "api-contas-64554bbd-g65j5" deleted from tipsbank-contas namespace
+pod "api-contas-64554bbd-tf52v" deleted from tipsbank-contas namespace
+❯  kubectl delete pod -n tipsbank-contas -l app=api-contas
+Found existing alias for "kubecolor". You should use: "kubectl"
+pod "api-contas-64554bbd-db87w" deleted from tipsbank-contas namespace
+pod "api-contas-64554bbd-qm84q" deleted from tipsbank-contas namespace
+❯  kubectl delete pod -n tipsbank-contas -l app=api-contas
+Found existing alias for "kubecolor". You should use: "kubectl"
+pod "api-contas-64554bbd-77fwc" deleted from tipsbank-contas namespace
+pod "api-contas-64554bbd-zfsjl" deleted from tipsbank-contas namespace
+❯  kubectl delete pod -n tipsbank-contas -l app=api-contas
+Found existing alias for "kubecolor". You should use: "kubectl"
+pod "api-contas-64554bbd-p448w" deleted from tipsbank-contas namespace
+pod "api-contas-64554bbd-wzh4p" deleted from tipsbank-contas namespace
+❯  kubectl delete pod -n tipsbank-contas -l app=api-contas
+Found existing alias for "kubecolor". You should use: "kubectl"
+pod "api-contas-64554bbd-9j8sh" deleted from tipsbank-contas namespace
+pod "api-contas-64554bbd-fbdwh" deleted from tipsbank-contas namespace
+❯  kubectl delete pod -n tipsbank-contas -l app=api-contas
+Found existing alias for "kubecolor". You should use: "kubectl"
+pod "api-contas-64554bbd-jsj8p" deleted from tipsbank-contas namespace
+pod "api-contas-64554bbd-nj27m" deleted from tipsbank-contas namespace
+Handling connection for 9090
+❯  kubectl delete pod -n tipsbank-contas -l app=api-contas
+Found existing alias for "kubecolor". You should use: "kubectl"
+pod "api-contas-64554bbd-4r7z2" deleted from tipsbank-contas namespace
+pod "api-contas-64554bbd-8bwsc" deleted from tipsbank-contas namespace
+❯  kubectl delete pod -n tipsbank-contas -l app=api-contas
+Found existing alias for "kubecolor". You should use: "kubectl"
+pod "api-contas-64554bbd-4zn6n" deleted from tipsbank-contas namespace
+pod "api-contas-64554bbd-vrxsk" deleted from tipsbank-contas namespace
+^[[A
+❯  kubectl delete pod -n tipsbank-contas -l app=api-contas
+Found existing alias for "kubecolor". You should use: "kubectl"
+pod "api-contas-64554bbd-67mzp" deleted from tipsbank-contas namespace
+pod "api-contas-64554bbd-mchh6" deleted from tipsbank-contas namespace
+^[[A
+❯  kubectl delete pod -n tipsbank-contas -l app=api-contas
+Found existing alias for "kubecolor". You should use: "kubectl"
+pod "api-contas-64554bbd-9bmfb" deleted from tipsbank-contas namespace
+pod "api-contas-64554bbd-btmpw" deleted from tipsbank-contas namespace
+
+    /mnt/c/Users/felip/Documents/Projetos/tipsbank  on   main ⇡5 !2 ▓▒░                                           ░▒▓ took 10s     at 09:27:03  
+❯ Handling connection for 9090
+Handling connection for 9090
+❯ kubectl get pods -n tipsbank-contas -w
+NAME                        READY   STATUS    RESTARTS   AGE
+api-contas-64554bbd-d9m2m   1/1     Running   0          77s
+api-contas-64554bbd-jh2fg   1/1     Running   0          77s
+postgres-0                  1/1     Running   0          4d3h
+postgres-replica-0          1/1     Running   0          7d1h
+^C
+❯ k debug -it api-contas-64554bbd-d9m2m  --image busybox --target=api-contas -n tipsbank-contas --profile=sysadmin -- sh
+Targeting container "api-contas". If you don't see processes from this container it may be because the container runtime doesn't support this feature.
+Defaulting debug container name to debugger-kdzp7.
+All commands and output from this session will be recorded in container logs, including credentials and sensitive information passed through the command prompt.
+If you don't see a command prompt, try pressing enter.
+/ # kill 1
+/ # Session ended, the ephemeral container will not be restarted but may be reattached using 'kubectl attach api-contas-64554bbd-d9m2m -c debugger-kdzp7 -i -t' if it is still running
+❯ kubectl get pods -n tipsbank-contas -w
+NAME                        READY   STATUS    RESTARTS     AGE
+api-contas-64554bbd-d9m2m   0/1     Running   1 (3s ago)   2m40s
+api-contas-64554bbd-jh2fg   1/1     Running   0            2m40s
+postgres-0                  1/1     Running   0            4d3h
+postgres-replica-0          1/1     Running   0            7d1h
+api-contas-64554bbd-d9m2m   0/1     Running   1 (9s ago)   2m46s
+api-contas-64554bbd-d9m2m   1/1     Running   1 (9s ago)   2m46s
+^C          
+❯ k debug -it api-contas-64554bbd-d9m2m --image busybox --target=api-contas -n tipsbank-contas --profile=sysadmin -- sh
+Targeting container "api-contas". If you don't see processes from this container it may be because the container runtime doesn't support this feature.
+Defaulting debug container name to debugger-splws.
+All commands and output from this session will be recorded in container logs, including credentials and sensitive information passed through the command prompt.
+If you don't see a command prompt, try pressing enter.
+/ # kill 1
+/ # Session ended, the ephemeral container will not be restarted but may be reattached using 'kubectl attach api-contas-64554bbd-d9m2m -c debugger-splws -i -t' if it is still running
+❯ k debug -it api-contas-64554bbd-d9m2m --image busybox --target=api-contas -n tipsbank-contas --profile=sysadmin -- sh
+Targeting container "api-contas". If you don't see processes from this container it may be because the container runtime doesn't support this feature.
+Defaulting debug container name to debugger-gcwbk.
+kWarning: container debugger-gcwbk: failed to generate container "10654c9f4283a42a79cff55fc7bb19c9a8aa690fb80398788c4be6954660f3b4" spec: failed to generate spec opts: invalid target container: container "68fa59a1e9fee07d6331badcaef874ac7eb878c5650e899327063ac08cdddaa8" is not running - in state CONTAINER_EXITED
+Warning: container debugger-gcwbk: failed to generate container "15a9fc799c62e8ac9bc1cab5d981fa509effd1e32a3330f9a2445be7c6d07673" spec: failed to generate spec opts: invalid target container: container "68fa59a1e9fee07d6331badcaef874ac7eb878c5650e899327063ac08cdddaa8" is not running - in state CONTAINER_EXITED
+All commands and output from this session will be recorded in container logs, including credentials and sensitive information passed through the command prompt.
+If you don't see a command prompt, try pressing enter.
+/ # kill 1
+/ # Session ended, the ephemeral container will not be restarted but may be reattached using 'kubectl attach api-contas-64554bbd-d9m2m -c debugger-gcwbk -i -t' if it is still running
+❯ k debug -it api-contas-64554bbd-d9m2m --image busybox --target=api-contas -n tipsbank-contas --profile=sysadmin -- sh
+Targeting container "api-contas". If you don't see processes from this container it may be because the container runtime doesn't support this feature.
+Defaulting debug container name to debugger-74gvm.
+^[[A^C
+❯ k debug -it api-contas-64554bbd-d9m2m --image busybox --target=api-contas -n tipsbank-contas --profile=sysadmin -- sh
+Targeting container "api-contas". If you don't see processes from this container it may be because the container runtime doesn't support this feature.
+Defaulting debug container name to debugger-jvlgb.
+Warning: container debugger-jvlgb: failed to generate container "a63ede32aecef9c7ad4baa83267f59a6ee31b9f76fc76c2ec0d7bc37ce57c650" spec: failed to generate spec opts: invalid target container: container "2705ecd61fe47cf8d0adf462a25a599915b9c92e9e84f2b13c28fdf197125d1a" is not running - in state CONTAINER_EXITED
+All commands and output from this session will be recorded in container logs, including credentials and sensitive information passed through the command prompt.
+If you don't see a command prompt, try pressing enter.
+/ # kill 1
+/ # Session ended, the ephemeral container will not be restarted but may be reattached using 'kubectl attach api-contas-64554bbd-d9m2m -c debugger-jvlgb -i -t' if it is still running
+❯ kubectl get pods -n tipsbank-contas -w
+NAME                        READY   STATUS             RESTARTS     AGE
+api-contas-64554bbd-d9m2m   0/1     CrashLoopBackOff   3 (3s ago)   3m57s
+api-contas-64554bbd-jh2fg   1/1     Running            0            3m57s
+postgres-0                  1/1     Running            0            4d3h
+postgres-replica-0          1/1     Running            0            7d1h
+Handling connection for 9090
+Handling connection for 9090
+Handling connection for 9090
+^[[A^[[A^C
+❯ kubectl get pods -n tipsbank-contas -w
+NAME                        READY   STATUS    RESTARTS      AGE
+api-contas-64554bbd-d9m2m   0/1     Running   4 (51s ago)   4m45s
+api-contas-64554bbd-jh2fg   1/1     Running   0             4m45s
+postgres-0                  1/1     Running   0             4d3h
+postgres-replica-0          1/1     Running   0             7d1h
+api-contas-64554bbd-d9m2m   0/1     Running   4 (57s ago)   4m51s
+api-contas-64554bbd-d9m2m   1/1     Running   4 (57s ago)   4m51s
+Handling connection for 9090
+Handling connection for 9090
+^C      
+❯ kubectl get pods -n tipsbank-contas -w
+NAME                        READY   STATUS    RESTARTS      AGE
+api-contas-64554bbd-d9m2m   1/1     Running   4 (83s ago)   5m17s
+api-contas-64554bbd-jh2fg   1/1     Running   0             5m17s
+postgres-0                  1/1     Running   0             4d3h
+postgres-replica-0          1/1     Running   0             7d1h
+

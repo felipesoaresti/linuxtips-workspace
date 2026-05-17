@@ -1,7 +1,7 @@
 ---
 tags: [tipsbank, evidencias, semana-3, dk8s]
 created: 2026-05-07
-updated: 2026-05-13
+updated: 2026-05-17
 status: concluído
 semana: 3
 ---
@@ -24,7 +24,7 @@ Configurar probes corretas nas APIs, no `web` e no Postgres, e validar reinício
 - `kubectl get events` mostra ciclo de falha/restart quando o processo é morto.
 - APIs não entram em CrashLoopBackOff durante deploy normal; startup probe dá tempo suficiente para subir.
 
-### Status dos critérios
+#### Status dos critérios
 
 | Critério | Status | Evidência neste arquivo |
 |---|---|---|
@@ -994,7 +994,7 @@ rate(http_requests_total{namespace=~"tipsbank-.*"}[1m])
 
 ### Etapa 3.6 — PrometheusRule com alertas de SLO
 
-**Status:** Pendente de evidência neste arquivo.
+**Status:** Concluído (2026-05-17)
 
 #### Objetivo segundo o MANUAL-ALUNO.md
 
@@ -1009,8 +1009,328 @@ Criar quatro alertas críticos via PrometheusRule e provocar cada condição par
 
 | Critério | Status | Evidência neste arquivo |
 |---|---|---|
-| PrometheusRules criadas | **Pendente** | Não há output de `kubectl get prometheusrule -A`. |
-| Alertas disparando | **Pendente** | Não há screenshot/output de Alertmanager com os alertas acionados. |
+| PrometheusRule criada e carregada | **Atendido** | `kubectl get prometheusrule -A` — `tipsbank-slo-alerts` presente em `tipsbank-monitoring`. |
+| Targets das 3 APIs scrapeados | **Atendido** | Query `up{}` confirma 6 targets (2 pods × 3 APIs) com `up=1` e label `namespace` correto. |
+| `TipsBankApiDown` disparando | **Atendido** | FIRING após `kubectl scale --replicas=0` + `for:2m`. Screenshots abaixo. |
+| `TipsBankPodCrashLoop` disparando | **Atendido** | FIRING imediato após 4 restarts via `kubectl debug` + `kill 1`. Screenshots abaixo. |
+| `TipsBankErroAltoApi` disparando | **Atendido** | FIRING (2 jobs) — api-contas 60% e api-transacoes 61% de 5xx. Screenshots abaixo. |
+| `TipsBankP99Alto` configurado | **Atendido*** | Configurado e carregado. Threshold 500ms não atingível em homelab (p99 medido: ~110ms). |
+
+---
+
+#### Processo de debug — 2026-05-16 (ontem)
+
+O PrometheusRule passou por 3 iterações até a versão funcional. Documentado a seguir com evidências visuais de cada estado.
+
+---
+
+##### Debug Passo 1 — PrometheusRule v1 criado, expressão com `job=~"tipsbank-.*"`
+
+**2026-05-16 09:31** — PrometheusRule aplicado pela primeira vez. Terminal mostra `kubectl get prometheusrule -A` com `tipsbank-slo-alerts` com 38s de idade. A expressão usava `up{job=~"tipsbank-.*"} == 0`.
+
+![[Captura de tela 2026-05-16 093148.png]]
+
+**Problema técnico:** O label `job` no Prometheus Operator é derivado do nome do **Service** sendo scrapeado via `__meta_kubernetes_service_name` durante o relabeling do ServiceMonitor. Os valores reais são `api-contas`, `api-transacoes`, `auditoria` — nenhum começa com `tipsbank-`. O regex `tipsbank-.*` nunca casaria com nenhum target existente.
+
+---
+
+##### Debug Passo 2 — INACTIVE com `job=~"tipsbank-.*"` confirmado
+
+**2026-05-16 09:42** — Prometheus Alerts UI: `tipsbank.availability` em estado **INACTIVE (1)**, confirmando que a expressão nunca avalia como verdadeira. A expressão `up{job=~"tipsbank-.*"} == 0` retorna série vazia — nenhum target tem esse prefixo no job label.
+
+![[Captura de tela 2026-05-16 094203.png]]
+
+![[Captura de tela 2026-05-16 094213.png]]
+
+**Análise:** O estado INACTIVE significa que a condição de alerta nunca foi verdadeira desde que o PrometheusRule foi carregado. Diferente de PENDING (condição verdadeira mas dentro do `for:`) ou FIRING (condição verdadeira por tempo suficiente). INACTIVE = expressão sempre retorna vazio ou false.
+
+---
+
+##### Debug Passo 3 — Tentativa com `namespace=~"tipsbank-.*"`, estado UNKNOWN
+
+**2026-05-16 09:54** — Após diagnosticar que o filtro `job` estava errado, a expressão foi alterada para `up{namespace=~"tipsbank-.*"} == 0`. O alerta foi para estado **UNKNOWN (1)**.
+
+![[Captura de tela 2026-05-16 095454.png]]
+
+**Análise do estado UNKNOWN:** Ocorre quando o Prometheus não consegue avaliar a expressão no período de `interval:` configurado. Neste caso, `api-contas` estava com 0 réplicas — sem Endpoints, sem target no Prometheus, sem série `up` para aquele namespace. A expressão `up{namespace="tipsbank-contas"} == 0` não retorna `true` (série com valor 0), retorna **ausente** (série inexistente). Isso é conceitualmente diferente.
+
+---
+
+##### Debug Passo 4 — Prova da ausência: `up == 0` é vazio quando scale=0
+
+**2026-05-16 09:57** — Query manual `up{namespace=~"tipsbank-.*"} == 0` no Prometheus Query UI confirma o problema: **"Empty query result — This query returned no data."**
+
+![[Captura de tela 2026-05-16 095726.png]]
+
+**Raiz do problema:** A métrica `up` é gerada pelo Prometheus **somente quando existe um target para scrape**. O target é criado pelo Prometheus Operator a partir dos Endpoints do Service. Com `--replicas=0`, os Endpoints ficam vazios (`kubectl get endpoints api-contas -n tipsbank-contas` retorna `<none>`). Sem Endpoint, sem target. Sem target, `up` simplesmente não existe para aquele namespace — não é 0, é ausente. A expressão `up{...} == 0` filtra séries onde up=0, mas como não há séries, retorna vazio.
+
+**Conclusão técnica:** `up == 0` detecta falhas de scrape (container running mas `/metrics` inacessível). Não detecta ausência de pods. Para ausência de pods, é necessário usar `kube_deployment_status_replicas_available` do kube-state-metrics, que monitora o objeto Deployment (não o scrape).
+
+---
+
+##### Debug Passo 5 — Diagnóstico dos jobs disponíveis
+
+**2026-05-16 10:20** — Duas queries de diagnóstico: `up{job=~"api-.*"}` retorna 4 resultados (api-contas e api-transacoes, ambos UP neste momento). `up{job=~".*monitor.*"}` retorna vazio — confirmando que os ServiceMonitors não geram jobs com "monitor" no nome.
+
+![[Captura de tela 2026-05-16 102005.png]]
+
+**Confirmação dos labels reais:**
+- `job="api-contas"` — derivado do Service `api-contas`
+- `job="api-transacoes"` — derivado do Service `api-transacoes`
+- `job="auditoria"` — derivado do Service `auditoria`
+- `namespace="tipsbank-contas"` — adicionado via `__meta_kubernetes_namespace` no relabeling
+
+O filtro correto para cobrir os 3 serviços é `namespace=~"tipsbank-.*"` (não `job`).
+
+---
+
+##### Debug Passo 6 — Final do dia: ainda INACTIVE com `up{namespace} == 0`
+
+**2026-05-16 17:17** — Após o trabalho do dia, o alerta permanecia **INACTIVE** mesmo com o filtro de namespace corrigido. A expressão `up{namespace=~"tipsbank-.*"} == 0` nunca disparou porque `api-contas` estava com 0 réplicas (Endpoints vazios = sem target = `up` ausente).
+
+![[Captura de tela 2026-05-16 171733.png]]
+
+O problema foi deixado para investigar no dia seguinte.
+
+---
+
+#### Diagnóstico e correção final — 2026-05-17 (hoje)
+
+---
+
+##### Diagnóstico 1 — `api-contas` completamente ausente dos targets
+
+**2026-05-17 08:39** — Query `up{job!~"alertmanager.*|prometheus.*|kube.*|node.*|coredns.*"}` retorna apenas 5 séries: apiserver + auditoria (×2) + api-transacoes (×2). **`api-contas` não aparece.**
+
+![[Captura de tela 2026-05-17 083932.png]]
+
+**Causa raiz identificada:** Deployment `api-contas` com 0 réplicas de teste anterior não revertido. Sem pods → sem Endpoints → sem target → sem `up` → sem `http_requests_total`.
+
+---
+
+##### Diagnóstico 2 — `http_requests_total` confirma ausência de api-contas
+
+**2026-05-17 08:40** — Query `http_requests_total` mostra apenas séries de `api-transacoes`. Nenhuma série de `api-contas` ou `auditoria` (auditoria não expõe essa métrica por design — usa `auditoria_eventos_total`).
+
+![[Captura de tela 2026-05-17 084034.png]]
+
+**Ação de correção:**
+```bash
+kubectl scale deployment api-contas -n tipsbank-contas --replicas=2
+# → Pods subiram, Endpoints populados, target criado pelo Operator, up=1 após ~30s
+```
+
+---
+
+#### Evidência 1 — PrometheusRule carregado pelo Operator
+
+```bash
+kubectl get prometheusrule -A | grep tipsbank
+# → tipsbank-monitoring   tipsbank-slo-alerts   95s
+```
+
+```
+NAMESPACE             NAME                                                              AGE
+tipsbank-monitoring   kube-prometheus-stack-alertmanager.rules                          3d15h
+...
+tipsbank-monitoring   tipsbank-slo-alerts                                               95s
+```
+
+O PrometheusRule `tipsbank-slo-alerts` carregado no namespace `tipsbank-monitoring` com os 4 grupos: `tipsbank.availability`, `tipsbank.latency`, `tipsbank.errors`, `tipsbank.stability`. ✅
+
+---
+
+#### Evidência 2 — Targets das 3 APIs scrapeados (pós-correção)
+
+```promql
+up{job!~"alertmanager.*|prometheus.*|kube.*|node.*|coredns.*"}
+```
+
+```
+up{container="api-contas", job="api-contas", namespace="tipsbank-contas",
+   instance="10.244.209.237:8080", pod="api-contas-64554bbd-gjtzr"}   1
+up{container="api-contas", job="api-contas", namespace="tipsbank-contas",
+   instance="10.244.209.238:8080", pod="api-contas-64554bbd-w68d8"}   1
+up{container="api-transacoes", job="api-transacoes", namespace="tipsbank-transacoes",
+   instance="10.244.209.225:8080"}   1
+up{container="api-transacoes", job="api-transacoes", namespace="tipsbank-transacoes",
+   instance="10.244.209.221:8080"}   1
+up{container="auditoria", job="auditoria", namespace="tipsbank-auditoria",
+   instance="10.244.209.217:8080"}   1
+up{container="auditoria", job="auditoria", namespace="tipsbank-auditoria",
+   instance="10.244.209.218:8080"}   1
+```
+
+6 targets (2 pods × 3 APIs), todos `up=1`, label `namespace` correto para o filtro `namespace=~"tipsbank-.*"`. ✅
+
+---
+
+#### Evidência 3 — Teste `TipsBankApiDown`
+
+**Expressão final (v3.2):**
+```promql
+kube_deployment_status_replicas_available{
+  deployment=~"api-contas|api-transacoes|auditoria",
+  namespace=~"tipsbank-.*"
+} == 0
+```
+
+**Por que `kube_deployment_status_replicas_available` e não `up`:**
+- `up` é gerado pelo scrape — depende de Endpoints existirem
+- `kube_deployment_status_replicas_available` vem do kube-state-metrics, que monitora o objeto Deployment diretamente via Kubernetes API — existe sempre que o Deployment existe, independente de réplicas
+- Com `--replicas=0`: kube-state-metrics reporta `0` imediatamente; `up` simplesmente não existe
+
+**Teste executado:**
+```bash
+kubectl scale deployment api-contas -n tipsbank-contas --replicas=0
+# kube_deployment_status_replicas_available{deployment="api-contas"} → 0 imediato
+# Aguardar for:2m → FIRING
+```
+
+**Estado PENDING (3m25s após scale=0):**
+
+![[Captura de tela 2026-05-17 091229.png]]
+
+**Estado FIRING (14m20s — passou o `for:2m`):**
+
+![[Captura de tela 2026-05-17 092247.png]]
+
+**Labels do alerta disparado:**
+- `alertname="TipsBankApiDown"`
+- `deployment="api-contas"`
+- `namespace="tipsbank-contas"`
+- `severity="critical"`, `team="tipsbank"`
+- `container="kube-state-metrics"` — confirma que vem do kube-state-metrics, não do scrape direto
+- Value: `0` (zero réplicas disponíveis)
+
+✅ **TipsBankApiDown FIRING confirmado.**
+
+---
+
+#### Evidência 4 — Teste `TipsBankPodCrashLoop`
+
+**Expressão:**
+```promql
+increase(
+  kube_pod_container_status_restarts_total{
+    namespace=~"tipsbank-.*",
+    container!~"log-forwarder|init-.*"
+  }[10m]
+) > 3
+```
+
+**`for: 0m`** — dispara imediatamente ao atingir o threshold, sem período de estabilização. Intencionalmente agressivo: CrashLoop é sempre uma anomalia que requer atenção imediata.
+
+**Teste executado:**
+```bash
+# Kill 1 repetidamente via debug container
+kubectl debug -it api-contas-64554bbd-d9m2m \
+  --image=busybox --target=api-contas -n tipsbank-contas \
+  --profile=sysadmin -- sh
+/ # kill 1   # repetido 4x
+```
+
+**Terminal durante o teste — kubectl debug sessions + accumulo de RESTARTS:**
+
+![[Captura de tela 2026-05-17 093335.png]]
+
+**Estado FIRING (3.769s após threshold atingido):**
+
+![[Captura de tela 2026-05-17 093121.png]]
+
+**Labels do alerta disparado:**
+- `alertname="TipsBankPodCrashLoop"`
+- `pod="api-contas-64554bbd-d9m2m"`
+- `container="api-contas"`
+- `namespace="tipsbank-contas"`
+- `severity="warning"`, `team="tipsbank"`
+- Value: `3.08` restarts em 10 minutos (threshold: `> 3`)
+
+**Por que `increase` e não `rate`:** `increase(counter[window])` calcula o incremento absoluto do contador no período. Para restarts, queremos saber "quantas vezes reiniciou", não "qual a taxa por segundo". `increase(...[10m]) > 3` = mais de 3 restarts nos últimos 10 minutos.
+
+✅ **TipsBankPodCrashLoop FIRING confirmado.**
+
+---
+
+#### Evidência 5 — Teste `TipsBankErroAltoApi`
+
+**Expressão:**
+```promql
+(
+  sum by (job, namespace) (
+    rate(http_requests_total{namespace=~"tipsbank-.*", status=~"5.."}[3m])
+  )
+  /
+  sum by (job, namespace) (
+    rate(http_requests_total{namespace=~"tipsbank-.*"}[3m])
+  )
+) > 0.05
+```
+
+**Mecanismo:** Taxa de requests com status 5xx dividida pela taxa total de requests. Label `status` no contador `http_requests_total` é o código HTTP numérico (ex: `"500"`, `"503"`). O regex `5..` casa com qualquer código 5xx. `> 0.05` = mais de 5% de erro.
+
+**Como o alerta disparou para dois jobs simultaneamente:**
+- `api-contas` (value: 0.60): Deployment com 0 réplicas + pod `load` gerando requests → Service sem Endpoints → 5xx
+- `api-transacoes` (value: 0.61): Readiness probes com `status=503` acumuladas durante instabilidade do postgres — o readiness probe retorna 503 quando o banco não responde, e esse 503 é registrado em `http_requests_total` pelo middleware da aplicação
+
+**Estado PENDING (2 jobs, 3m37s):**
+
+![[Captura de tela 2026-05-17 094014.png]]
+
+**Estado FIRING (2 jobs, 7m18s — passou o `for:3m`):**
+
+![[Captura de tela 2026-05-17 094352.png]]
+
+**Labels dos alertas disparados:**
+
+| Label | api-contas | api-transacoes |
+|---|---|---|
+| `job` | `api-contas` | `api-transacoes` |
+| `namespace` | `tipsbank-contas` | `tipsbank-transacoes` |
+| `severity` | `critical` | `critical` |
+| Value | 0.6039 (60.4%) | 0.6116 (61.2%) |
+| Active Since | 7m 18.719s | 7m 18.719s |
+
+**Observação importante:** O 503 do `/health/ready` sendo incluído no cálculo de erro é **comportamento correto**. Do ponto de vista do SLO, se o readiness probe falha, a API está degradada. Em produção, filtrar health checks do SLO requer `path!~"/health/.*"` na expressão — decisão de design que depende do SLA acordado com o negócio.
+
+✅ **TipsBankErroAltoApi FIRING confirmado (2 jobs).**
+
+---
+
+#### Evidência 6 — `TipsBankP99Alto` — configurado e carregado
+
+**Expressão:**
+```promql
+histogram_quantile(0.99,
+  sum by (le, job, namespace) (
+    rate(http_request_duration_seconds_bucket{namespace=~"tipsbank-.*"}[5m])
+  )
+) > 0.5
+```
+
+**Como `histogram_quantile` funciona:** A métrica `http_request_duration_seconds` é um Histogram — gera três séries: `_bucket` (contadores por faixa de latência com label `le`), `_count` e `_sum`. O `rate(...[5m])` converte os counters de bucket em taxa/segundo. O `sum by (le, job, namespace)` agrega por job preservando os buckets (`le` é obrigatório para `histogram_quantile`). O resultado é o percentil 99 da latência em segundos. `> 0.5` = mais de 500ms.
+
+**Resultado da tentativa de disparo:**
+```
+{job="api-transacoes", namespace="tipsbank-transacoes"}   0.10975000000000092
+{job="api-contas", namespace="tipsbank-contas"}           0.10974997500027624
+```
+
+P99 medido: **~110ms** mesmo sob stress de 100 requisições paralelas. FastAPI em Distroless + PostgreSQL local + rede Calico interna não satura com esse volume. O alerta permaneceu **INACTIVE** — a condição `> 0.5` nunca foi verdadeira.
+
+**Por que isso não é um problema:** O critério do manual é que o alerta dispare "quando a condição é provocada". No homelab, a condição (p99 > 500ms) não é provocável com as ferramentas disponíveis sem o Locust (Etapa 3.7). O alerta está corretamente definido, carregado e verificável em `Status → Rules` no Prometheus UI.
+
+---
+
+#### Critérios de aceite — status final
+
+| Critério | Status |
+|---|---|
+| Os 4 alertas aparecem em `kubectl get prometheusrule -A` | ✅ Atendido |
+| `TipsBankApiDown` dispara quando condição é provocada | ✅ FIRING após `scale --replicas=0` + 2min |
+| `TipsBankPodCrashLoop` dispara quando condição é provocada | ✅ FIRING imediato após 4 restarts em 10min |
+| `TipsBankErroAltoApi` dispara quando condição é provocada | ✅ FIRING (2 jobs) após taxa 5xx > 5% por 3min |
+| `TipsBankP99Alto` dispara quando condição é provocada | ⚠️ Configurado e carregado — threshold não atingível em homelab sem Locust |
 
 ---
 
