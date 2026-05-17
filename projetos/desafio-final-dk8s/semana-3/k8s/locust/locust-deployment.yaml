@@ -1,0 +1,74 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: locust
+  namespace: tipsbank-transacoes
+  labels:
+    app: locust
+    app.kubernetes.io/part-of: tipsbank
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: locust
+  template:
+    metadata:
+      labels:
+        app: locust
+    spec:
+      containers:
+        - name: locust
+          image: felipestaypuff/tipsbank-locust:v1.0.0
+          args:
+            - "-f"
+            - "/mnt/locust/locustfile.py"
+          env:
+            - name: LOCUST_HOST
+              value: "http://api-transacoes.tipsbank-transacoes.svc.cluster.local:8080"
+          ports:
+            - name: locust-ui
+              containerPort: 8089
+          resources:
+            requests:
+              cpu: 200m
+              memory: 256Mi
+            limits:
+              cpu: 1000m
+              memory: 512Mi
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: locust
+  namespace: tipsbank-transacoes
+  labels:
+    app: locust
+spec:
+  selector:
+    app: locust
+  ports:
+    - name: locust-ui
+      port: 8089
+      targetPort: 8089
+---
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: locust
+  namespace: tipsbank-transacoes
+  annotations:
+    nginx.ingress.kubernetes.io/proxy-read-timeout: "3600"
+    nginx.ingress.kubernetes.io/proxy-send-timeout: "3600"
+spec:
+  ingressClassName: nginx
+  rules:
+    - host: locust.tipsbank.staypuff.info
+      http:
+        paths:
+          - path: /
+            pathType: Prefix
+            backend:
+              service:
+                name: locust
+                port:
+                  number: 8089
