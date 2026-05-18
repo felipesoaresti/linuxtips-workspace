@@ -2,6 +2,9 @@ apiVersion: kyverno.io/v1
 kind: ClusterPolicy
 metadata:
   name: disallow-root-user
+  labels:
+    rule: disallow-root-user
+    app.kubernetes.io/part-of: tipsbank
   annotations:
     policies.kyverno.io/title: Disallow Root User
     policies.kyverno.io/category: Security
