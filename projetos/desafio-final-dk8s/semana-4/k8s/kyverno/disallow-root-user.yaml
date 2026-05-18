@@ -8,7 +8,7 @@ metadata:
     policies.kyverno.io/severity: High
     policies.kyverno.io/description: Container/Pod não podem rodar como root (runAsUser=0)
 spec:
-  validationFailureAction: enforce
+  validationFailureAction: Enforce
   background: true
   rules:
     - name: disallow-root-user

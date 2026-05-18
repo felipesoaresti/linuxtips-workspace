@@ -1,0 +1,32 @@
+apiVersion: kyverno.io/v1
+kind: ClusterPolicy
+metadata:
+  name: disallow-latest-tag
+  annotations:
+    policies.kyverno.io/title: Disallow Latest Tag
+    policies.kyverno.io/description: Imagens sem tag ou com tag ':latest' não são permitidas.
+    policies.kyverno.io/category: Security
+    policies.kyverno.io/severity: High
+spec:
+  validationFailureAction: Enforce
+  background: true
+  rules:
+    - name: require-image-tag
+      match:
+        any:
+          - resources:
+              kinds:
+                - Pod
+      validate:
+        message: "Imagens sem tag não são permitidas. Não usar latest"
+        deny:
+          conditions:
+            any:
+              - key: "{{ images.containers.*.tag }}"
+                operator: AnyIn
+                value:
+                  - latest
+              - key: "{{ images.initContainers.*.tag }}"
+                operator: AnyIn
+                value:
+                  - latest
