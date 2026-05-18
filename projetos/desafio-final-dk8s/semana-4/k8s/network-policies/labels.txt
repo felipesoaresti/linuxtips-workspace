@@ -1,0 +1,5 @@
+tipsbank-auditoria    auditoria                  3/3     3            3           7d22h   app.kubernetes.io/name=auditoria,app.kubernetes.io/part-of=tipsbank,app=auditoria
+tipsbank-contas       api-contas                 2/2     2            2           8d      app.kubernetes.io/name=api-contas,app.kubernetes.io/part-of=tipsbank,app=api-contas
+tipsbank-transacoes   api-transacoes             2/2     2            2           8d      app.kubernetes.io/name=api-transacoes,app.kubernetes.io/part-of=tipsbank,app=api-transacoes
+tipsbank-transacoes   api-transacoes-v2          1/1     1            1           31h     app.kubernetes.io/name=api-transacoes-v2,app.kubernetes.io/part-of=tipsbank,app=api-transacoes-v2,version=v2
+tipsbank-web          web                        2/2     2            2           7d20h   app=web,kubernetes.io/name=web,kubernetes.io/part-of=tipsbank

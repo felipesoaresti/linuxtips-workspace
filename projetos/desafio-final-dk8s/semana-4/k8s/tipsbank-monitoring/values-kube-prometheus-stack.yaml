@@ -1,0 +1,64 @@
+grafana:
+  adminPassword: "tipsbank@puff"
+  persistence:
+    enabled: true
+    storageClassName: nfs-tp-data
+    accessModes: ["ReadWriteOnce"]
+    resources:
+      requests:
+        storage: 5Gi
+    size: 5Gi
+  ingress:
+    enabled: true
+    ingressClassName: nginx
+    annotations:
+      cert-manager.io/cluster-issuer: "prod-letsencrypt-cloudflare"
+    hosts:
+      - grafana.tipsbank.staypuff.info
+    tls:
+      - secretName: grafana-tipsbank-tls
+        hosts:
+          - grafana.tipsbank.staypuff.info
+
+prometheus:
+  ingress:
+    enabled: true
+    ingressClassName: nginx
+    annotations:
+      cert-manager.io/cluster-issuer: "prod-letsencrypt-cloudflare"
+    hosts:
+      - prometheus.tipsbank.staypuff.info
+    tls:
+      - secretName: prometheus-tipsbank-tls
+        hosts:
+          - prometheus.tipsbank.staypuff.info
+  prometheusSpec:
+    retention: 15d
+    serviceMonitorSelectorNilUsesHelmValues: false
+    podMonitorSelectorNilUsesHelmValues: false
+    storageSpec:
+      volumeClaimTemplate:
+        spec:
+          storageClassName: nfs-tp-data
+          accessModes: ["ReadWriteOnce"]
+          resources:
+            requests:
+              storage: 20Gi
+    resources:
+      requests:
+        cpu: 200m
+        memory: 512Mi
+      limits:
+        cpu: 1000m
+        memory: 2Gi
+
+alertmanager:
+  alertmanagerSpec:
+    storage:
+      volumeClaimTemplate:
+        spec:
+          storageClassName: nfs-tp-data
+          accessModes: ["ReadWriteOnce"]
+          resources:
+            requests:
+              storage: 2Gi
