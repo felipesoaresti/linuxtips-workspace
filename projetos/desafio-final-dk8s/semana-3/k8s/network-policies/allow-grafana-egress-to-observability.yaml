@@ -1,0 +1,33 @@
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: allow-grafana-egress-to-observability
+  namespace: tipsbank-monitoring
+spec:
+  podSelector:
+    matchLabels:
+      app.kubernetes.io/name: grafana
+      app.kubernetes.io/instance: kube-prometheus-stack
+  policyTypes:
+    - Egress
+  egress:
+    - to:
+        - podSelector:
+            matchLabels:
+              app.kubernetes.io/name: prometheus
+              operator.prometheus.io/name: kube-prometheus-stack-prometheus
+        - ipBlock:
+            cidr: 10.111.49.251/32
+      ports:
+        - protocol: TCP
+          port: 9090
+    - to:
+        - podSelector:
+            matchLabels:
+              app.kubernetes.io/name: alertmanager
+              alertmanager: kube-prometheus-stack-alertmanager
+        - ipBlock:
+            cidr: 10.105.148.58/32
+      ports:
+        - protocol: TCP
+          port: 9093

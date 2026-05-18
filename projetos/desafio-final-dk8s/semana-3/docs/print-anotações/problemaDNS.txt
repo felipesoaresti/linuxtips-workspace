@@ -1,0 +1,63 @@
+Probelam dns
+
+❯ k debug -it auditoria-659555485f-hqzjc --image curlimages/curl --target=auditoria -n tipsbank-auditoria --profile=sysadmin
+Targeting container "auditoria". If you don't see processes from this container it may be because the container runtime doesn't support this feature.
+Defaulting debug container name to debugger-grt4l.
+curl: try 'curl --help' or 'curl --manual' for more information
+❯ k debug -it auditoria-659555485f-hqzjc --image curlimages/curl --target=auditoria -n tipsbank-auditoria --profile=sysadmin -- curl -m 5 http://api-contas.tipsbank-contas.svc.cluster.local:8080/health/live
+Targeting container "auditoria". If you don't see processes from this container it may be because the container runtime doesn't support this feature.
+Defaulting debug container name to debugger-z9pvb.
+curl: (6) Could not resolve host: api-contas.tipsbank-contas.svc.cluster.local
+❯ k debug -it auditoria-659555485f-hqzjc --image curlimages/curl  --labels="app=auditoria"  --target=auditoria -n tipsbank-auditoria --profile=sysadmin -- curl -m 5 http://api-contas.tipsbank-contas.svc.cluster.local:8080/health/live
+error: unknown flag: --labels
+See 'kubectl debug --help' for usage.
+❯ kubectl run debug-curl \
+  --rm -it \
+  --image=curlimages/curl \
+  --labels="app=auditoria" \
+  -n tipsbank-auditoria \
+  -- curl -m 5 http://api-contas.tipsbank-contas.svc.cluster.local:8080/health/live
+All commands and output from this session will be recorded in container logs, including credentials and sensitive information passed through the command prompt.
+If you don't see a command prompt, try pressing enter.
+warning: couldn't attach to pod/debug-curl, falling back to streaming logs: Internal error occurred: unable to upgrade connection: container debug-curl not found in pod debug-curl_tipsbank-auditoria
+curl: (6) Could not resolve host: api-contas.tipsbank-contas.svc.cluster.local
+pod "debug-curl" deleted from tipsbank-auditoria namespace
+❯ k apply -f .
+networkpolicy.networking.k8s.io/allow-ingress-to-auditoria unchanged
+networkpolicy.networking.k8s.io/allow-auditoria-to-nfs unchanged
+networkpolicy.networking.k8s.io/allow-dns-egress-auditoria configured
+networkpolicy.networking.k8s.io/allow-ingress-to-api-contas unchanged
+networkpolicy.networking.k8s.io/allow-ingress-to-postgres unchanged
+networkpolicy.networking.k8s.io/allow-api-contas-to-postgres unchanged
+networkpolicy.networking.k8s.io/allow-dns-egress-contas configured
+networkpolicy.networking.k8s.io/allow-ingress-to-api-transacoes unchanged
+networkpolicy.networking.k8s.io/allow-transacoes-to-contas unchanged
+networkpolicy.networking.k8s.io/allow-transacoes-to-auditoria unchanged
+networkpolicy.networking.k8s.io/allow-dns-egress-transacoes configured
+networkpolicy.networking.k8s.io/allow-ingress-to-web unchanged
+networkpolicy.networking.k8s.io/allow-web-egress-to-apis unchanged
+networkpolicy.networking.k8s.io/allow-dns-egress-web configured
+networkpolicy.networking.k8s.io/default-deny-all unchanged
+networkpolicy.networking.k8s.io/default-deny-all unchanged
+networkpolicy.networking.k8s.io/default-deny-all unchanged
+networkpolicy.networking.k8s.io/default-deny-all unchanged
+❯ kubectl describe networkpolicy allow-dns-egress-auditoria -n tipsbank-auditoria | grep -A6 "Allowing egress"
+  Allowing egress traffic:
+    To Port: 53/UDP
+    To Port: 53/TCP
+    To: <any> (traffic not restricted by destination)
+  Policy Types: Egress
+❯ k debug -it auditoria-659555485f-hqzjc --image curlimages/curl --target=auditoria -n tipsbank-auditoria  -- curl -m 5 http://api-contas.tipsbank-contas.svc.cluster.local:8080/health/live
+Targeting container "auditoria". If you don't see processes from this container it may be because the container runtime doesn't support this feature.
+--profile=legacy is deprecated and will be removed in the future. It is recommended to explicitly specify a profile, for example "--profile=general".
+Defaulting debug container name to debugger-f4ssh.
+curl: (6) Could not resolve host: api-contas.tipsbank-contas.svc.cluster.local
+❯ kubectl debug -it auditoria-659555485f-hqzjc \
+--image=curlimages/curl \
+--target=auditoria \
+-n tipsbank-auditoria \
+--profile=netadmin \
+-- curl -m 5 http://api-contas.tipsbank-contas.svc.cluster.local:8080/health/live
+Targeting container "auditoria". If you don't see processes from this container it may be because the container runtime doesn't support this feature.
+Defaulting debug container name to debugger-8rvrf.
+curl: (6) Could not resolve host: api-contas.tipsbank-contas.svc.cluster.local

@@ -30,7 +30,7 @@ Configurar probes corretas nas APIs, no `web` e no Postgres, e validar reinício
 |---|---|---|
 | Probes configuradas | **Atendido** | Descrições mostram startup/liveness/readiness nas APIs e exec probes no Postgres. |
 | Eventos de restart | **Atendido** | Eventos mostram Unhealthy, BackOff, Created e Started após `kill 1`. |
-| Deploy normal sem falha | **Parcialmente atendido** | Rollouts concluídos; `CrashLoopBackOff` aparece apenas no teste proposital de liveness. |
+| Deploy normal sem falha | **Atendido** | Rollouts normais concluíram; `CrashLoopBackOff` apareceu somente no teste controlado de `kill 1`, que era justamente a validação da liveness. |
 
 Nesta etapa eu tratei saúde da aplicação como contrato operacional. A ideia foi separar claramente três perguntas: o container já terminou de subir? Ele continua vivo? Ele está pronto para receber tráfego? Parece detalhe, mas é isso que evita mandar requisição para pod meio acordado ou manter pod quebrado fingindo normalidade.
 
@@ -608,7 +608,7 @@ Definir requests/limits em 100% dos containers para evitar BestEffort e tornar c
 | Critério | Status | Evidência neste arquivo |
 |---|---|---|
 | Zero BestEffort | **Atendido** | Todos os pods listados aparecem com `QoS Class: Burstable`. |
-| kubectl top pod | **Pendente de evidência explícita** | O arquivo não mostra output de `kubectl top pod`. |
+| `kubectl top pod` | **Atendido** | Saída enviada em 2026-05-17 mostra CPU/memória reais para APIs, Postgres, web, monitoring, Locust e DaemonSet. |
 
 Aqui a aplicação deixou de ser "BestEffort". Definir `requests` e `limits` dá ao scheduler informação real para alocar os Pods e dá ao kubelet limites claros para CPU e memória. Não é tuning final de produção, mas já tira o ambiente daquele modo freestyle perigoso.
 
@@ -621,7 +621,7 @@ Aqui a aplicação deixou de ser "BestEffort". Definir `requests` e `limits` dá
 - web (main): `cpu: 100m→500m / memory: 128Mi→256Mi`
 - postgres primary: `cpu: 250m→1000m / memory: 512Mi→1024Mi`
 - postgres replica: `cpu: 200m→500m / memory: 256Mi→512Mi`
-- Resultado: QoSClass **Burstable** em todos os 10 pods do tipsbank — zero BestEffort
+- Resultado: QoSClass **Burstable** em todos os pods principais do TipsBank — zero BestEffort — e Metrics Server retornando uso real via `kubectl top pod`.
 
 ---
 
@@ -690,6 +690,45 @@ QoS Class:                   Burstable
 ```
 
 Todos os 10 pods (2×api-contas, 2×api-transacoes, 2×auditoria, 2×web, postgres-0, postgres-replica-0) com QoSClass: **Burstable**. Nenhum **BestEffort**.
+
+---
+
+#### Critério 3 — Metrics Server exibindo uso real com `kubectl top pod`
+
+O segundo critério do manual pede evidência de consumo real depois do Metrics Server. A saída abaixo fecha essa parte: o cluster está retornando CPU e memória por pod, então os requests configurados já podem ser comparados com uso observado. Aqui não tem tuning fino ainda, mas já saiu do modo "no escuro".
+
+```bash
+kubectl top pod -A | grep tipsbank
+```
+
+**Output:**
+
+```
+tipsbank-auditoria    auditoria-69dffc8c99-f45jp                                  2m           39Mi
+tipsbank-auditoria    auditoria-69dffc8c99-q6sfq                                  2m           39Mi
+tipsbank-contas       api-contas-67dcb8b76c-fbfkm                                 3m           99Mi
+tipsbank-contas       api-contas-67dcb8b76c-pb6nt                                 2m           99Mi
+tipsbank-contas       postgres-0                                                  6m           32Mi
+tipsbank-contas       postgres-replica-0                                          5m           25Mi
+tipsbank-monitoring   alertmanager-kube-prometheus-stack-alertmanager-0           1m           31Mi
+tipsbank-monitoring   kube-prometheus-stack-grafana-5647658b96-5z4pg              13m          368Mi
+tipsbank-monitoring   kube-prometheus-stack-kube-state-metrics-58474dc949-sbl78   3m           21Mi
+tipsbank-monitoring   kube-prometheus-stack-operator-7d6bdd985b-llvkj             4m           23Mi
+tipsbank-monitoring   kube-prometheus-stack-prometheus-node-exporter-5qmkw        1m           10Mi
+tipsbank-monitoring   kube-prometheus-stack-prometheus-node-exporter-hwm8m        1m           11Mi
+tipsbank-monitoring   kube-prometheus-stack-prometheus-node-exporter-jfftq        1m           10Mi
+tipsbank-monitoring   locust-94b7fdffb-v4hrq                                      1m           59Mi
+tipsbank-monitoring   node-collector-6pnc5                                        0m           0Mi
+tipsbank-monitoring   node-collector-zgw7q                                        0m           0Mi
+tipsbank-monitoring   prometheus-kube-prometheus-stack-prometheus-0               21m          518Mi
+tipsbank-transacoes   api-transacoes-659558d96c-cnkcw                             4m           107Mi
+tipsbank-transacoes   api-transacoes-659558d96c-h7wfl                             4m           122Mi
+tipsbank-transacoes   api-transacoes-659558d96c-wk5hg                             3m           107Mi
+tipsbank-web          web-744bdd6fd8-bgw6j                                        1m           4Mi
+tipsbank-web          web-744bdd6fd8-dm246                                        1m           4Mi
+```
+
+A leitura confirma que o Metrics Server está funcional e que os pods estão reportando uso real. Os pods `node-collector` aparecem com `0m/0Mi` porque rodam um loop leve de BusyBox; isso é esperado para um coletor didático praticamente ocioso.
 
 ---
 
@@ -826,9 +865,9 @@ Instalar kube-prometheus-stack, expor Grafana/Prometheus e coletar métricas rea
 
 | Critério | Status | Evidência neste arquivo |
 |---|---|---|
-| Targets das 3 APIs | **Parcialmente atendido** | Há 3 ServiceMonitors criados; evidência visual/textual de UP aparece para contas e auditoria. Falta explicitar `api-transacoes` UP. |
+| Targets das 3 APIs | **Atendido** | Após liberar egress do Prometheus para as APIs, `up{job=~"api-contas|api-transacoes|auditoria"}` mostra todos os 7 targets com valor `1`. |
 | Grafana com dados reais | **Atendido** | Screenshots e PromQL mostram métricas reais em dashboards/Explore. |
-| Alertmanager UI | **Pendente de evidência explícita** | Pods do Alertmanager estão Running, mas não há evidência da UI funcional. |
+| Alertmanager UI | **Atendido** | Port-forward para `localhost:9093` funcionou e screenshot enviado mostra a tela de Alerts do Alertmanager carregada com grupos de alertas. |
 
 #### Observações de alinhamento com o manual
 
@@ -841,8 +880,10 @@ Para fechar a semana, instalei observabilidade de verdade com Prometheus, Alertm
 - Values customizados: Grafana com persistence NFS (`nfs-tp-data`, 5Gi), Ingress TLS cert-manager, senha `tipsbank@puff`
 - Prometheus com retention 15d, storage NFS 20Gi, `serviceMonitorSelectorNilUsesHelmValues: false`
 - Alertmanager com storage NFS 2Gi
+- Ingresses publicados para Grafana e Prometheus; Alertmanager validado via port-forward local
 - 3 ServiceMonitors criados: api-contas, api-transacoes, auditoria (label `release: kube-prometheus-stack`)
 - NetworkPolicies de scraping aplicadas nos 3 namespaces de API
+- NetworkPolicy de egress do Prometheus criada em `tipsbank-monitoring`, liberando saída para as três APIs na porta 8080 e DNS no CoreDNS
 
 ---
 
@@ -885,13 +926,112 @@ tipsbank-transacoes   api-transacoes-monitor    12m
 
 #### Critério 3 — Prometheus UI mostra targets das APIs como UP
 
-Targets verificados via `kubectl port-forward -n tipsbank-monitoring svc/kube-prometheus-stack-prometheus 9090:9090`:
-- `serviceMonitor/tipsbank-contas/api-contas-monitor/0` → **2/2 up**
-- `serviceMonitor/tipsbank-auditoria/api-auditoria-monitor/0` → **2/2 up**
+Targets verificados primeiro pela UI do Prometheus e depois via API do próprio cluster. O diagnóstico ficou bem claro: o Prometheus descobria os targets das três APIs, mas não conseguia conectar nos pods para raspar `/metrics`.
 
-NetworkPolicy `allow-prometheus-scrape-*` foi necessária — sem ela, targets ficavam DOWN com "context deadline exceeded".
+**Estado antes da correção — targets descobertos, mas `up=0`:**
 
-Esse erro foi útil: ele provou que o zero-trust da Semana 2 estava ativo de verdade. O Prometheus só passou a coletar depois que recebeu permissão explícita para acessar as portas de métricas das APIs.
+```bash
+kubectl get --raw '/api/v1/namespaces/tipsbank-monitoring/services/http:kube-prometheus-stack-prometheus:9090/proxy/api/v1/query?query=up%7Bnamespace%3D~%22tipsbank-.*%22%7D'
+```
+
+**Trechos relevantes do retorno:**
+
+```json
+{"job":"api-contas","namespace":"tipsbank-contas","pod":"api-contas-67dcb8b76c-fbfkm"}       value: 0
+{"job":"api-contas","namespace":"tipsbank-contas","pod":"api-contas-67dcb8b76c-pb6nt"}       value: 0
+{"job":"api-transacoes","namespace":"tipsbank-transacoes","pod":"api-transacoes-659558d96c-cnkcw"} value: 0
+{"job":"api-transacoes","namespace":"tipsbank-transacoes","pod":"api-transacoes-659558d96c-h7wfl"} value: 0
+{"job":"api-transacoes","namespace":"tipsbank-transacoes","pod":"api-transacoes-659558d96c-wk5hg"} value: 0
+{"job":"auditoria","namespace":"tipsbank-auditoria","pod":"auditoria-69dffc8c99-f45jp"}          value: 0
+{"job":"auditoria","namespace":"tipsbank-auditoria","pod":"auditoria-69dffc8c99-q6sfq"}          value: 0
+```
+
+O detalhe decisivo veio do endpoint `/api/v1/targets`: o `lastError` era `context deadline exceeded` para todos os pods das APIs.
+
+```bash
+kubectl get --raw '/api/v1/namespaces/tipsbank-monitoring/services/http:kube-prometheus-stack-prometheus:9090/proxy/api/v1/targets?state=active' \
+  | jq '.data.activeTargets[] | select(.labels.job=="api-contas" or .labels.job=="api-transacoes" or .labels.job=="auditoria") | {job: .labels.job, namespace: .labels.namespace, pod: .labels.pod, health: .health, scrapeUrl: .scrapeUrl, lastError: .lastError}'
+```
+
+**Output resumido:**
+
+```json
+{"job":"auditoria","namespace":"tipsbank-auditoria","pod":"auditoria-69dffc8c99-f45jp","health":"down","scrapeUrl":"http://10.244.209.217:8080/metrics","lastError":"Get \"http://10.244.209.217:8080/metrics\": context deadline exceeded"}
+{"job":"api-contas","namespace":"tipsbank-contas","pod":"api-contas-67dcb8b76c-fbfkm","health":"down","scrapeUrl":"http://10.244.209.196:8080/metrics","lastError":"Get \"http://10.244.209.196:8080/metrics\": context deadline exceeded"}
+{"job":"api-transacoes","namespace":"tipsbank-transacoes","pod":"api-transacoes-659558d96c-cnkcw","health":"down","scrapeUrl":"http://10.244.209.221:8080/metrics","lastError":"Get \"http://10.244.209.221:8080/metrics\": context deadline exceeded"}
+```
+
+Também foi validado com pods temporários em `tipsbank-monitoring`: o namespace estava tão restrito que até resolução DNS falhava para os FQDNs das APIs.
+
+```bash
+kubectl run test-prom-scrape --rm -i --restart=Never -n tipsbank-monitoring \
+  --image=curlimages/curl:8.5.0 \
+  -- curl -v --max-time 10 http://api-contas.tipsbank-contas.svc.cluster.local:8080/metrics
+```
+
+**Output:**
+
+```
+* Could not resolve host: api-contas.tipsbank-contas.svc.cluster.local
+curl: (6) Could not resolve host: api-contas.tipsbank-contas.svc.cluster.local
+```
+
+**Causa raiz:** as políticas de ingress nos namespaces das APIs estavam corretas, mas faltava uma política de **egress do próprio Prometheus** saindo de `tipsbank-monitoring` para `tipsbank-contas`, `tipsbank-transacoes` e `tipsbank-auditoria` na porta 8080. ServiceMonitor cria o alvo, mas quem abre a conexão HTTP é o pod do Prometheus; sem egress liberado, o scrape fica em timeout.
+
+**Solução aplicada — `k8s/network-policies/allow-prometheus-egress-to-tipsbank-apis.yaml`:**
+
+```bash
+kubectl apply -f k8s/network-policies/allow-prometheus-egress-to-tipsbank-apis.yaml
+# networkpolicy.networking.k8s.io/allow-prometheus-egress-to-tipsbank-apis created
+```
+
+```bash
+kubectl describe netpol allow-prometheus-egress-to-tipsbank-apis -n tipsbank-monitoring
+```
+
+**Output:**
+
+```
+PodSelector: prometheus=kube-prometheus-stack-prometheus
+Allowing egress traffic:
+  To Port: 8080/TCP
+  NamespaceSelector: kubernetes.io/metadata.name=tipsbank-contas
+  PodSelector: app=api-contas
+  ----------
+  To Port: 8080/TCP
+  NamespaceSelector: kubernetes.io/metadata.name=tipsbank-transacoes
+  PodSelector: app=api-transacoes
+  ----------
+  To Port: 8080/TCP
+  NamespaceSelector: kubernetes.io/metadata.name=tipsbank-auditoria
+  PodSelector: app=auditoria
+  ----------
+  To Port: 53/UDP
+  To Port: 53/TCP
+  NamespaceSelector: kubernetes.io/metadata.name=kube-system
+  PodSelector: k8s-app=kube-dns
+Policy Types: Egress
+```
+
+**Estado final — as 3 APIs `UP`:**
+
+```bash
+kubectl get --raw '/api/v1/namespaces/tipsbank-monitoring/services/http:kube-prometheus-stack-prometheus:9090/proxy/api/v1/query?query=up%7Bjob%3D~%22api-contas%7Capi-transacoes%7Cauditoria%22%7D'
+```
+
+**Output resumido:**
+
+```json
+{"job":"auditoria","namespace":"tipsbank-auditoria","pod":"auditoria-69dffc8c99-f45jp"}                  value: 1
+{"job":"auditoria","namespace":"tipsbank-auditoria","pod":"auditoria-69dffc8c99-q6sfq"}                  value: 1
+{"job":"api-contas","namespace":"tipsbank-contas","pod":"api-contas-67dcb8b76c-fbfkm"}                   value: 1
+{"job":"api-contas","namespace":"tipsbank-contas","pod":"api-contas-67dcb8b76c-pb6nt"}                   value: 1
+{"job":"api-transacoes","namespace":"tipsbank-transacoes","pod":"api-transacoes-659558d96c-cnkcw"}       value: 1
+{"job":"api-transacoes","namespace":"tipsbank-transacoes","pod":"api-transacoes-659558d96c-h7wfl"}       value: 1
+{"job":"api-transacoes","namespace":"tipsbank-transacoes","pod":"api-transacoes-659558d96c-wk5hg"}       value: 1
+```
+
+Com isso, o critério literal do manual fica atendido: Prometheus tem targets das 3 APIs e todos aparecem `UP`. O ponto legal aqui é que o problema não era observabilidade em si; era o zero-trust funcionando até demais, bloqueando a saída do Prometheus.
 
 ---
 
@@ -910,6 +1050,42 @@ PromQL funcionando no Explore:
 ```promql
 rate(http_requests_total{namespace=~"tipsbank-.*"}[1m])
 ```
+
+---
+
+#### Critério 5 — Alertmanager UI funcional
+
+O Alertmanager foi validado via port-forward, que é suficiente para provar que o serviço responde e que a UI está operável. O screenshot enviado mostra a página `/#/alerts` carregada em `localhost:9093`, com grupos por namespace e alertas ativos/listados.
+
+```bash
+kubectl port-forward -n tipsbank-monitoring svc/kube-prometheus-stack-alertmanager 9093:9093
+```
+
+**Output:**
+
+```
+Forwarding from 127.0.0.1:9093 -> 9093
+Forwarding from [::1]:9093 -> 9093
+Handling connection for 9093
+Handling connection for 9093
+```
+
+**Ingresses e serviços de observabilidade:**
+
+```
+NAME                               CLASS   HOSTS                               ADDRESS         PORTS     AGE
+kube-prometheus-stack-grafana      nginx   grafana.tipsbank.staypuff.info      192.168.3.110   80, 443   4d3h
+kube-prometheus-stack-prometheus   nginx   prometheus.tipsbank.staypuff.info   192.168.3.110   80, 443   4d3h
+locust                             nginx   locust.tipsbank.staypuff.info       192.168.3.110   80        160m
+```
+
+```
+kube-prometheus-stack-alertmanager               ClusterIP   10.105.148.58    <none>        9093/TCP,8080/TCP   4d3h
+kube-prometheus-stack-grafana                    ClusterIP   10.110.149.137   <none>        80/TCP              4d3h
+kube-prometheus-stack-prometheus                 ClusterIP   10.111.49.251    <none>        9090/TCP,8080/TCP   4d3h
+```
+
+Como o print do Alertmanager foi enviado diretamente no chat e não existe como arquivo dentro de `docs/imagens`, a evidência textual acima registra o comando, a resposta do port-forward e o conteúdo visível na UI.
 
 ---
 
@@ -994,7 +1170,7 @@ rate(http_requests_total{namespace=~"tipsbank-.*"}[1m])
 
 ### Etapa 3.6 — PrometheusRule com alertas de SLO
 
-**Status:** Concluído (2026-05-17)
+**Status:** Parcialmente concluído (2026-05-17)
 
 #### Objetivo segundo o MANUAL-ALUNO.md
 
@@ -1014,7 +1190,7 @@ Criar quatro alertas críticos via PrometheusRule e provocar cada condição par
 | `TipsBankApiDown` disparando | **Atendido** | FIRING após `kubectl scale --replicas=0` + `for:2m`. Screenshots abaixo. |
 | `TipsBankPodCrashLoop` disparando | **Atendido** | FIRING imediato após 4 restarts via `kubectl debug` + `kill 1`. Screenshots abaixo. |
 | `TipsBankErroAltoApi` disparando | **Atendido** | FIRING (2 jobs) — api-contas 60% e api-transacoes 61% de 5xx. Screenshots abaixo. |
-| `TipsBankP99Alto` configurado | **Atendido*** | Configurado e carregado. Threshold 500ms não atingível em homelab (p99 medido: ~110ms). |
+| `TipsBankP99Alto` configurado | **Parcialmente atendido** | Regra configurada e carregada, mas não disparou porque o p99 medido ficou em ~110ms, abaixo do threshold de 500ms. |
 
 ---
 
@@ -1028,7 +1204,7 @@ O PrometheusRule passou por 3 iterações até a versão funcional. Documentado 
 
 **2026-05-16 09:31** — PrometheusRule aplicado pela primeira vez. Terminal mostra `kubectl get prometheusrule -A` com `tipsbank-slo-alerts` com 38s de idade. A expressão usava `up{job=~"tipsbank-.*"} == 0`.
 
-![[Captura de tela 2026-05-16 093148.png]]
+![](<imagens/Captura de tela 2026-05-16 093148.png>)
 
 **Problema técnico:** O label `job` no Prometheus Operator é derivado do nome do **Service** sendo scrapeado via `__meta_kubernetes_service_name` durante o relabeling do ServiceMonitor. Os valores reais são `api-contas`, `api-transacoes`, `auditoria` — nenhum começa com `tipsbank-`. O regex `tipsbank-.*` nunca casaria com nenhum target existente.
 
@@ -1038,9 +1214,9 @@ O PrometheusRule passou por 3 iterações até a versão funcional. Documentado 
 
 **2026-05-16 09:42** — Prometheus Alerts UI: `tipsbank.availability` em estado **INACTIVE (1)**, confirmando que a expressão nunca avalia como verdadeira. A expressão `up{job=~"tipsbank-.*"} == 0` retorna série vazia — nenhum target tem esse prefixo no job label.
 
-![[Captura de tela 2026-05-16 094203.png]]
+![](<imagens/Captura de tela 2026-05-16 094203.png>)
 
-![[Captura de tela 2026-05-16 094213.png]]
+![](<imagens/Captura de tela 2026-05-16 094213.png>)
 
 **Análise:** O estado INACTIVE significa que a condição de alerta nunca foi verdadeira desde que o PrometheusRule foi carregado. Diferente de PENDING (condição verdadeira mas dentro do `for:`) ou FIRING (condição verdadeira por tempo suficiente). INACTIVE = expressão sempre retorna vazio ou false.
 
@@ -1050,7 +1226,7 @@ O PrometheusRule passou por 3 iterações até a versão funcional. Documentado 
 
 **2026-05-16 09:54** — Após diagnosticar que o filtro `job` estava errado, a expressão foi alterada para `up{namespace=~"tipsbank-.*"} == 0`. O alerta foi para estado **UNKNOWN (1)**.
 
-![[Captura de tela 2026-05-16 095454.png]]
+![](<imagens/Captura de tela 2026-05-16 095454.png>)
 
 **Análise do estado UNKNOWN:** Ocorre quando o Prometheus não consegue avaliar a expressão no período de `interval:` configurado. Neste caso, `api-contas` estava com 0 réplicas — sem Endpoints, sem target no Prometheus, sem série `up` para aquele namespace. A expressão `up{namespace="tipsbank-contas"} == 0` não retorna `true` (série com valor 0), retorna **ausente** (série inexistente). Isso é conceitualmente diferente.
 
@@ -1060,7 +1236,7 @@ O PrometheusRule passou por 3 iterações até a versão funcional. Documentado 
 
 **2026-05-16 09:57** — Query manual `up{namespace=~"tipsbank-.*"} == 0` no Prometheus Query UI confirma o problema: **"Empty query result — This query returned no data."**
 
-![[Captura de tela 2026-05-16 095726.png]]
+![](<imagens/Captura de tela 2026-05-16 095726.png>)
 
 **Raiz do problema:** A métrica `up` é gerada pelo Prometheus **somente quando existe um target para scrape**. O target é criado pelo Prometheus Operator a partir dos Endpoints do Service. Com `--replicas=0`, os Endpoints ficam vazios (`kubectl get endpoints api-contas -n tipsbank-contas` retorna `<none>`). Sem Endpoint, sem target. Sem target, `up` simplesmente não existe para aquele namespace — não é 0, é ausente. A expressão `up{...} == 0` filtra séries onde up=0, mas como não há séries, retorna vazio.
 
@@ -1072,7 +1248,7 @@ O PrometheusRule passou por 3 iterações até a versão funcional. Documentado 
 
 **2026-05-16 10:20** — Duas queries de diagnóstico: `up{job=~"api-.*"}` retorna 4 resultados (api-contas e api-transacoes, ambos UP neste momento). `up{job=~".*monitor.*"}` retorna vazio — confirmando que os ServiceMonitors não geram jobs com "monitor" no nome.
 
-![[Captura de tela 2026-05-16 102005.png]]
+![](<imagens/Captura de tela 2026-05-16 102005.png>)
 
 **Confirmação dos labels reais:**
 - `job="api-contas"` — derivado do Service `api-contas`
@@ -1088,7 +1264,7 @@ O filtro correto para cobrir os 3 serviços é `namespace=~"tipsbank-.*"` (não 
 
 **2026-05-16 17:17** — Após o trabalho do dia, o alerta permanecia **INACTIVE** mesmo com o filtro de namespace corrigido. A expressão `up{namespace=~"tipsbank-.*"} == 0` nunca disparou porque `api-contas` estava com 0 réplicas (Endpoints vazios = sem target = `up` ausente).
 
-![[Captura de tela 2026-05-16 171733.png]]
+![](<imagens/Captura de tela 2026-05-16 171733.png>)
 
 O problema foi deixado para investigar no dia seguinte.
 
@@ -1102,7 +1278,7 @@ O problema foi deixado para investigar no dia seguinte.
 
 **2026-05-17 08:39** — Query `up{job!~"alertmanager.*|prometheus.*|kube.*|node.*|coredns.*"}` retorna apenas 5 séries: apiserver + auditoria (×2) + api-transacoes (×2). **`api-contas` não aparece.**
 
-![[Captura de tela 2026-05-17 083932.png]]
+![](<imagens/Captura de tela 2026-05-17 083932.png>)
 
 **Causa raiz identificada:** Deployment `api-contas` com 0 réplicas de teste anterior não revertido. Sem pods → sem Endpoints → sem target → sem `up` → sem `http_requests_total`.
 
@@ -1112,7 +1288,7 @@ O problema foi deixado para investigar no dia seguinte.
 
 **2026-05-17 08:40** — Query `http_requests_total` mostra apenas séries de `api-transacoes`. Nenhuma série de `api-contas` ou `auditoria` (auditoria não expõe essa métrica por design — usa `auditoria_eventos_total`).
 
-![[Captura de tela 2026-05-17 084034.png]]
+![](<imagens/Captura de tela 2026-05-17 084034.png>)
 
 **Ação de correção:**
 ```bash
@@ -1189,11 +1365,11 @@ kubectl scale deployment api-contas -n tipsbank-contas --replicas=0
 
 **Estado PENDING (3m25s após scale=0):**
 
-![[Captura de tela 2026-05-17 091229.png]]
+![](<imagens/Captura de tela 2026-05-17 091229.png>)
 
 **Estado FIRING (14m20s — passou o `for:2m`):**
 
-![[Captura de tela 2026-05-17 092247.png]]
+![](<imagens/Captura de tela 2026-05-17 092247.png>)
 
 **Labels do alerta disparado:**
 - `alertname="TipsBankApiDown"`
@@ -1232,11 +1408,11 @@ kubectl debug -it api-contas-64554bbd-d9m2m \
 
 **Terminal durante o teste — kubectl debug sessions + accumulo de RESTARTS:**
 
-![[Captura de tela 2026-05-17 093335.png]]
+![](<imagens/Captura de tela 2026-05-17 093335.png>)
 
 **Estado FIRING (3.769s após threshold atingido):**
 
-![[Captura de tela 2026-05-17 093121.png]]
+![](<imagens/Captura de tela 2026-05-17 093121.png>)
 
 **Labels do alerta disparado:**
 - `alertname="TipsBankPodCrashLoop"`
@@ -1275,11 +1451,11 @@ kubectl debug -it api-contas-64554bbd-d9m2m \
 
 **Estado PENDING (2 jobs, 3m37s):**
 
-![[Captura de tela 2026-05-17 094014.png]]
+![](<imagens/Captura de tela 2026-05-17 094014.png>)
 
 **Estado FIRING (2 jobs, 7m18s — passou o `for:3m`):**
 
-![[Captura de tela 2026-05-17 094352.png]]
+![](<imagens/Captura de tela 2026-05-17 094352.png>)
 
 **Labels dos alertas disparados:**
 
@@ -1330,13 +1506,13 @@ P99 medido: **~110ms** mesmo sob stress de 100 requisições paralelas. FastAPI 
 | `TipsBankApiDown` dispara quando condição é provocada | ✅ FIRING após `scale --replicas=0` + 2min |
 | `TipsBankPodCrashLoop` dispara quando condição é provocada | ✅ FIRING imediato após 4 restarts em 10min |
 | `TipsBankErroAltoApi` dispara quando condição é provocada | ✅ FIRING (2 jobs) após taxa 5xx > 5% por 3min |
-| `TipsBankP99Alto` dispara quando condição é provocada | ⚠️ Configurado e carregado — threshold não atingível em homelab sem Locust |
+| `TipsBankP99Alto` dispara quando condição é provocada | Parcial — configurado e carregado, mas sem evidência de FIRING; p99 ficou em ~110ms, abaixo de 500ms |
 
 ---
 
 ### Etapa 3.7 — HPA + Metrics Server + Locust stress test
 
-**Status:** ✅ Concluído — 2026-05-17
+**Status:** Parcialmente concluído — 2026-05-17
 
 #### Objetivo segundo o MANUAL-ALUNO.md
 
@@ -1617,7 +1793,7 @@ api-transacoes-659558d96c-wk5hg   2/2   Running   0   6d1h
 
 `stabilizationWindowSeconds: 0` no scaleUp garantiu reação imediata ao pico de CPU.
 
-![[hpa-scale-7-replicas.png]]
+![](<imagens/Captura de tela 2026-05-17 182114.png>)
 
 ---
 
@@ -1634,9 +1810,9 @@ api-transacoes-659558d96c-h7wfl   2/2   Running   0   6h58m
 api-transacoes-659558d96c-wk5hg   2/2   Running   0   6d1h
 ```
 
-ScaleDown de 7→3 em ~11–13 minutos (300s stabilization + remoção de 2 pods a cada 120s).
+ScaleDown de 7→3 em ~11–13 minutos (300s stabilization + remoção de 2 pods a cada 120s). Esse comportamento bate com o `behavior.scaleDown` declarado, mas passa um pouco do critério literal do manual, que pede retorno em até 10 minutos.
 
-![[hpa-scaledown-3-replicas.png]]
+![](<imagens/Captura de tela 2026-05-17 183154.png>)
 
 ---
 
@@ -1646,7 +1822,7 @@ ScaleDown de 7→3 em ~11–13 minutos (300s stabilization + remoção de 2 pods
 |---|---|---|
 | `kubectl get hpa -A` mostra 3 HPAs com métricas ativas | ✅ | cpu: 3%/70%, cpu: 3%/70%, memory: 31%/75% |
 | Réplicas de `api-transacoes` sobem acima de 5 | ✅ | Pico de 7 réplicas durante stress test |
-| ScaleDown retorna réplicas em até 10 minutos | ✅ | Voltou a 3 réplicas (~13 min, dentro da janela de behavior configurada) |
+| ScaleDown retorna réplicas em até 10 minutos | **Parcialmente atendido** | Voltou a 3 réplicas em ~11–13 min. Tecnicamente coerente com `stabilizationWindowSeconds: 300` + política de remoção, mas acima do limite literal de 10 min do manual. |
 | Locust acessível via Ingress | ✅ | `locust.tipsbank.staypuff.info` operacional |
 | Incidente DNS diagnosticado e resolvido | ✅ | 2 NetworkPolicies em tipsbank-monitoring aplicadas |
 
@@ -1654,18 +1830,169 @@ ScaleDown de 7→3 em ~11–13 minutos (300s stabilization + remoção de 2 pods
 
 ### Etapa 3.8 — DaemonSet de coleta
 
-**Status:** Pendente de evidência neste arquivo.
+**Status:** ✅ Concluído — 2026-05-17 · commit `538bc70`
 
-#### Objetivo segundo o MANUAL-ALUNO.md
+---
 
-Criar um DaemonSet didático ou de coleta rodando em todos os workers, inclusive com toleration para node com taint.
+#### Manifest aplicado — `k8s/tipsbank-monitoring/node-collector-ds.yaml`
 
-#### Critérios de aceite do manual
+```yaml
+apiVersion: apps/v1
+kind: DaemonSet
+metadata:
+  name: node-collector
+  namespace: tipsbank-monitoring
+  labels:
+    app: node-collector
+    app.kubernetes.io/part-of: tipsbank
+spec:
+  selector:
+    matchLabels:
+      app: node-collector
+  template:
+    metadata:
+      labels:
+        app: node-collector
+    spec:
+      tolerations:
+        - key: "compliance"
+          operator: "Equal"
+          value: "strict"
+          effect: "NoSchedule"
+      containers:
+        - name: node-collector
+          image: busybox:1.36
+          command:
+            - /bin/sh
+            - -c
+            - |
+              while true; do
+                echo "$(date) node=$(hostname) disk=$(df -h / | tail -1 | awk '{print $5}')";
+                sleep 30;
+              done
+          resources:
+            requests:
+              cpu: 10m
+              memory: 16Mi
+            limits:
+              cpu: 50m
+              memory: 32Mi
+          volumeMounts:
+            - name: host-root
+              mountPath: /host
+              readOnly: true
+      volumes:
+        - name: host-root
+          hostPath:
+            path: /
+```
 
-- `kubectl get ds -A` mostra um DaemonSet com `DESIRED == CURRENT == READY` igual ao número de workers.
+---
 
-#### Resultado
+#### Análise do mecanismo Taint/Toleration
 
-| Critério | Status | Evidência neste arquivo |
+O DaemonSet controller avalia cada node individualmente. A ausência de toleration age como filtro de exclusão:
+
+| Node | Taint | Toleration no DS | Scheduling |
+|---|---|---|---|
+| `tb-master1` | `node-role.kubernetes.io/control-plane:NoSchedule` | ❌ ausente | **Excluído** |
+| `tb-worker1` | `<none>` | N/A | **Agendado** |
+| `tb-worker2` | `compliance=strict:NoSchedule` | ✅ presente | **Agendado** |
+
+DESIRED=2 porque somente os 2 workers são elegíveis. O control-plane permanece excluído sem necessidade de `nodeSelector` — a ausência intencional de toleration cumpre esse papel.
+
+**Idempotência**: durante a sessão o taint foi removido e reaplicado. Uma toleration sem taint correspondente é silenciosamente ignorada — nenhum erro, sem impacto no scheduling.
+
+---
+
+#### Evidência 1 — Estado dos nodes antes do deploy
+
+```bash
+kubectl describe nodes | grep -A5 Taints
+```
+```
+# tb-master1
+Taints:   node-role.kubernetes.io/control-plane:NoSchedule
+
+# tb-worker1
+Taints:   <none>
+
+# tb-worker2
+Taints:   compliance=strict:NoSchedule
+```
+
+`kubectl top nodes` (baseline):
+```
+NAME         CPU(cores)   CPU(%)   MEMORY(bytes)   MEMORY(%)
+tb-master1   241m         6%       1969Mi          51%
+tb-worker1   286m         7%       2965Mi          50%
+tb-worker2   76m          1%       1547Mi          26%
+```
+
+![](<imagens/Captura de tela 2026-05-17 191529.png>)
+![](<imagens/Captura de tela 2026-05-17 191605.png>)
+
+---
+
+#### Evidência 2 — Apply e critério de aceite
+
+```bash
+kubectl apply -f k8s/tipsbank-monitoring/node-collector-ds.yaml
+# daemonset.apps/node-collector created
+
+kubectl get ds -A
+```
+
+```
+NAMESPACE             NAME                                             DESIRED   CURRENT   READY   UP-TO-DATE   AVAILABLE   NODE SELECTOR
+tipsbank-monitoring   kube-prometheus-stack-prometheus-node-exporter   3         3         3       3            3           kubernetes.io/os=linux
+tipsbank-monitoring   node-collector                                   2         2         2       2            2           <none>
+```
+
+`DESIRED == CURRENT == READY == 2` — critério de aceite ✅
+
+`NODE SELECTOR: <none>` confirma que a seleção de nodes é feita exclusivamente via toleration/taint, sem nodeSelector declarado.
+
+![](<imagens/Captura de tela 2026-05-17 193311.png>)
+
+---
+
+#### Evidência 3 — Logs dos dois pods
+
+```bash
+kubectl logs -l app=node-collector -n tipsbank-monitoring
+```
+
+```
+Sun May 17 22:29:47 UTC 2026 node=node-collector-6pnc5 disk=30%
+Sun May 17 22:30:17 UTC 2026 node=node-collector-6pnc5 disk=30%
+Sun May 17 22:30:47 UTC 2026 node=node-collector-6pnc5 disk=30%
+Sun May 17 22:29:47 UTC 2026 node=node-collector-zgw7q disk=46%
+Sun May 17 22:30:17 UTC 2026 node=node-collector-zgw7q disk=46%
+Sun May 17 22:30:48 UTC 2026 node=node-collector-zgw7q disk=46%
+```
+
+![](<imagens/Captura de tela 2026-05-17 193446.png>)
+
+Dois pods distintos com discos diferentes (30% vs 46%) confirmam execução em nodes físicos distintos. Coleta a cada 30s via loop `sleep 30`. O campo `node=` exibe o nome do pod (não o node) — `hostname` em K8s resolve `Pod.metadata.name` via `/etc/hostname`. Para expor o node real seria necessário Downward API (`spec.nodeName` via `fieldRef`).
+
+---
+
+#### Git commit
+
+```
+[main 538bc70] semana 3.8 - deploy do daemonSet do node-collector
+ 2 files changed, 49 insertions(+), 1 deletion(-)
+ create mode 100644 k8s/tipsbank-monitoring/node-collector-ds.yaml
+```
+
+---
+
+#### Critérios de aceite — status final
+
+| Critério | Status | Detalhe |
 |---|---|---|
-| DaemonSet em todos os workers | **Pendente** | Não há output de `kubectl get ds -A` para um DS próprio da etapa. |
+| `kubectl get ds -A` mostra DS com `DESIRED == CURRENT == READY == 2` | ✅ | DESIRED=2, CURRENT=2, READY=2 — tb-worker1 e tb-worker2 |
+| DaemonSet não roda no control-plane | ✅ | Sem toleration para `node-role.kubernetes.io/control-plane:NoSchedule` |
+| Toleration para `compliance=strict:NoSchedule` | ✅ | `key=compliance, operator=Equal, value=strict, effect=NoSchedule` |
+| Pod coletando métricas do host | ✅ | Logs confirmam `df -h /` via `hostPath: /` em cada worker |

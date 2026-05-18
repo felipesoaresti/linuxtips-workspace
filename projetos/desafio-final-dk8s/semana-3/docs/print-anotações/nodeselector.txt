@@ -1,0 +1,180 @@
+❯ k get nodes
+NAME         STATUS   ROLES           AGE   VERSION
+tb-master1   Ready    control-plane   21d   v1.35.4
+tb-worker1   Ready    worker          21d   v1.35.4
+tb-worker2   Ready    worker          21d   v1.35.4
+❯ k get nodes -owide
+NAME         STATUS   ROLES           AGE   VERSION   INTERNAL-IP    EXTERNAL-IP   OS-IMAGE             KERNEL-VERSION      CONTAINER-RUNTIME
+tb-master1   Ready    control-plane   21d   v1.35.4   192.168.3.40   <none>        Ubuntu 24.04.4 LTS   6.8.0-111-generic   containerd://2.2.1
+tb-worker1   Ready    worker          21d   v1.35.4   192.168.3.41   <none>        Ubuntu 24.04.4 LTS   6.8.0-111-generic   containerd://2.2.1
+tb-worker2   Ready    worker          21d   v1.35.4   192.168.3.42   <none>        Ubuntu 24.04.4 LTS   6.8.0-111-generic   containerd://2.2.1
+❯ k get nodes -owide -A | egrep tipsbank
+❯ k get nodes -owide -A | egrep tipsbank*
+zsh: no matches found: tipsbank*
+❯ k get nodes -owide -A | grep tipsbank*
+zsh: no matches found: tipsbank*
+❯ k get pods -owide -A | grep tipsbank*
+zsh: no matches found: tipsbank*
+❯ k get pods -owide -A | grep tipsbank
+tipsbank-auditoria    auditoria-69dffc8c99-f45jp                                  1/1     Running   0            6d2h    10.244.209.217   tb-worker1   <none>           <none>
+tipsbank-auditoria    auditoria-69dffc8c99-q6sfq                                  1/1     Running   0            6d2h    10.244.209.218   tb-worker1   <none>           <none>
+tipsbank-contas       api-contas-67dcb8b76c-fbfkm                                 1/1     Running   0            9h      10.244.209.196   tb-worker1   <none>           <none>
+tipsbank-contas       api-contas-67dcb8b76c-pb6nt                                 1/1     Running   0            9h      10.244.209.201   tb-worker1   <none>           <none>
+tipsbank-contas       postgres-0                                                  1/1     Running   0            9h      10.244.247.5     tb-worker2   <none>           <none>
+tipsbank-contas       postgres-replica-0                                          1/1     Running   0            7d11h   10.244.209.214   tb-worker1   <none>           <none>
+tipsbank-monitoring   alertmanager-kube-prometheus-stack-alertmanager-0           2/2     Running   0            4d2h    10.244.209.222   tb-worker1   <none>           <none>
+tipsbank-monitoring   kube-prometheus-stack-grafana-5647658b96-5z4pg              3/3     Running   0            4d2h    10.244.209.210   tb-worker1   <none>           <none>
+tipsbank-monitoring   kube-prometheus-stack-kube-state-metrics-58474dc949-sbl78   1/1     Running   0            4d2h    10.244.209.208   tb-worker1   <none>           <none>
+tipsbank-monitoring   kube-prometheus-stack-operator-7d6bdd985b-llvkj             1/1     Running   0            4d2h    10.244.209.234   tb-worker1   <none>           <none>
+tipsbank-monitoring   kube-prometheus-stack-prometheus-node-exporter-5qmkw        1/1     Running   0            4d2h    192.168.3.40     tb-master1   <none>           <none>
+tipsbank-monitoring   kube-prometheus-stack-prometheus-node-exporter-hwm8m        1/1     Running   0            4d2h    192.168.3.41     tb-worker1   <none>           <none>
+tipsbank-monitoring   kube-prometheus-stack-prometheus-node-exporter-jfftq        1/1     Running   0            4d2h    192.168.3.42     tb-worker2   <none>           <none>
+tipsbank-monitoring   locust-94b7fdffb-v4hrq                                      1/1     Running   0            81m     10.244.209.233   tb-worker1   <none>           <none>
+tipsbank-monitoring   prometheus-kube-prometheus-stack-prometheus-0               2/2     Running   0            4d2h    10.244.209.236   tb-worker1   <none>           <none>
+tipsbank-transacoes   api-transacoes-659558d96c-cnkcw                             2/2     Running   0            6d2h    10.244.209.221   tb-worker1   <none>           <none>
+tipsbank-transacoes   api-transacoes-659558d96c-h7wfl                             2/2     Running   0            7h39m   10.244.209.206   tb-worker1   <none>           <none>
+tipsbank-transacoes   api-transacoes-659558d96c-wk5hg                             2/2     Running   0            6d2h    10.244.209.225   tb-worker1   <none>           <none>
+tipsbank-web          web-744bdd6fd8-bgw6j                                        1/1     Running   0            6d2h    10.244.209.231   tb-worker1   <none>           <none>
+tipsbank-web          web-744bdd6fd8-dm246                                        1/1     Running   0            6d2h    10.244.209.227   tb-worker1   <none>           <none>
+❯ k top nodes
+NAME         CPU(cores)   CPU(%)   MEMORY(bytes)   MEMORY(%)   
+tb-master1   241m         6%       1969Mi          51%         
+tb-worker1   286m         7%       2965Mi          50%         
+tb-worker2   76m          1%       1547Mi          26%         
+
+    /mnt/c/Users/felip/Documents/Projetos/tipsbank  on   main ▓▒░                                                                                      
+
+    /mnt/c/Users/felip/Documents/Projetos/tipsbank  on   main ▓▒░                                                                  ░▒▓ at 19:15:52  
+❯ 
+❯ kubectl describe nodes | grep -A5 Taints
+Taints:             node-role.kubernetes.io/control-plane:NoSchedule
+Unschedulable:      false
+Lease:
+  HolderIdentity:  tb-master1
+  AcquireTime:     <unset>
+  RenewTime:       Sun, 17 May 2026 19:18:42 -0300
+--
+Taints:             <none>
+Unschedulable:      false
+Lease:
+  HolderIdentity:  tb-worker1
+  AcquireTime:     <unset>
+  RenewTime:       Sun, 17 May 2026 19:18:41 -0300
+--
+Taints:             compliance=strict:NoSchedule
+Unschedulable:      false
+Lease:
+  HolderIdentity:  tb-worker2
+  AcquireTime:     <unset>
+  RenewTime:       Sun, 17 May 2026 19:18:43 -0300
+❯ kubectl get ds -A
+NAMESPACE             NAME                                             DESIRED   CURRENT   READY   UP-TO-DATE   AVAILABLE   NODE SELECTOR            AGE
+calico-system         calico-node                                      3         3         3       3            3           kubernetes.io/os=linux   21d
+calico-system         csi-node-driver                                  3         3         3       3            3           kubernetes.io/os=linux   21d
+kube-system           csi-nfs-node                                     3         3         3       3            3           kubernetes.io/os=linux   20d
+kube-system           kube-proxy                                       3         3         3       3            3           kubernetes.io/os=linux   21d
+metallb-system        metallb-speaker                                  2         2         2       2            2           kubernetes.io/os=linux   17d
+tipsbank-monitoring   kube-prometheus-stack-prometheus-node-exporter   3         3         3       3            3           kubernetes.io/os=linux   4d2h
+❯ kubectl taint nodes tb-worker2 compliance=strict:NoSchedule-
+node/tb-worker2 untainted
+❯ k get pods -owide -A | grep tipsbank
+tipsbank-auditoria    auditoria-69dffc8c99-f45jp                                  1/1     Running   0            6d2h    10.244.209.217   tb-worker1   <none>           <none>
+tipsbank-auditoria    auditoria-69dffc8c99-q6sfq                                  1/1     Running   0            6d2h    10.244.209.218   tb-worker1   <none>           <none>
+tipsbank-contas       api-contas-67dcb8b76c-fbfkm                                 1/1     Running   0            9h      10.244.209.196   tb-worker1   <none>           <none>
+tipsbank-contas       api-contas-67dcb8b76c-pb6nt                                 1/1     Running   0            9h      10.244.209.201   tb-worker1   <none>           <none>
+tipsbank-contas       postgres-0                                                  1/1     Running   0            9h      10.244.247.5     tb-worker2   <none>           <none>
+tipsbank-contas       postgres-replica-0                                          1/1     Running   0            7d11h   10.244.209.214   tb-worker1   <none>           <none>
+tipsbank-monitoring   alertmanager-kube-prometheus-stack-alertmanager-0           2/2     Running   0            4d2h    10.244.209.222   tb-worker1   <none>           <none>
+tipsbank-monitoring   kube-prometheus-stack-grafana-5647658b96-5z4pg              3/3     Running   0            4d2h    10.244.209.210   tb-worker1   <none>           <none>
+tipsbank-monitoring   kube-prometheus-stack-kube-state-metrics-58474dc949-sbl78   1/1     Running   0            4d2h    10.244.209.208   tb-worker1   <none>           <none>
+tipsbank-monitoring   kube-prometheus-stack-operator-7d6bdd985b-llvkj             1/1     Running   0            4d2h    10.244.209.234   tb-worker1   <none>           <none>
+tipsbank-monitoring   kube-prometheus-stack-prometheus-node-exporter-5qmkw        1/1     Running   0            4d2h    192.168.3.40     tb-master1   <none>           <none>
+tipsbank-monitoring   kube-prometheus-stack-prometheus-node-exporter-hwm8m        1/1     Running   0            4d2h    192.168.3.41     tb-worker1   <none>           <none>
+tipsbank-monitoring   kube-prometheus-stack-prometheus-node-exporter-jfftq        1/1     Running   0            4d2h    192.168.3.42     tb-worker2   <none>           <none>
+tipsbank-monitoring   locust-94b7fdffb-v4hrq                                      1/1     Running   0            86m     10.244.209.233   tb-worker1   <none>           <none>
+tipsbank-monitoring   prometheus-kube-prometheus-stack-prometheus-0               2/2     Running   0            4d2h    10.244.209.236   tb-worker1   <none>           <none>
+tipsbank-transacoes   api-transacoes-659558d96c-cnkcw                             2/2     Running   0            6d2h    10.244.209.221   tb-worker1   <none>           <none>
+tipsbank-transacoes   api-transacoes-659558d96c-h7wfl                             2/2     Running   0            7h45m   10.244.209.206   tb-worker1   <none>           <none>
+tipsbank-transacoes   api-transacoes-659558d96c-wk5hg                             2/2     Running   0            6d2h    10.244.209.225   tb-worker1   <none>           <none>
+tipsbank-web          web-744bdd6fd8-bgw6j                                        1/1     Running   0            6d2h    10.244.209.231   tb-worker1   <none>           <none>
+tipsbank-web          web-744bdd6fd8-dm246                                        1/1     Running   0            6d2h    10.244.209.227   tb-worker1   <none>           <none>
+❯ kubectl describe nodes | grep -A5 Taints
+Taints:             node-role.kubernetes.io/control-plane:NoSchedule
+Unschedulable:      false
+Lease:
+  HolderIdentity:  tb-master1
+  AcquireTime:     <unset>
+  RenewTime:       Sun, 17 May 2026 19:21:15 -0300
+--
+Taints:             <none>
+Unschedulable:      false
+Lease:
+  HolderIdentity:  tb-worker1
+  AcquireTime:     <unset>
+  RenewTime:       Sun, 17 May 2026 19:21:14 -0300
+--
+Taints:             <none>
+Unschedulable:      false
+Lease:
+  HolderIdentity:  tb-worker2
+  AcquireTime:     <unset>
+  RenewTime:       Sun, 17 May 2026 19:21:16 -0300
+❯ k get pods -owide -A | grep tipsbank
+tipsbank-auditoria    auditoria-69dffc8c99-f45jp                                  1/1     Running   0            6d2h    10.244.209.217   tb-worker1   <none>           <none>
+tipsbank-auditoria    auditoria-69dffc8c99-q6sfq                                  1/1     Running   0            6d2h    10.244.209.218   tb-worker1   <none>           <none>
+tipsbank-contas       api-contas-67dcb8b76c-fbfkm                                 1/1     Running   0            9h      10.244.209.196   tb-worker1   <none>           <none>
+tipsbank-contas       api-contas-67dcb8b76c-pb6nt                                 1/1     Running   0            9h      10.244.209.201   tb-worker1   <none>           <none>
+tipsbank-contas       postgres-0                                                  1/1     Running   0            9h      10.244.247.5     tb-worker2   <none>           <none>
+tipsbank-contas       postgres-replica-0                                          1/1     Running   0            7d11h   10.244.209.214   tb-worker1   <none>           <none>
+tipsbank-monitoring   alertmanager-kube-prometheus-stack-alertmanager-0           2/2     Running   0            4d2h    10.244.209.222   tb-worker1   <none>           <none>
+tipsbank-monitoring   kube-prometheus-stack-grafana-5647658b96-5z4pg              3/3     Running   0            4d2h    10.244.209.210   tb-worker1   <none>           <none>
+tipsbank-monitoring   kube-prometheus-stack-kube-state-metrics-58474dc949-sbl78   1/1     Running   0            4d2h    10.244.209.208   tb-worker1   <none>           <none>
+tipsbank-monitoring   kube-prometheus-stack-operator-7d6bdd985b-llvkj             1/1     Running   0            4d2h    10.244.209.234   tb-worker1   <none>           <none>
+tipsbank-monitoring   kube-prometheus-stack-prometheus-node-exporter-5qmkw        1/1     Running   0            4d2h    192.168.3.40     tb-master1   <none>           <none>
+tipsbank-monitoring   kube-prometheus-stack-prometheus-node-exporter-hwm8m        1/1     Running   0            4d2h    192.168.3.41     tb-worker1   <none>           <none>
+tipsbank-monitoring   kube-prometheus-stack-prometheus-node-exporter-jfftq        1/1     Running   0            4d2h    192.168.3.42     tb-worker2   <none>           <none>
+tipsbank-monitoring   locust-94b7fdffb-v4hrq                                      1/1     Running   0            87m     10.244.209.233   tb-worker1   <none>           <none>
+tipsbank-monitoring   prometheus-kube-prometheus-stack-prometheus-0               2/2     Running   0            4d2h    10.244.209.236   tb-worker1   <none>           <none>
+tipsbank-transacoes   api-transacoes-659558d96c-cnkcw                             2/2     Running   0            6d2h    10.244.209.221   tb-worker1   <none>           <none>
+tipsbank-transacoes   api-transacoes-659558d96c-h7wfl                             2/2     Running   0            7h46m   10.244.209.206   tb-worker1   <none>           <none>
+tipsbank-transacoes   api-transacoes-659558d96c-wk5hg                             2/2     Running   0            6d2h    10.244.209.225   tb-worker1   <none>           <none>
+tipsbank-web          web-744bdd6fd8-bgw6j                                        1/1     Running   0            6d2h    10.244.209.231   tb-worker1   <none>           <none>
+tipsbank-web          web-744bdd6fd8-dm246                                        1/1     Running   0            6d2h    10.244.209.227   tb-worker1   <none>           <none>
+
+    /mnt/c/Users/felip/Documents/Projetos/tipsbank  on   main ▓▒░                                                                                      
+
+    /mnt/c/Users/felip/Documents/Projetos/tipsbank  on   main ▓▒░                                                                                      
+❯ kubectl taint nodes tb-worker2 compliance=strict:NoSchedule
+node/tb-worker2 tainted
+❯ git add . && git commit -m "semana 3.8 - deploy do daemonSet do node-collector"
+Found existing alias for "git add". You should use: "ga"
+[main 538bc70] semana 3.8 - deploy do daemonSet do node-collector
+ 2 files changed, 49 insertions(+), 1 deletion(-)
+ create mode 100644 k8s/tipsbank-monitoring/node-collector-ds.yaml
+❯ kubectl apply -f k8s/tipsbank-monitoring/node-collector-ds.yaml
+daemonset.apps/node-collector created
+❯ kubectl get ds -A
+NAMESPACE             NAME                                             DESIRED   CURRENT   READY   UP-TO-DATE   AVAILABLE   NODE SELECTOR            AGE
+calico-system         calico-node                                      3         3         3       3            3           kubernetes.io/os=linux   21d
+calico-system         csi-node-driver                                  3         3         3       3            3           kubernetes.io/os=linux   21d
+kube-system           csi-nfs-node                                     3         3         3       3            3           kubernetes.io/os=linux   20d
+kube-system           kube-proxy                                       3         3         3       3            3           kubernetes.io/os=linux   21d
+metallb-system        metallb-speaker                                  3         3         3       3            3           kubernetes.io/os=linux   17d
+tipsbank-monitoring   kube-prometheus-stack-prometheus-node-exporter   3         3         3       3            3           kubernetes.io/os=linux   4d2h
+tipsbank-monitoring   node-collector                                   2         2         2       2            2           <none>                   16s
+❯ kubectl get ds -A
+NAMESPACE             NAME                                             DESIRED   CURRENT   READY   UP-TO-DATE   AVAILABLE   NODE SELECTOR            AGE
+calico-system         calico-node                                      3         3         3       3            3           kubernetes.io/os=linux   21d
+calico-system         csi-node-driver                                  3         3         3       3            3           kubernetes.io/os=linux   21d
+kube-system           csi-nfs-node                                     3         3         3       3            3           kubernetes.io/os=linux   20d
+kube-system           kube-proxy                                       3         3         3       3            3           kubernetes.io/os=linux   21d
+metallb-system        metallb-speaker                                  3         3         3       3            3           kubernetes.io/os=linux   17d
+tipsbank-monitoring   kube-prometheus-stack-prometheus-node-exporter   3         3         3       3            3           kubernetes.io/os=linux   4d2h
+tipsbank-monitoring   node-collector                                   2         2         2       2            2           <none>                   37s
+❯ kubectl logs -l app=node-collector -n tipsbank-monitoring
+Sun May 17 22:29:47 UTC 2026 node=node-collector-6pnc5 disk=30%
+Sun May 17 22:30:17 UTC 2026 node=node-collector-6pnc5 disk=30%
+Sun May 17 22:30:47 UTC 2026 node=node-collector-6pnc5 disk=30%
+Sun May 17 22:29:47 UTC 2026 node=node-collector-zgw7q disk=46%
+Sun May 17 22:30:17 UTC 2026 node=node-collector-zgw7q disk=46%
+Sun May 17 22:30:48 UTC 2026 node=node-collector-zgw7q disk=46%
