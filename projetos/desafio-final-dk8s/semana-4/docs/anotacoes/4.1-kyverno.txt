@@ -2234,3 +2234,67 @@ Events:   <none>
 
     /mnt/c/Users/felip/Documents/Projetos/tipsbank  on   main ⇡9 ▓▒░                                                               ░▒▓ at 18:02:36  
 ❯ 
+k get policyreport -n tipsbank-contas
+NAME                                   KIND          NAME                          PASS   FAIL   WARN   ERROR   SKIP   AGE
+18addcdb-4927-4ddd-8936-0bcd4a718447   Deployment    api-contas                    4      0      0      0       0      7h49m
+238fc93a-2c92-4ec4-b112-90efa6741797   ReplicaSet    api-contas-64554bbd           3      0      0      0       0      7h49m
+494ea847-c531-45e4-9c58-5752708f81bf   Pod           postgres-replica-0            3      0      0      0       0      7h49m
+591c8f32-acd0-4e71-aa57-3a55896df8bd   Pod           api-contas-67dcb8b76c-fbfkm   3      0      0      0       0      7h49m
+5f533c4a-403c-4c6e-8450-c87c791a7f04   ReplicaSet    api-contas-68f86bffcc         3      0      0      0       0      7h49m
+6576d691-857b-4fbf-8ad1-9bf0b4e1f0f6   ReplicaSet    api-contas-c574fcd6b          3      0      0      0       0      7h49m
+69bb76ea-0b05-4794-abde-a43169e1618e   Pod           postgres-0                    3      0      0      0       0      7h49m
+6de9388f-874c-4ea3-9d96-fcac679d6e0f   ReplicaSet    api-contas-6f58f96b9f         3      0      0      0       0      7h49m
+90e38008-2df4-4f0c-9e02-9dd64c81ae45   Pod           api-contas-67dcb8b76c-pb6nt   3      0      0      0       0      7h49m
+9ea6922e-c774-47c2-8e2f-9828be267289   ReplicaSet    api-contas-65d86d5dc7         3      0      0      0       0      7h49m
+9f183207-5241-4844-8249-65efe5be2fa2   StatefulSet   postgres-replica              4      0      0      0       0      7h49m
+9f705a18-24c0-4981-9601-85cafeafa382   ReplicaSet    api-contas-5958f4d65          3      0      0      0       0      7h49m
+a3c97984-3c6a-43ce-813c-edc39507bdbd   ReplicaSet    api-contas-594c4dbd5b         3      0      0      0       0      7h49m
+a7081e56-97d7-44f8-81d7-067c9feed53c   ReplicaSet    api-contas-67dcb8b76c         3      0      0      0       0      7h49m
+abcc2f25-db91-49a8-86d9-df0d257687eb   ReplicaSet    api-contas-d4b9fd5fc          3      0      0      0       0      7h49m
+b6e1cef1-3e6d-4ddd-bff7-3890d5d7c6f8   ReplicaSet    api-contas-856f59f7d6         3      0      0      0       0      7h49m
+c3882251-a0ef-4caf-9918-4b32efa87016   StatefulSet   postgres                      4      0      0      0       0      7h49m
+c69d4da7-f89a-4cc9-b32e-cc019477295b   ReplicaSet    api-contas-6c4cbcc8b9         3      0      0      0       0      7h49m
+❯ k get policyreport -n tipsbank-transacoes
+NAME                                   KIND         NAME                              PASS   FAIL   WARN   ERROR   SKIP   AGE
+0e891829-60be-46cd-bb94-eab27ba01ec7   ReplicaSet   api-transacoes-5cb7cc9b8b         3      0      0      0       0      7h49m
+5462e565-1e21-4494-8824-c544ced323cb   ReplicaSet   api-transacoes-f96d7c44d          3      0      0      0       0      7h49m
+54beadd3-1348-49eb-aa09-eb27c0d4692a   Deployment   api-transacoes                    4      0      0      0       0      7h49m
+57b53c87-dbe8-43b8-a379-c08de48f4103   ReplicaSet   api-transacoes-659558d96c         3      0      0      0       0      7h49m
+90ac9b2d-30f4-4752-a6e1-1ebddcae8d6d   Pod          api-transacoes-659558d96c-h7wfl   3      0      0      0       0      7h49m
+910c5ef1-5459-456c-a2bb-9ed7b8cbd57a   Pod          api-transacoes-659558d96c-ktvwr   3      0      0      0       0      7h47m
+a04b7add-3ae3-4e94-8c71-aff386b71a63   ReplicaSet   api-transacoes-68d8f9fb4b         3      0      0      0       0      7h49m
+a13728c1-7c77-4966-8a41-256f072fc7c7   ReplicaSet   api-transacoes-d56bff9bc          3      0      0      0       0      7h49m
+e9205fec-3dc3-4662-991c-faaf6eeb8dec   Pod          api-transacoes-659558d96c-tdhnl   3      0      0      0       0      138m
+f0a926a2-907f-4786-9256-3de1ba8566c3   ReplicaSet   api-transacoes-f76f7c5c8          3      0      0      0       0      7h49m
+❯ k get policyreport -n tipsbank-auditoria
+NAME                                   KIND         NAME                         PASS   FAIL   WARN   ERROR   SKIP   AGE
+21c23924-6f3a-4e4c-a6ae-e764fef0d475   Pod          auditoria-69dffc8c99-f45jp   3      0      0      0       0      7h49m
+3575ff41-30ef-467f-9e66-b4a176ca472e   ReplicaSet   auditoria-b5bc479fb          3      0      0      0       0      7h49m
+3916e86c-f090-48d3-830d-e4792115aba8   ReplicaSet   auditoria-659555485f         3      0      0      0       0      7h49m
+3985ee2a-4dd0-498b-a79e-ce2be31a435e   ReplicaSet   auditoria-6cb497b8c5         3      0      0      0       0      7h49m
+4f6f1510-88d6-42c6-97b8-9817d528c201   ReplicaSet   auditoria-7fd5c4f477         3      0      0      0       0      7h49m
+539a3381-3e51-4608-ac9c-6c4ec03c2c7e   ReplicaSet   auditoria-fb47ff566          3      0      0      0       0      7h49m
+63180ea3-62d3-407c-9f33-bee9352e2a38   ReplicaSet   auditoria-8657559b7f         3      0      0      0       0      7h49m
+65e9bdb0-30f0-494a-ba6f-679437c8c3b4   Deployment   auditoria                    4      0      0      0       0      7h49m
+66e5022e-10e7-47ad-8399-94ebec5dd395   ReplicaSet   auditoria-86d479b57b         3      0      0      0       0      7h49m
+8956b432-e255-49ed-9ab9-b901a05d8edf   ReplicaSet   auditoria-69dffc8c99         3      0      0      0       0      7h49m
+93abcaaf-638b-4e3f-8f70-dfad71f4436f   ReplicaSet   auditoria-6c859b8d87         3      0      0      0       0      7h49m
+cdd4345a-9403-4515-be60-d7c167517079   ReplicaSet   auditoria-767479b94f         3      0      0      0       0      7h49m
+ec19ea15-83f1-46fd-b44f-d58b1468c3ba   Pod          auditoria-69dffc8c99-q6sfq   3      0      0      0       0      7h49m
+f5ee4166-cfa7-4cc5-8639-0872916ae428   ReplicaSet   auditoria-845b4664d          3      0      0      0       0      7h49m
+❯ k get policyreport -n tipsbank-web
+NAME                                   KIND         NAME                   PASS   FAIL   WARN   ERROR   SKIP   AGE
+16821df3-8fa5-4066-8d13-3d6dafdf6646   ReplicaSet   web-674cdbcdb9         3      0      0      0       0      7h50m
+17245ec8-7acf-4b0c-b4c2-26710976720b   Pod          web-744bdd6fd8-bgw6j   3      0      0      0       0      7h50m
+2dc4ffb4-554c-4432-9253-bb6a8970875e   ReplicaSet   web-744bdd6fd8         3      0      0      0       0      7h50m
+34b4e549-12a8-4b77-871b-4fa2588aee50   ReplicaSet   web-6bc8b8c546         3      0      0      0       0      7h50m
+51498666-17fe-41e9-bd01-12d4ccf229e9   ReplicaSet   web-757cf45b8c         3      0      0      0       0      7h50m
+62d64a56-80f4-4f21-a487-56292ec27447   ReplicaSet   web-7df6cdd49f         3      0      0      0       0      7h50m
+93dbbe7d-edd2-477a-9cf2-8a511db9da33   ReplicaSet   web-bdc86b8fc          3      0      0      0       0      7h50m
+994930ad-4793-4129-9343-d754526fadf6   ReplicaSet   web-75dff7dfc6         3      0      0      0       0      7h50m
+a7676b73-1397-4f4b-aec0-91acc7f3770e   ReplicaSet   web-544946b4d9         3      0      0      0       0      7h50m
+ca48ac98-ea5f-49e6-a8df-542554a676cf   Pod          web-744bdd6fd8-dm246   3      0      0      0       0      7h50m
+dbec34bc-3045-462a-aa7b-9200eff13aef   ReplicaSet   web-b94f466b5          3      0      0      0       0      7h50m
+ec5c23f1-b566-4a2b-9fa4-bcd4f6fb30e8   Deployment   web                    4      0      0      0       0      7h50m
+efc3e929-d9f9-4a72-a9e2-d1200fa9348a   ReplicaSet   web-5bbb54df69         3      0      0      0       0      7h50m
+f32f6b16-2e8c-4e0a-ba26-9dcbeb3b06e9   ReplicaSet   web-769c8c8fd5         3      0      0      0       0      7h50m
