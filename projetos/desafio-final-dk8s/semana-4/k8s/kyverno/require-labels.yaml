@@ -20,6 +20,11 @@ spec:
                 - Deployment
                 - StatefulSet
                 - DaemonSet
+              namespaces:
+                - tipsbank-contas
+                - tipsbank-transacoes
+                - tipsbank-auditoria
+                - tipsbank-web
       validate:
         message: "Labels obrigatórios ausentes. Todo workload deve ter: app, team e env"
         pattern:

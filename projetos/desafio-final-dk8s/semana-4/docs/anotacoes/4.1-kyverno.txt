@@ -1,0 +1,2236 @@
+[main 5aeb559] semana 4.1 - disallow-root-user - v2
+ 2 files changed, 35 insertions(+), 1 deletion(-)
+ create mode 100644 k8s/kyverno/disallow-root-user.yaml
+❯ k apply -f k8s/kyverno/disallow-root-user.yaml
+Warning: Validation failure actions enforce/audit are deprecated, use Enforce/Audit instead.
+clusterpolicy.kyverno.io/disallow-root-user created
+❯ k apply -f k8s/kyverno/disallow-root-user.yaml
+clusterpolicy.kyverno.io/disallow-root-user configured
+❯ k get pod -A | grep tipsbank
+tipsbank-auditoria    auditoria-69dffc8c99-f45jp                                  1/1     Running   0            6d19h
+tipsbank-auditoria    auditoria-69dffc8c99-q6sfq                                  1/1     Running   0            6d19h
+tipsbank-contas       api-contas-67dcb8b76c-fbfkm                                 1/1     Running   0            26h
+tipsbank-contas       api-contas-67dcb8b76c-pb6nt                                 1/1     Running   0            26h
+tipsbank-contas       postgres-0                                                  1/1     Running   0            26h
+tipsbank-contas       postgres-replica-0                                          1/1     Running   0            8d
+tipsbank-monitoring   alertmanager-kube-prometheus-stack-alertmanager-0           2/2     Running   0            4d19h
+tipsbank-monitoring   kube-prometheus-stack-grafana-5647658b96-5z4pg              3/3     Running   0            4d19h
+tipsbank-monitoring   kube-prometheus-stack-kube-state-metrics-58474dc949-sbl78   1/1     Running   0            4d19h
+tipsbank-monitoring   kube-prometheus-stack-operator-7d6bdd985b-llvkj             1/1     Running   0            4d19h
+tipsbank-monitoring   kube-prometheus-stack-prometheus-node-exporter-5qmkw        1/1     Running   0            4d19h
+tipsbank-monitoring   kube-prometheus-stack-prometheus-node-exporter-hwm8m        1/1     Running   0            4d19h
+tipsbank-monitoring   kube-prometheus-stack-prometheus-node-exporter-jfftq        1/1     Running   0            4d19h
+tipsbank-monitoring   locust-94b7fdffb-v4hrq                                      1/1     Running   0            18h
+tipsbank-monitoring   node-collector-6pnc5                                        1/1     Running   0            17h
+tipsbank-monitoring   node-collector-zgw7q                                        1/1     Running   0            17h
+tipsbank-monitoring   prometheus-kube-prometheus-stack-prometheus-0               2/2     Running   0            4d19h
+tipsbank-transacoes   api-transacoes-659558d96c-cnkcw                             2/2     Running   0            6d19h
+tipsbank-transacoes   api-transacoes-659558d96c-h7wfl                             2/2     Running   0            24h
+tipsbank-transacoes   api-transacoes-659558d96c-wk5hg                             2/2     Running   0            6d19h
+tipsbank-web          web-744bdd6fd8-bgw6j                                        1/1     Running   0            6d19h
+tipsbank-web          web-744bdd6fd8-dm246                                        1/1     Running   0            6d19h
+❯ k scale deployment -n tipsbank-transacoes api-transacoes --replicas=2
+deployment.apps/api-transacoes scaled
+❯ k get pod -A | grep tipsbank
+tipsbank-auditoria    auditoria-69dffc8c99-f45jp                                  1/1     Running       0            6d19h
+tipsbank-auditoria    auditoria-69dffc8c99-q6sfq                                  1/1     Running       0            6d19h
+tipsbank-contas       api-contas-67dcb8b76c-fbfkm                                 1/1     Running       0            26h
+tipsbank-contas       api-contas-67dcb8b76c-pb6nt                                 1/1     Running       0            26h
+tipsbank-contas       postgres-0                                                  1/1     Running       0            26h
+tipsbank-contas       postgres-replica-0                                          1/1     Running       0            8d
+tipsbank-monitoring   alertmanager-kube-prometheus-stack-alertmanager-0           2/2     Running       0            4d19h
+tipsbank-monitoring   kube-prometheus-stack-grafana-5647658b96-5z4pg              3/3     Running       0            4d19h
+tipsbank-monitoring   kube-prometheus-stack-kube-state-metrics-58474dc949-sbl78   1/1     Running       0            4d19h
+tipsbank-monitoring   kube-prometheus-stack-operator-7d6bdd985b-llvkj             1/1     Running       0            4d19h
+tipsbank-monitoring   kube-prometheus-stack-prometheus-node-exporter-5qmkw        1/1     Running       0            4d19h
+tipsbank-monitoring   kube-prometheus-stack-prometheus-node-exporter-hwm8m        1/1     Running       0            4d19h
+tipsbank-monitoring   kube-prometheus-stack-prometheus-node-exporter-jfftq        1/1     Running       0            4d19h
+tipsbank-monitoring   locust-94b7fdffb-v4hrq                                      1/1     Running       0            18h
+tipsbank-monitoring   node-collector-6pnc5                                        1/1     Running       0            17h
+tipsbank-monitoring   node-collector-zgw7q                                        1/1     Running       0            17h
+tipsbank-monitoring   prometheus-kube-prometheus-stack-prometheus-0               2/2     Running       0            4d19h
+tipsbank-transacoes   api-transacoes-659558d96c-cnkcw                             2/2     Terminating   0            6d19h
+tipsbank-transacoes   api-transacoes-659558d96c-h7wfl                             2/2     Running       0            24h
+tipsbank-transacoes   api-transacoes-659558d96c-wk5hg                             2/2     Running       0            6d19h
+tipsbank-web          web-744bdd6fd8-bgw6j                                        1/1     Running       0            6d19h
+tipsbank-web          web-744bdd6fd8-dm246                                        1/1     Running       0            6d19h
+❯ k get pod -A | grep tipsbank
+tipsbank-auditoria    auditoria-69dffc8c99-f45jp                                  1/1     Running       0            6d19h
+tipsbank-auditoria    auditoria-69dffc8c99-q6sfq                                  1/1     Running       0            6d19h
+tipsbank-contas       api-contas-67dcb8b76c-fbfkm                                 1/1     Running       0            26h
+tipsbank-contas       api-contas-67dcb8b76c-pb6nt                                 1/1     Running       0            26h
+tipsbank-contas       postgres-0                                                  1/1     Running       0            26h
+tipsbank-contas       postgres-replica-0                                          1/1     Running       0            8d
+tipsbank-monitoring   alertmanager-kube-prometheus-stack-alertmanager-0           2/2     Running       0            4d19h
+tipsbank-monitoring   kube-prometheus-stack-grafana-5647658b96-5z4pg              3/3     Running       0            4d19h
+tipsbank-monitoring   kube-prometheus-stack-kube-state-metrics-58474dc949-sbl78   1/1     Running       0            4d19h
+tipsbank-monitoring   kube-prometheus-stack-operator-7d6bdd985b-llvkj             1/1     Running       0            4d19h
+tipsbank-monitoring   kube-prometheus-stack-prometheus-node-exporter-5qmkw        1/1     Running       0            4d19h
+tipsbank-monitoring   kube-prometheus-stack-prometheus-node-exporter-hwm8m        1/1     Running       0            4d19h
+tipsbank-monitoring   kube-prometheus-stack-prometheus-node-exporter-jfftq        1/1     Running       0            4d19h
+tipsbank-monitoring   locust-94b7fdffb-v4hrq                                      1/1     Running       0            18h
+tipsbank-monitoring   node-collector-6pnc5                                        1/1     Running       0            17h
+tipsbank-monitoring   node-collector-zgw7q                                        1/1     Running       0            17h
+tipsbank-monitoring   prometheus-kube-prometheus-stack-prometheus-0               2/2     Running       0            4d19h
+tipsbank-transacoes   api-transacoes-659558d96c-cnkcw                             2/2     Terminating   0            6d19h
+tipsbank-transacoes   api-transacoes-659558d96c-h7wfl                             2/2     Running       0            24h
+tipsbank-transacoes   api-transacoes-659558d96c-ktvwr                             0/2     Init:0/2      0            2s
+tipsbank-transacoes   api-transacoes-659558d96c-wk5hg                             2/2     Running       0            6d19h
+tipsbank-web          web-744bdd6fd8-bgw6j                                        1/1     Running       0            6d19h
+tipsbank-web          web-744bdd6fd8-dm246                                        1/1     Running       0            6d19h
+❯ k get pod -A | grep tipsbank
+tipsbank-auditoria    auditoria-69dffc8c99-f45jp                                  1/1     Running           0            6d19h
+tipsbank-auditoria    auditoria-69dffc8c99-q6sfq                                  1/1     Running           0            6d19h
+tipsbank-contas       api-contas-67dcb8b76c-fbfkm                                 1/1     Running           0            26h
+tipsbank-contas       api-contas-67dcb8b76c-pb6nt                                 1/1     Running           0            26h
+tipsbank-contas       postgres-0                                                  1/1     Running           0            26h
+tipsbank-contas       postgres-replica-0                                          1/1     Running           0            8d
+tipsbank-monitoring   alertmanager-kube-prometheus-stack-alertmanager-0           2/2     Running           0            4d19h
+tipsbank-monitoring   kube-prometheus-stack-grafana-5647658b96-5z4pg              3/3     Running           0            4d19h
+tipsbank-monitoring   kube-prometheus-stack-kube-state-metrics-58474dc949-sbl78   1/1     Running           0            4d19h
+tipsbank-monitoring   kube-prometheus-stack-operator-7d6bdd985b-llvkj             1/1     Running           0            4d19h
+tipsbank-monitoring   kube-prometheus-stack-prometheus-node-exporter-5qmkw        1/1     Running           0            4d19h
+tipsbank-monitoring   kube-prometheus-stack-prometheus-node-exporter-hwm8m        1/1     Running           0            4d19h
+tipsbank-monitoring   kube-prometheus-stack-prometheus-node-exporter-jfftq        1/1     Running           0            4d19h
+tipsbank-monitoring   locust-94b7fdffb-v4hrq                                      1/1     Running           0            18h
+tipsbank-monitoring   node-collector-6pnc5                                        1/1     Running           0            17h
+tipsbank-monitoring   node-collector-zgw7q                                        1/1     Running           0            17h
+tipsbank-monitoring   prometheus-kube-prometheus-stack-prometheus-0               2/2     Running           0            4d19h
+tipsbank-transacoes   api-transacoes-659558d96c-cnkcw                             2/2     Terminating       0            6d19h
+tipsbank-transacoes   api-transacoes-659558d96c-h7wfl                             2/2     Running           0            24h
+tipsbank-transacoes   api-transacoes-659558d96c-ktvwr                             0/2     PodInitializing   0            7s
+tipsbank-transacoes   api-transacoes-659558d96c-wk5hg                             2/2     Running           0            6d19h
+tipsbank-web          web-744bdd6fd8-bgw6j                                        1/1     Running           0            6d19h
+tipsbank-web          web-744bdd6fd8-dm246                                        1/1     Running           0            6d19h
+❯ k get pod -A | grep tipsbank
+tipsbank-auditoria    auditoria-69dffc8c99-f45jp                                  1/1     Running       0            6d19h
+tipsbank-auditoria    auditoria-69dffc8c99-q6sfq                                  1/1     Running       0            6d19h
+tipsbank-contas       api-contas-67dcb8b76c-fbfkm                                 1/1     Running       0            26h
+tipsbank-contas       api-contas-67dcb8b76c-pb6nt                                 1/1     Running       0            26h
+tipsbank-contas       postgres-0                                                  1/1     Running       0            26h
+tipsbank-contas       postgres-replica-0                                          1/1     Running       0            8d
+tipsbank-monitoring   alertmanager-kube-prometheus-stack-alertmanager-0           2/2     Running       0            4d19h
+tipsbank-monitoring   kube-prometheus-stack-grafana-5647658b96-5z4pg              3/3     Running       0            4d19h
+tipsbank-monitoring   kube-prometheus-stack-kube-state-metrics-58474dc949-sbl78   1/1     Running       0            4d19h
+tipsbank-monitoring   kube-prometheus-stack-operator-7d6bdd985b-llvkj             1/1     Running       0            4d19h
+tipsbank-monitoring   kube-prometheus-stack-prometheus-node-exporter-5qmkw        1/1     Running       0            4d19h
+tipsbank-monitoring   kube-prometheus-stack-prometheus-node-exporter-hwm8m        1/1     Running       0            4d19h
+tipsbank-monitoring   kube-prometheus-stack-prometheus-node-exporter-jfftq        1/1     Running       0            4d19h
+tipsbank-monitoring   locust-94b7fdffb-v4hrq                                      1/1     Running       0            18h
+tipsbank-monitoring   node-collector-6pnc5                                        1/1     Running       0            17h
+tipsbank-monitoring   node-collector-zgw7q                                        1/1     Running       0            17h
+tipsbank-monitoring   prometheus-kube-prometheus-stack-prometheus-0               2/2     Running       0            4d19h
+tipsbank-transacoes   api-transacoes-659558d96c-cnkcw                             2/2     Terminating   0            6d19h
+tipsbank-transacoes   api-transacoes-659558d96c-h7wfl                             2/2     Running       0            24h
+tipsbank-transacoes   api-transacoes-659558d96c-ktvwr                             1/2     Running       0            9s
+tipsbank-transacoes   api-transacoes-659558d96c-wk5hg                             2/2     Running       0            6d19h
+tipsbank-web          web-744bdd6fd8-bgw6j                                        1/1     Running       0            6d19h
+tipsbank-web          web-744bdd6fd8-dm246                                        1/1     Running       0            6d19h
+❯ k get pod -A | grep tipsbank
+tipsbank-auditoria    auditoria-69dffc8c99-f45jp                                  1/1     Running       0            6d19h
+tipsbank-auditoria    auditoria-69dffc8c99-q6sfq                                  1/1     Running       0            6d19h
+tipsbank-contas       api-contas-67dcb8b76c-fbfkm                                 1/1     Running       0            26h
+tipsbank-contas       api-contas-67dcb8b76c-pb6nt                                 1/1     Running       0            26h
+tipsbank-contas       postgres-0                                                  1/1     Running       0            26h
+tipsbank-contas       postgres-replica-0                                          1/1     Running       0            8d
+tipsbank-monitoring   alertmanager-kube-prometheus-stack-alertmanager-0           2/2     Running       0            4d19h
+tipsbank-monitoring   kube-prometheus-stack-grafana-5647658b96-5z4pg              3/3     Running       0            4d19h
+tipsbank-monitoring   kube-prometheus-stack-kube-state-metrics-58474dc949-sbl78   1/1     Running       0            4d19h
+tipsbank-monitoring   kube-prometheus-stack-operator-7d6bdd985b-llvkj             1/1     Running       0            4d19h
+tipsbank-monitoring   kube-prometheus-stack-prometheus-node-exporter-5qmkw        1/1     Running       0            4d19h
+tipsbank-monitoring   kube-prometheus-stack-prometheus-node-exporter-hwm8m        1/1     Running       0            4d19h
+tipsbank-monitoring   kube-prometheus-stack-prometheus-node-exporter-jfftq        1/1     Running       0            4d19h
+tipsbank-monitoring   locust-94b7fdffb-v4hrq                                      1/1     Running       0            18h
+tipsbank-monitoring   node-collector-6pnc5                                        1/1     Running       0            17h
+tipsbank-monitoring   node-collector-zgw7q                                        1/1     Running       0            17h
+tipsbank-monitoring   prometheus-kube-prometheus-stack-prometheus-0               2/2     Running       0            4d19h
+tipsbank-transacoes   api-transacoes-659558d96c-cnkcw                             1/2     Terminating   0            6d19h
+tipsbank-transacoes   api-transacoes-659558d96c-h7wfl                             2/2     Running       0            24h
+tipsbank-transacoes   api-transacoes-659558d96c-ktvwr                             1/2     Running       0            13s
+tipsbank-transacoes   api-transacoes-659558d96c-wk5hg                             2/2     Running       0            6d19h
+tipsbank-web          web-744bdd6fd8-bgw6j                                        1/1     Running       0            6d19h
+tipsbank-web          web-744bdd6fd8-dm246                                        1/1     Running       0            6d19h
+❯ k get pod -A | grep tipsbank
+tipsbank-auditoria    auditoria-69dffc8c99-f45jp                                  1/1     Running       0            6d19h
+tipsbank-auditoria    auditoria-69dffc8c99-q6sfq                                  1/1     Running       0            6d19h
+tipsbank-contas       api-contas-67dcb8b76c-fbfkm                                 1/1     Running       0            26h
+tipsbank-contas       api-contas-67dcb8b76c-pb6nt                                 1/1     Running       0            26h
+tipsbank-contas       postgres-0                                                  1/1     Running       0            26h
+tipsbank-contas       postgres-replica-0                                          1/1     Running       0            8d
+tipsbank-monitoring   alertmanager-kube-prometheus-stack-alertmanager-0           2/2     Running       0            4d19h
+tipsbank-monitoring   kube-prometheus-stack-grafana-5647658b96-5z4pg              3/3     Running       0            4d19h
+tipsbank-monitoring   kube-prometheus-stack-kube-state-metrics-58474dc949-sbl78   1/1     Running       0            4d19h
+tipsbank-monitoring   kube-prometheus-stack-operator-7d6bdd985b-llvkj             1/1     Running       0            4d19h
+tipsbank-monitoring   kube-prometheus-stack-prometheus-node-exporter-5qmkw        1/1     Running       0            4d19h
+tipsbank-monitoring   kube-prometheus-stack-prometheus-node-exporter-hwm8m        1/1     Running       0            4d19h
+tipsbank-monitoring   kube-prometheus-stack-prometheus-node-exporter-jfftq        1/1     Running       0            4d19h
+tipsbank-monitoring   locust-94b7fdffb-v4hrq                                      1/1     Running       0            18h
+tipsbank-monitoring   node-collector-6pnc5                                        1/1     Running       0            17h
+tipsbank-monitoring   node-collector-zgw7q                                        1/1     Running       0            17h
+tipsbank-monitoring   prometheus-kube-prometheus-stack-prometheus-0               2/2     Running       0            4d19h
+tipsbank-transacoes   api-transacoes-659558d96c-cnkcw                             1/2     Terminating   0            6d19h
+tipsbank-transacoes   api-transacoes-659558d96c-h7wfl                             2/2     Running       0            24h
+tipsbank-transacoes   api-transacoes-659558d96c-ktvwr                             2/2     Running       0            20s
+tipsbank-transacoes   api-transacoes-659558d96c-wk5hg                             2/2     Running       0            6d19h
+tipsbank-web          web-744bdd6fd8-bgw6j                                        1/1     Running       0            6d19h
+tipsbank-web          web-744bdd6fd8-dm246                                        1/1     Running       0            6d19h
+❯ k get pod -A | grep tipsbank
+tipsbank-auditoria    auditoria-69dffc8c99-f45jp                                  1/1     Running   0            6d19h
+tipsbank-auditoria    auditoria-69dffc8c99-q6sfq                                  1/1     Running   0            6d19h
+tipsbank-contas       api-contas-67dcb8b76c-fbfkm                                 1/1     Running   0            26h
+tipsbank-contas       api-contas-67dcb8b76c-pb6nt                                 1/1     Running   0            26h
+tipsbank-contas       postgres-0                                                  1/1     Running   0            26h
+tipsbank-contas       postgres-replica-0                                          1/1     Running   0            8d
+tipsbank-monitoring   alertmanager-kube-prometheus-stack-alertmanager-0           2/2     Running   0            4d19h
+tipsbank-monitoring   kube-prometheus-stack-grafana-5647658b96-5z4pg              3/3     Running   0            4d19h
+tipsbank-monitoring   kube-prometheus-stack-kube-state-metrics-58474dc949-sbl78   1/1     Running   0            4d19h
+tipsbank-monitoring   kube-prometheus-stack-operator-7d6bdd985b-llvkj             1/1     Running   0            4d19h
+tipsbank-monitoring   kube-prometheus-stack-prometheus-node-exporter-5qmkw        1/1     Running   0            4d19h
+tipsbank-monitoring   kube-prometheus-stack-prometheus-node-exporter-hwm8m        1/1     Running   0            4d19h
+tipsbank-monitoring   kube-prometheus-stack-prometheus-node-exporter-jfftq        1/1     Running   0            4d19h
+tipsbank-monitoring   locust-94b7fdffb-v4hrq                                      1/1     Running   0            18h
+tipsbank-monitoring   node-collector-6pnc5                                        1/1     Running   0            17h
+tipsbank-monitoring   node-collector-zgw7q                                        1/1     Running   0            17h
+tipsbank-monitoring   prometheus-kube-prometheus-stack-prometheus-0               2/2     Running   0            4d19h
+tipsbank-transacoes   api-transacoes-659558d96c-cnkcw                             0/2     Error     0            6d19h
+tipsbank-transacoes   api-transacoes-659558d96c-h7wfl                             2/2     Running   0            24h
+tipsbank-transacoes   api-transacoes-659558d96c-ktvwr                             2/2     Running   0            26s
+tipsbank-transacoes   api-transacoes-659558d96c-wk5hg                             2/2     Running   0            6d19h
+tipsbank-web          web-744bdd6fd8-bgw6j                                        1/1     Running   0            6d19h
+tipsbank-web          web-744bdd6fd8-dm246                                        1/1     Running   0            6d19h
+❯ k get pod -A | grep tipsbank
+tipsbank-auditoria    auditoria-69dffc8c99-f45jp                                  1/1     Running   0            6d19h
+tipsbank-auditoria    auditoria-69dffc8c99-q6sfq                                  1/1     Running   0            6d19h
+tipsbank-contas       api-contas-67dcb8b76c-fbfkm                                 1/1     Running   0            26h
+tipsbank-contas       api-contas-67dcb8b76c-pb6nt                                 1/1     Running   0            26h
+tipsbank-contas       postgres-0                                                  1/1     Running   0            26h
+tipsbank-contas       postgres-replica-0                                          1/1     Running   0            8d
+tipsbank-monitoring   alertmanager-kube-prometheus-stack-alertmanager-0           2/2     Running   0            4d19h
+tipsbank-monitoring   kube-prometheus-stack-grafana-5647658b96-5z4pg              3/3     Running   0            4d19h
+tipsbank-monitoring   kube-prometheus-stack-kube-state-metrics-58474dc949-sbl78   1/1     Running   0            4d19h
+tipsbank-monitoring   kube-prometheus-stack-operator-7d6bdd985b-llvkj             1/1     Running   0            4d19h
+tipsbank-monitoring   kube-prometheus-stack-prometheus-node-exporter-5qmkw        1/1     Running   0            4d19h
+tipsbank-monitoring   kube-prometheus-stack-prometheus-node-exporter-hwm8m        1/1     Running   0            4d19h
+tipsbank-monitoring   kube-prometheus-stack-prometheus-node-exporter-jfftq        1/1     Running   0            4d19h
+tipsbank-monitoring   locust-94b7fdffb-v4hrq                                      1/1     Running   0            18h
+tipsbank-monitoring   node-collector-6pnc5                                        1/1     Running   0            17h
+tipsbank-monitoring   node-collector-zgw7q                                        1/1     Running   0            17h
+tipsbank-monitoring   prometheus-kube-prometheus-stack-prometheus-0               2/2     Running   0            4d19h
+tipsbank-transacoes   api-transacoes-659558d96c-h7wfl                             2/2     Running   0            24h
+tipsbank-transacoes   api-transacoes-659558d96c-ktvwr                             2/2     Running   0            29s
+tipsbank-transacoes   api-transacoes-659558d96c-wk5hg                             2/2     Running   0            6d19h
+tipsbank-web          web-744bdd6fd8-bgw6j                                        1/1     Running   0            6d19h
+tipsbank-web          web-744bdd6fd8-dm246                                        1/1     Running   0            6d19h
+❯ k get clusterpolicies.kyverno.io -A
+NAME                 ADMISSION   BACKGROUND   READY   AGE   MESSAGE
+disallow-root-user   true        true         True    16m   Ready
+❯ git add . && git commit -m "semana 4.1 - disallow-latest-tag - v1 "
+Found existing alias for "git add". You should use: "ga"
+[main c3ac93a] semana 4.1 - disallow-latest-tag - v1
+ 3 files changed, 36 insertions(+), 4 deletions(-)
+ create mode 100644 k8s/kyverno/disallow-latest-tag.yaml
+❯ k apply -f k8s/kyverno/disallow-root-user.yaml
+clusterpolicy.kyverno.io/disallow-root-user configured
+❯ k apply -f k8s/kyverno/disallow-latest-tag.yaml
+clusterpolicy.kyverno.io/disallow-latest-tag created
+❯ k describe cpol disallow-latest-tag | grep "Rule Name"
+❯ k describe cpol disallow-latest-tag | grep "Rule Name"
+❯ k describe cpol disallow-latest-tag
+Name:         disallow-latest-tag
+Namespace:    
+Labels:       <none>
+Annotations:  policies.kyverno.io/category: Security
+              policies.kyverno.io/description: Imagens sem tag ou com tag ':latest' não são permitidas.
+              policies.kyverno.io/severity: High
+              policies.kyverno.io/title: Disallow Latest Tag
+API Version:  kyverno.io/v1
+Kind:         ClusterPolicy
+Metadata:
+  Creation Timestamp:  2026-05-18T20:13:07Z
+  Generation:          1
+  Resource Version:    5396443
+  UID:                 c9d39b05-9b8f-4c2e-a1e8-fe7df93e036c
+Spec:
+  Admission:     true
+  Background:    true
+  Emit Warning:  false
+  Rules:
+    Match:
+      Any:
+        Resources:
+          Kinds:
+            Pod
+    Name:                      require-image-tag
+    Skip Background Requests:  true
+    Validate:
+      Allow Existing Violations:  true
+      Message:                    Imagem sem tag não é permitida.
+      Pattern:
+        Spec:
+          =(initContainers):
+            Image:  *:*
+          Containers:
+            Image:  *:*
+    Match:
+      Any:
+        Resources:
+          Kinds:
+            Pod
+    Name:                      disallow-tag-latest
+    Skip Background Requests:  true
+    Validate:
+      Allow Existing Violations:  true
+      Deny:
+        Conditions:
+          Any:
+            Key:       {{ images.containers.*.tag }}
+            Operator:  AnyIn
+            Value:
+              latest
+            Key:       {{ images.initContainers.*.tag }}
+            Operator:  AnyIn
+            Value:
+              latest
+      Message:                Tag ':latest' não é permitida
+  Validation Failure Action:  Enforce
+Status:
+  Autogen:
+    Rules:
+      Match:
+        Any:
+          Resources:
+            Kinds:
+              apps/v1/DaemonSet
+              apps/v1/Deployment
+              batch/v1/Job
+              apps/v1/ReplicaSet
+              v1/ReplicationController
+              apps/v1/StatefulSet
+        Resources:
+      Name:                      autogen-require-image-tag
+      Skip Background Requests:  true
+      Validate:
+        Allow Existing Violations:  true
+        Message:                    Imagem sem tag não é permitida.
+        Pattern:
+          Spec:
+            Template:
+              Spec:
+                =(initContainers):
+                  Image:  *:*
+                Containers:
+                  Image:  *:*
+      Match:
+        Any:
+          Resources:
+            Kinds:
+              batch/v1/CronJob
+        Resources:
+      Name:                      autogen-cronjob-require-image-tag
+      Skip Background Requests:  true
+      Validate:
+        Allow Existing Violations:  true
+        Message:                    Imagem sem tag não é permitida.
+        Pattern:
+          Spec:
+            Job Template:
+              Spec:
+                Template:
+                  Spec:
+                    =(initContainers):
+                      Image:  *:*
+                    Containers:
+                      Image:  *:*
+      Match:
+        Any:
+          Resources:
+            Kinds:
+              apps/v1/DaemonSet
+              apps/v1/Deployment
+              batch/v1/Job
+              apps/v1/ReplicaSet
+              v1/ReplicationController
+              apps/v1/StatefulSet
+        Resources:
+      Name:                      autogen-disallow-tag-latest
+      Skip Background Requests:  true
+      Validate:
+        Allow Existing Violations:  true
+        Deny:
+          Conditions:
+            Any:
+              Key:       {{ images.containers.*.tag }}
+              Operator:  AnyIn
+              Value:
+                latest
+              Key:       {{ images.initContainers.*.tag }}
+              Operator:  AnyIn
+              Value:
+                latest
+        Message:  Tag ':latest' não é permitida
+      Match:
+        Any:
+          Resources:
+            Kinds:
+              batch/v1/CronJob
+        Resources:
+      Name:                      autogen-cronjob-disallow-tag-latest
+      Skip Background Requests:  true
+      Validate:
+        Allow Existing Violations:  true
+        Deny:
+          Conditions:
+            Any:
+              Key:       {{ images.containers.*.tag }}
+              Operator:  AnyIn
+              Value:
+                latest
+              Key:       {{ images.initContainers.*.tag }}
+              Operator:  AnyIn
+              Value:
+                latest
+        Message:  Tag ':latest' não é permitida
+  Conditions:
+    Last Transition Time:  2026-05-18T20:13:08Z
+    Message:               Ready
+    Reason:                Succeeded
+    Status:                True
+    Type:                  Ready
+  Rulecount:
+    Generate:      0
+    Mutate:        0
+    Validate:      2
+    Verifyimages:  0
+  Validatingadmissionpolicy:
+    Generated:  false
+    Message:    
+Events:
+  Type     Reason           Age   From          Message
+  ----     ------           ----  ----          -------
+  Warning  PolicyViolation  91s   kyverno-scan  Pod default/nginx: [require-image-tag] fail; validation error: Imagem sem tag não é permitida. rule require-image-tag failed at path /spec/containers/0/image/
+  Warning  PolicyViolation  91s   kyverno-scan  Pod default/nginx: [disallow-tag-latest] fail; Tag ':latest' não é permitida
+  ❯  kubectl describe cpol disallow-latest-tag
+Found existing alias for "kubecolor". You should use: "kubectl"
+Name:         disallow-latest-tag
+Namespace:    
+Labels:       <none>
+Annotations:  policies.kyverno.io/category: Security
+              policies.kyverno.io/description: Imagens sem tag ou com tag ':latest' não são permitidas.
+              policies.kyverno.io/severity: High
+              policies.kyverno.io/title: Disallow Latest Tag
+API Version:  kyverno.io/v1
+Kind:         ClusterPolicy
+Metadata:
+  Creation Timestamp:  2026-05-18T20:13:07Z
+  Generation:          1
+  Resource Version:    5396443
+  UID:                 c9d39b05-9b8f-4c2e-a1e8-fe7df93e036c
+Spec:
+  Admission:     true
+  Background:    true
+  Emit Warning:  false
+  Rules:
+    Match:
+      Any:
+        Resources:
+          Kinds:
+            Pod
+    Name:                      require-image-tag
+    Skip Background Requests:  true
+    Validate:
+      Allow Existing Violations:  true
+      Message:                    Imagem sem tag não é permitida.
+      Pattern:
+        Spec:
+          =(initContainers):
+            Image:  *:*
+          Containers:
+            Image:  *:*
+    Match:
+      Any:
+        Resources:
+          Kinds:
+            Pod
+    Name:                      disallow-tag-latest
+    Skip Background Requests:  true
+    Validate:
+      Allow Existing Violations:  true
+      Deny:
+        Conditions:
+          Any:
+            Key:       {{ images.containers.*.tag }}
+            Operator:  AnyIn
+            Value:
+              latest
+            Key:       {{ images.initContainers.*.tag }}
+            Operator:  AnyIn
+            Value:
+              latest
+      Message:                Tag ':latest' não é permitida
+  Validation Failure Action:  Enforce
+Status:
+  Autogen:
+    Rules:
+      Match:
+        Any:
+          Resources:
+            Kinds:
+              apps/v1/DaemonSet
+              apps/v1/Deployment
+              batch/v1/Job
+              apps/v1/ReplicaSet
+              v1/ReplicationController
+              apps/v1/StatefulSet
+        Resources:
+      Name:                      autogen-require-image-tag
+      Skip Background Requests:  true
+      Validate:
+        Allow Existing Violations:  true
+        Message:                    Imagem sem tag não é permitida.
+        Pattern:
+          Spec:
+            Template:
+              Spec:
+                =(initContainers):
+                  Image:  *:*
+                Containers:
+                  Image:  *:*
+      Match:
+        Any:
+          Resources:
+            Kinds:
+              batch/v1/CronJob
+        Resources:
+      Name:                      autogen-cronjob-require-image-tag
+      Skip Background Requests:  true
+      Validate:
+        Allow Existing Violations:  true
+        Message:                    Imagem sem tag não é permitida.
+        Pattern:
+          Spec:
+            Job Template:
+              Spec:
+                Template:
+                  Spec:
+                    =(initContainers):
+                      Image:  *:*
+                    Containers:
+                      Image:  *:*
+      Match:
+        Any:
+          Resources:
+            Kinds:
+              apps/v1/DaemonSet
+              apps/v1/Deployment
+              batch/v1/Job
+              apps/v1/ReplicaSet
+              v1/ReplicationController
+              apps/v1/StatefulSet
+        Resources:
+      Name:                      autogen-disallow-tag-latest
+      Skip Background Requests:  true
+      Validate:
+        Allow Existing Violations:  true
+        Deny:
+          Conditions:
+            Any:
+              Key:       {{ images.containers.*.tag }}
+              Operator:  AnyIn
+              Value:
+                latest
+              Key:       {{ images.initContainers.*.tag }}
+              Operator:  AnyIn
+              Value:
+                latest
+        Message:  Tag ':latest' não é permitida
+      Match:
+        Any:
+          Resources:
+            Kinds:
+              batch/v1/CronJob
+        Resources:
+      Name:                      autogen-cronjob-disallow-tag-latest
+      Skip Background Requests:  true
+      Validate:
+        Allow Existing Violations:  true
+        Deny:
+          Conditions:
+            Any:
+              Key:       {{ images.containers.*.tag }}
+              Operator:  AnyIn
+              Value:
+                latest
+              Key:       {{ images.initContainers.*.tag }}
+              Operator:  AnyIn
+              Value:
+                latest
+        Message:  Tag ':latest' não é permitida
+  Conditions:
+    Last Transition Time:  2026-05-18T20:13:08Z
+    Message:               Ready
+    Reason:                Succeeded
+    Status:                True
+    Type:                  Ready
+  Rulecount:
+    Generate:      0
+    Mutate:        0
+    Validate:      2
+    Verifyimages:  0
+  Validatingadmissionpolicy:
+    Generated:  false
+    Message:    
+Events:
+  Type     Reason           Age   From               Message
+  ----     ------           ----  ----               -------
+  Warning  PolicyViolation  12m   kyverno-scan       Pod default/nginx: [require-image-tag] fail; validation error: Imagem sem tag não é permitida. rule require-image-tag failed at path /spec/containers/0/image/
+  Warning  PolicyViolation  12m   kyverno-scan       Pod default/nginx: [disallow-tag-latest] fail; Tag ':latest' não é permitida
+  Warning  PolicyViolation  80s   kyverno-admission  Pod default/nginx: [require-image-tag] fail (blocked); validation error: Imagem sem tag não é permitida. rule require-image-tag failed at path /spec/containers/0/image/
+  Warning  PolicyViolation  80s   kyverno-admission  Pod default/nginx: [disallow-tag-latest] fail (blocked); Tag ':latest' não é permitida
+❯ k run teste-sem-tag --image=nginx --restart=Never -n tipsbank-contas
+Error from server: admission webhook "validate.kyverno.svc-fail" denied the request: 
+
+resource Pod/tipsbank-contas/teste-sem-tag was blocked due to the following policies 
+
+disallow-latest-tag:
+  disallow-tag-latest: Tag ':latest' não é permitida
+  require-image-tag: 'validation error: Imagem sem tag não é permitida. rule require-image-tag
+    failed at path /spec/containers/0/image/'
+❯  k run teste-latest --image=nginx:latest --restart=Never -n tipsbank-contas
+Found existing alias for "kubecolor". You should use: "kubectl"
+Error from server: admission webhook "validate.kyverno.svc-fail" denied the request: 
+
+resource Pod/tipsbank-contas/teste-latest was blocked due to the following policies 
+
+disallow-latest-tag:
+  disallow-tag-latest: Tag ':latest' não é permitida
+❯ k run teste-ok --image=nginx:1.27 --restart=Never -n tipsbank-contas
+pod/teste-ok created
+❯ k delete  teste-ok  -n tipsbank-contas
+error: the server doesn't have a resource type "teste-ok"
+❯ k delete pod teste-ok -n tipsbank-contas
+pod "teste-ok" deleted from tipsbank-contas namespace
+❯ kubectl apply -f k8s/kyverno/require-labels.yaml
+clusterpolicy.kyverno.io/require-labels configured
+❯ k describe cpol require-labels
+Name:         require-labels
+Namespace:    
+Labels:       app.kubernetes.io/part-of=tipsbank
+              rule=require-labels
+Annotations:  policies.kyverno.io/description: Deploy, StatefulSet e DaemonSet deve ter as labels: app, team e env.
+              policies.kyverno.io/title: Require Labels
+API Version:  kyverno.io/v1
+Kind:         ClusterPolicy
+Metadata:
+  Creation Timestamp:  2026-05-18T20:46:30Z
+  Generation:          2
+  Resource Version:    5410118
+  UID:                 703ead7a-80ba-4910-9340-1eb3aa815487
+Spec:
+  Admission:     true
+  Background:    true
+  Emit Warning:  false
+  Rules:
+    Match:
+      Any:
+        Resources:
+          Kinds:
+            Deployment
+            StatefulSet
+            DaemonSet
+          Namespaces:
+            tipsbank-contas
+            tipsbank-transacoes
+            tipsbank-auditoria
+            tipsbank-web
+    Name:                      require-app-team-env
+    Skip Background Requests:  true
+    Validate:
+      Allow Existing Violations:  true
+      Message:                    Labels obrigatórios ausentes. Todo workload deve ter: app, team e env
+      Pattern:
+        Metadata:
+          Labels:
+            App:              ?*
+            Env:              ?*
+            Team:             ?*
+  Validation Failure Action:  Enforce
+Status:
+  Autogen:
+  Conditions:
+    Last Transition Time:  2026-05-18T20:46:31Z
+    Message:               Ready
+    Reason:                Succeeded
+    Status:                True
+    Type:                  Ready
+  Rulecount:
+    Generate:      0
+    Mutate:        0
+    Validate:      1
+    Verifyimages:  0
+  Validatingadmissionpolicy:
+    Generated:  false
+    Message:    skip generating ValidatingAdmissionPolicy for non CEL rules.
+Events:
+  Type     Reason           Age    From          Message
+  ----     ------           ----   ----          -------
+  Warning  PolicyViolation  6m33s  kyverno-scan  DaemonSet metallb-system/metallb-speaker: [require-app-team-env] fail; validation error: Labels obrigatórios ausentes. Todo workload deve ter: app, team e env. rule require-app-team-env failed at path /metadata/labels/app/
+  Warning  PolicyViolation  6m33s  kyverno-scan  DaemonSet tipsbank-monitoring/kube-prometheus-stack-prometheus-node-exporter: [require-app-team-env] fail; validation error: Labels obrigatórios ausentes. Todo workload deve ter: app, team e env. rule require-app-team-env failed at path /metadata/labels/app/
+  Warning  PolicyViolation  6m33s  kyverno-scan  DaemonSet calico-system/calico-node: [require-app-team-env] fail; validation error: Labels obrigatórios ausentes. Todo workload deve ter: app, team e env. rule require-app-team-env failed at path /metadata/labels/
+  Warning  PolicyViolation  6m33s  kyverno-scan  DaemonSet kube-system/csi-nfs-node: [require-app-team-env] fail; validation error: Labels obrigatórios ausentes. Todo workload deve ter: app, team e env. rule require-app-team-env failed at path /metadata/labels/
+  Warning  PolicyViolation  6m33s  kyverno-scan  DaemonSet calico-system/csi-node-driver: [require-app-team-env] fail; validation error: Labels obrigatórios ausentes. Todo workload deve ter: app, team e env. rule require-app-team-env failed at path /metadata/labels/
+  Warning  PolicyViolation  6m32s  kyverno-scan  DaemonSet kube-system/kube-proxy: [require-app-team-env] fail; validation error: Labels obrigatórios ausentes. Todo workload deve ter: app, team e env. rule require-app-team-env failed at path /metadata/labels/app/
+  Warning  PolicyViolation  6m32s  kyverno-scan  Deployment cert-manager/cert-manager-cainjector: [require-app-team-env] fail; validation error: Labels obrigatórios ausentes. Todo workload deve ter: app, team e env. rule require-app-team-env failed at path /metadata/labels/env/
+  Warning  PolicyViolation  6m32s  kyverno-scan  Deployment cert-manager/cert-manager-webhook: [require-app-team-env] fail; validation error: Labels obrigatórios ausentes. Todo workload deve ter: app, team e env. rule require-app-team-env failed at path /metadata/labels/env/
+  Warning  PolicyViolation  6m32s  kyverno-scan  Deployment kyverno/kyverno-cleanup-controller: [require-app-team-env] fail; validation error: Labels obrigatórios ausentes. Todo workload deve ter: app, team e env. rule require-app-team-env failed at path /metadata/labels/app/
+  Warning  PolicyViolation  6m32s  kyverno-scan  Deployment tigera-operator/tigera-operator: [require-app-team-env] fail; validation error: Labels obrigatórios ausentes. Todo workload deve ter: app, team e env. rule require-app-team-env failed at path /metadata/labels/app/
+  Warning  PolicyViolation  6m32s  kyverno-scan  Deployment kube-system/csi-nfs-controller: [require-app-team-env] fail; validation error: Labels obrigatórios ausentes. Todo workload deve ter: app, team e env. rule require-app-team-env failed at path /metadata/labels/
+  Warning  PolicyViolation  6m32s  kyverno-scan  Deployment kyverno/kyverno-reports-controller: [require-app-team-env] fail; validation error: Labels obrigatórios ausentes. Todo workload deve ter: app, team e env. rule require-app-team-env failed at path /metadata/labels/app/
+  Warning  PolicyViolation  6m32s  kyverno-scan  Deployment local-path-storage/local-path-provisioner: [require-app-team-env] fail; validation error: Labels obrigatórios ausentes. Todo workload deve ter: app, team e env. rule require-app-team-env failed at path /metadata/labels/
+  Warning  PolicyViolation  6m32s  kyverno-scan  Deployment tipsbank-monitoring/kube-prometheus-stack-kube-state-metrics: [require-app-team-env] fail; validation error: Labels obrigatórios ausentes. Todo workload deve ter: app, team e env. rule require-app-team-env failed at path /metadata/labels/app/
+  Warning  PolicyViolation  6m32s  kyverno-scan  Deployment tipsbank-monitoring/kube-prometheus-stack-operator: [require-app-team-env] fail; validation error: Labels obrigatórios ausentes. Todo workload deve ter: app, team e env. rule require-app-team-env failed at path /metadata/labels/env/
+  Warning  PolicyViolation  6m32s  kyverno-scan  Deployment kube-system/coredns: [require-app-team-env] fail; validation error: Labels obrigatórios ausentes. Todo workload deve ter: app, team e env. rule require-app-team-env failed at path /metadata/labels/app/
+  Warning  PolicyViolation  6m32s  kyverno-scan  Deployment kyverno/kyverno-background-controller: [require-app-team-env] fail; validation error: Labels obrigatórios ausentes. Todo workload deve ter: app, team e env. rule require-app-team-env failed at path /metadata/labels/app/
+  Warning  PolicyViolation  6m32s  kyverno-scan  Deployment tipsbank-monitoring/kube-prometheus-stack-grafana: [require-app-team-env] fail; validation error: Labels obrigatórios ausentes. Todo workload deve ter: app, team e env. rule require-app-team-env failed at path /metadata/labels/app/
+  Warning  PolicyViolation  6m32s  kyverno-scan  Deployment calico-system/calico-kube-controllers: [require-app-team-env] fail; validation error: Labels obrigatórios ausentes. Todo workload deve ter: app, team e env. rule require-app-team-env failed at path /metadata/labels/app/
+  Warning  PolicyViolation  6m32s  kyverno-scan  Deployment ingress-nginx/ingress-nginx-controller: [require-app-team-env] fail; validation error: Labels obrigatórios ausentes. Todo workload deve ter: app, team e env. rule require-app-team-env failed at path /metadata/labels/app/
+  Warning  PolicyViolation  6m32s  kyverno-scan  Deployment kube-system/metrics-server: [require-app-team-env] fail; validation error: Labels obrigatórios ausentes. Todo workload deve ter: app, team e env. rule require-app-team-env failed at path /metadata/labels/app/
+  Warning  PolicyViolation  6m32s  kyverno-scan  Deployment kyverno/kyverno-admission-controller: [require-app-team-env] fail; validation error: Labels obrigatórios ausentes. Todo workload deve ter: app, team e env. rule require-app-team-env failed at path /metadata/labels/app/
+  Warning  PolicyViolation  6m32s  kyverno-scan  Deployment metallb-system/metallb-controller: [require-app-team-env] fail; validation error: Labels obrigatórios ausentes. Todo workload deve ter: app, team e env. rule require-app-team-env failed at path /metadata/labels/app/
+  Warning  PolicyViolation  6m32s  kyverno-scan  Deployment tipsbank-monitoring/locust: [require-app-team-env] fail; validation error: Labels obrigatórios ausentes. Todo workload deve ter: app, team e env. rule require-app-team-env failed at path /metadata/labels/env/
+  Warning  PolicyViolation  6m32s  kyverno-scan  Deployment calico-system/calico-typha: [require-app-team-env] fail; validation error: Labels obrigatórios ausentes. Todo workload deve ter: app, team e env. rule require-app-team-env failed at path /metadata/labels/app/
+  Warning  PolicyViolation  6m32s  kyverno-scan  Deployment cert-manager/cert-manager: [require-app-team-env] fail; validation error: Labels obrigatórios ausentes. Todo workload deve ter: app, team e env. rule require-app-team-env failed at path /metadata/labels/env/
+  Warning  PolicyViolation  6m30s  kyverno-scan  StatefulSet tipsbank-monitoring/alertmanager-kube-prometheus-stack-alertmanager: [require-app-team-env] fail; validation error: Labels obrigatórios ausentes. Todo workload deve ter: app, team e env. rule require-app-team-env failed at path /metadata/labels/env/
+  Warning  PolicyViolation  6m30s  kyverno-scan  StatefulSet tipsbank-monitoring/prometheus-kube-prometheus-stack-prometheus: [require-app-team-env] fail; validation error: Labels obrigatórios ausentes. Todo workload deve ter: app, team e env. rule require-app-team-env failed at path /metadata/labels/env/
+❯ kubectl delete -f k8s/kyverno/require-labels.yaml
+clusterpolicy.kyverno.io "require-labels" deleted
+❯ kubectl apply -f k8s/kyverno/require-labels.yaml
+clusterpolicy.kyverno.io/require-labels created
+❯ k describe cpol require-labels
+Name:         require-labels
+Namespace:    
+Labels:       app.kubernetes.io/part-of=tipsbank
+              rule=require-labels
+Annotations:  policies.kyverno.io/description: Deploy, StatefulSet e DaemonSet deve ter as labels: app, team e env.
+              policies.kyverno.io/title: Require Labels
+API Version:  kyverno.io/v1
+Kind:         ClusterPolicy
+Metadata:
+  Creation Timestamp:  2026-05-18T20:53:35Z
+  Generation:          1
+  Resource Version:    5410942
+  UID:                 1ee0bf2b-300d-4c08-a7b1-ea680b47e5fb
+Spec:
+  Admission:     true
+  Background:    true
+  Emit Warning:  false
+  Rules:
+    Match:
+      Any:
+        Resources:
+          Kinds:
+            Deployment
+            StatefulSet
+            DaemonSet
+          Namespaces:
+            tipsbank-contas
+            tipsbank-transacoes
+            tipsbank-auditoria
+            tipsbank-web
+    Name:                      require-app-team-env
+    Skip Background Requests:  true
+    Validate:
+      Allow Existing Violations:  true
+      Message:                    Labels obrigatórios ausentes. Todo workload deve ter: app, team e env
+      Pattern:
+        Metadata:
+          Labels:
+            App:              ?*
+            Env:              ?*
+            Team:             ?*
+  Validation Failure Action:  Enforce
+Status:
+  Autogen:
+  Conditions:
+    Last Transition Time:  2026-05-18T20:53:35Z
+    Message:               Ready
+    Reason:                Succeeded
+    Status:                True
+    Type:                  Ready
+  Rulecount:
+    Generate:      0
+    Mutate:        0
+    Validate:      1
+    Verifyimages:  0
+  Validatingadmissionpolicy:
+    Generated:  false
+    Message:    
+Events:         <none>
+
+    /mnt/c/Users/felip/Documents/Projetos/tipsbank  on   main ⇡8 !1 ▓▒░                                                            ░▒▓ at 17:53:39  
+❯
+❯ git add . && git commit -m "semana 4.1 - require-labels - v2 "
+Found existing alias for "git add". You should use: "ga"
+[main 79dca98] semana 4.1 - require-labels - v2
+ 1 file changed, 5 insertions(+)
+❯ kubectl get cpol
+NAME                  ADMISSION   BACKGROUND   READY   AGE     MESSAGE
+disallow-latest-tag   true        true         True    43m     Ready
+disallow-root-user    true        true         True    5h27m   Ready
+require-labels        true        true         True    3m26s   Ready
+❯ k run pod-ruim-latest \
+  --image=nginx:latest \
+  --restart=Never \
+  -n tipsbank-contas
+Error from server: admission webhook "validate.kyverno.svc-fail" denied the request: 
+
+resource Pod/tipsbank-contas/pod-ruim-latest was blocked due to the following policies 
+
+disallow-latest-tag:
+  disallow-tag-latest: Tag ':latest' não é permitida
+❯ k run pod-ruim-root \
+  --image=nginx:1.27 \
+  --restart=Never \
+  -n tipsbank-contas \
+  --overrides='{"spec":{"securityContext":{"runAsUser":0}}}'
+Error from server: admission webhook "validate.kyverno.svc-fail" denied the request: 
+
+resource Pod/tipsbank-contas/pod-ruim-root was blocked due to the following policies 
+
+disallow-root-user:
+  disallow-root-user: 'validation error: Container/Pod não podem rodar como root (runAsUser=0).
+    rule disallow-root-user failed at path /spec/securityContext/runAsUser/'
+❯ k apply -f k8s/tipsbank-contas/contas-deployment.yaml
+deployment.apps/api-contas configured
+service/api-contas unchanged
+❯ k apply -f k8s/tipsbank-contas/postgres-statefull.yaml
+statefulset.apps/postgres configured
+service/postgres-service unchanged
+❯ k apply -f k8s/tipsbank-transacoes/transacoes-deployment.yaml
+deployment.apps/api-transacoes configured
+service/api-transacoes unchanged
+❯ k apply -f k8s/tipsbank-auditoria/auditoria-deployment.yaml
+deployment.apps/auditoria configured
+persistentvolumeclaim/auditoria-pvc unchanged
+service/auditoria unchanged
+❯ k apply -f k8s/tipsbank-web/web-deployment.yaml
+deployment.apps/web configured
+service/web unchanged
+❯ k apply -f k8s/tipsbank-monitoring/node-collector-ds.yaml
+daemonset.apps/node-collector configured
+❯ kubectl get policyreport -A
+NAMESPACE             NAME                                   KIND          NAME                                                        PASS   FAIL   WARN   ERROR   SKIP   AGE
+calico-system         1722af7f-d54a-42f5-8a7b-761ba750fab6   Pod           calico-node-zqbd8                                           2      1      0      0       0      5h32m
+calico-system         23882638-3d51-410a-a773-bf96cffcdd20   Pod           csi-node-driver-vlmnr                                       2      1      0      0       0      5h32m
+calico-system         2d5117f1-f375-43dd-bccd-49316e6f0f77   Pod           calico-node-nj6dz                                           2      1      0      0       0      5h32m
+calico-system         35393269-c8fd-4ae8-a89e-2c03e2dc4d87   Pod           calico-node-b58jm                                           2      1      0      0       0      5h32m
+calico-system         56ae0816-e589-439a-8b9a-2d9923acccc4   Pod           calico-typha-96f98c97d-h69dv                                3      0      0      0       0      5h32m
+calico-system         6294881a-9183-4b05-8bde-b69c11b45419   Deployment    calico-kube-controllers                                     3      1      0      0       0      5h32m
+calico-system         7e477762-0d03-40cd-a65e-9edcd62ccdde   DaemonSet     calico-node                                                 2      2      0      0       0      5h32m
+calico-system         9c1f51b8-d719-4e91-b0d0-b90798a32cb5   Pod           csi-node-driver-vhvth                                       2      1      0      0       0      5h32m
+calico-system         9e3db50c-8b60-4885-aa72-62152ffba301   ReplicaSet    calico-kube-controllers-597ff8fcc5                          3      0      0      0       0      5h32m
+calico-system         9eefc408-a4f6-4b73-8926-285df87ec0ee   Pod           calico-kube-controllers-597ff8fcc5-ttv4v                    3      0      0      0       0      5h32m
+calico-system         ad450baf-ecf4-4e68-9bbe-ac7b00dc1243   ReplicaSet    calico-typha-96f98c97d                                      3      0      0      0       0      5h32m
+calico-system         b26b82ff-c1f5-48d2-92c2-1f56ea78911e   Pod           calico-typha-96f98c97d-dngcb                                3      0      0      0       0      5h32m
+calico-system         c090e4ea-68bf-497f-9f7a-eaace2974045   Pod           csi-node-driver-m8pgk                                       2      1      0      0       0      5h32m
+calico-system         cdbfefae-6f1b-4dc5-94cb-cdf7e430657f   Deployment    calico-typha                                                3      1      0      0       0      5h32m
+calico-system         ce16500c-98c1-43de-a2aa-f14386c489ab   DaemonSet     csi-node-driver                                             2      2      0      0       0      5h32m
+cert-manager          1ad51860-818c-48e1-ba06-26a98bc274f6   Deployment    cert-manager-webhook                                        3      1      0      0       0      5h32m
+cert-manager          1f88b55f-3b24-4590-aa5f-eb1fab73c6ed   ReplicaSet    cert-manager-cainjector-567c6b47ff                          3      0      0      0       0      5h32m
+cert-manager          272160a6-14a7-48e7-8243-bcc5546f0414   Pod           cert-manager-5957746d66-frdhv                               3      0      0      0       0      5h32m
+cert-manager          5e4529aa-f9b3-4f60-aec4-4b3115015be8   Pod           cert-manager-webhook-7cc5c588cb-xkvst                       3      0      0      0       0      5h32m
+cert-manager          89029121-d59a-45a6-904e-0f1a6b9024a6   ReplicaSet    cert-manager-5957746d66                                     3      0      0      0       0      5h32m
+cert-manager          a788fc39-71d1-4ea5-a04f-cebece61add5   Pod           cert-manager-cainjector-567c6b47ff-hcphn                    3      0      0      0       0      5h32m
+cert-manager          dc532e3d-8ef5-4627-be4e-598157ecee66   Deployment    cert-manager                                                3      1      0      0       0      5h32m
+cert-manager          df1d62a0-d746-4c7d-865e-0b1dd9e535b4   Deployment    cert-manager-cainjector                                     3      1      0      0       0      5h32m
+cert-manager          f70952a4-9e23-4056-b8c4-bb3b21a7ae83   ReplicaSet    cert-manager-webhook-7cc5c588cb                             3      0      0      0       0      5h32m
+ingress-nginx         37427a93-4270-4bbb-826a-d6ba2ecf9398   ReplicaSet    ingress-nginx-controller-6c7cd85885                         3      0      0      0       0      5h32m
+ingress-nginx         40f6c298-b3da-4d77-a191-effe1d87c7dc   Pod           ingress-nginx-controller-859798667d-s249g                   3      0      0      0       0      5h32m
+ingress-nginx         5ef88d51-9f24-4a98-9d51-55fe87cb6f7e   Deployment    ingress-nginx-controller                                    3      1      0      0       0      5h32m
+ingress-nginx         da6619e4-6fc4-4d8a-9de9-4755b48d223b   ReplicaSet    ingress-nginx-controller-859798667d                         3      0      0      0       0      5h32m
+kube-system           06a737b9-707e-4811-b40b-a100ed7b950b   Pod           csi-nfs-node-rxmmq                                          3      0      0      0       0      5h32m
+kube-system           13b5415e-6c8c-4b18-a1a0-d8ea9686e9d9   Pod           coredns-7d764666f9-kf6db                                    3      0      0      0       0      5h32m
+kube-system           19cdbea1-6a75-4801-be9c-b3fd473056c7   ReplicaSet    coredns-7d764666f9                                          3      0      0      0       0      5h32m
+kube-system           26d9f854-5c6f-44c7-a48c-7fec4cefb0ea   Pod           kube-proxy-2fz7n                                            3      0      0      0       0      5h32m
+kube-system           4880cd3f-cd28-4cd6-a816-e66247e2dffa   DaemonSet     csi-nfs-node                                                3      1      0      0       0      5h32m
+kube-system           4b6646aa-b3bd-4183-858f-af35d64a7b96   ReplicaSet    csi-nfs-controller-85cc966848                               3      0      0      0       0      5h32m
+kube-system           50e49577-ce62-499b-9f1d-a3e08bfafbd5   Pod           kube-scheduler-tb-master1                                   3      0      0      0       0      5h32m
+kube-system           52b04097-c432-4a7c-bee2-b349e9e1be6b   Pod           kube-proxy-d6gsv                                            3      0      0      0       0      5h32m
+kube-system           5e148cba-93f4-48c8-9c20-95292d6c5594   Pod           coredns-7d764666f9-bgpzr                                    3      0      0      0       0      5h32m
+kube-system           73f8ff7c-21c2-437c-8c94-ccde9aed3d0f   Pod           etcd-tb-master1                                             3      0      0      0       0      5h32m
+kube-system           77a7a276-4eb5-4703-80aa-584d0054350d   DaemonSet     kube-proxy                                                  3      1      0      0       0      5h32m
+kube-system           7dbfc399-f5fa-48b9-911f-1b90515de92e   ReplicaSet    metrics-server-6ccf764647                                   3      0      0      0       0      5h32m
+kube-system           7fa76fdf-023b-46e7-aced-0967c86038cd   Pod           csi-nfs-node-n7rcj                                          3      0      0      0       0      5h32m
+kube-system           8f1ed736-b61b-466b-9152-1e32511289af   Pod           kube-apiserver-tb-master1                                   3      0      0      0       0      5h32m
+kube-system           95953468-ed59-4176-ba54-8ee8038efaba   Pod           kube-controller-manager-tb-master1                          3      0      0      0       0      5h32m
+kube-system           9ca849d3-e470-44b4-b719-ce48a54392c7   Deployment    coredns                                                     3      1      0      0       0      5h32m
+kube-system           a5e134b5-4496-4dda-b0c2-2bbfa22ac0b5   Pod           csi-nfs-controller-85cc966848-dw5l6                         3      0      0      0       0      5h32m
+kube-system           d2df91b0-68fa-4c74-a80f-5be7f2f18b63   Deployment    metrics-server                                              3      1      0      0       0      5h32m
+kube-system           dc87ce87-5a18-4c8f-bb5d-096f0d7fd0e8   Deployment    csi-nfs-controller                                          3      1      0      0       0      5h32m
+kube-system           f0c2ea2b-8ad6-40a4-87e3-d98fd8eb0f0d   Pod           metrics-server-6ccf764647-4bs54                             3      0      0      0       0      5h32m
+kube-system           f59a40d8-2d54-4ecd-8701-894a0575b39d   Pod           kube-proxy-8psbk                                            3      0      0      0       0      5h32m
+kube-system           fe16596a-9bbd-41c5-ac89-a233b84133e5   Pod           csi-nfs-node-5c7kd                                          3      0      0      0       0      5h32m
+kyverno               027294d6-6742-43fd-88cf-f906c66057d8   Pod           kyverno-background-controller-57f7cb7c48-rr2bd              3      0      0      0       0      5h32m
+kyverno               0476b6da-e4a2-47f2-b1d4-cd6ea37f76cd   Pod           kyverno-reports-controller-dfdd969cd-n7mxz                  3      0      0      0       0      5h32m
+kyverno               195b2ca8-e98c-415d-8752-a34a9c41b333   Pod           kyverno-cleanup-controller-75c566db9c-v6zx5                 3      0      0      0       0      5h32m
+kyverno               26273344-8fe6-46ec-b496-2b495411b74f   Deployment    kyverno-reports-controller                                  3      1      0      0       0      5h32m
+kyverno               4c0571b6-44e9-4152-b9d4-b05d465a324c   ReplicaSet    kyverno-admission-controller-66756fbfdf                     3      0      0      0       0      5h32m
+kyverno               5716a7d8-74c7-42ff-b020-cf1e0b817c23   ReplicaSet    kyverno-reports-controller-dfdd969cd                        3      0      0      0       0      5h32m
+kyverno               64233c50-5a74-4052-a254-4a33547e60c7   ReplicaSet    kyverno-background-controller-57f7cb7c48                    3      0      0      0       0      5h32m
+kyverno               7d1c1c71-a2b0-4060-a49e-b69a7edc9dd5   Deployment    kyverno-background-controller                               3      1      0      0       0      5h32m
+kyverno               a0835090-cd1d-49af-9f35-25b46a0f2d79   Pod           kyverno-admission-controller-66756fbfdf-cn7f4               3      0      0      0       0      5h32m
+kyverno               ae24c9ed-84cf-4f3e-b92f-bd1d3374d7d2   ReplicaSet    kyverno-cleanup-controller-75c566db9c                       3      0      0      0       0      5h32m
+kyverno               ddc6b63a-0607-4d97-b2b7-209cf054d291   Deployment    kyverno-cleanup-controller                                  3      1      0      0       0      5h32m
+kyverno               f9186ec5-8d8f-42f4-a26b-e19829d06819   Deployment    kyverno-admission-controller                                3      1      0      0       0      5h32m
+local-path-storage    28215594-92c4-4b2c-b48b-453ebf77a4ff   Pod           local-path-provisioner-7d4d469b6-vhpq5                      3      0      0      0       0      5h32m
+local-path-storage    6790e04f-f8c6-4092-985d-5fc7135ae44d   ReplicaSet    local-path-provisioner-7d4d469b6                            3      0      0      0       0      5h32m
+local-path-storage    c85e4f08-ac8e-4ffe-b859-fc2089de1ee8   Deployment    local-path-provisioner                                      3      1      0      0       0      5h32m
+metallb-system        09615560-2401-475e-90b1-66d678a8e6a9   DaemonSet     metallb-speaker                                             3      1      0      0       0      5h32m
+metallb-system        0f0f5ded-aa11-44e9-88be-26c30e4100c4   ReplicaSet    metallb-controller-84c7d4d544                               3      0      0      0       0      5h32m
+metallb-system        12ba22d5-e2cd-4af9-9b29-6ece5f719fcf   Pod           metallb-speaker-rf6qm                                       3      0      0      0       0      5h32m
+metallb-system        2ae5f853-3ce1-43be-b3c5-767f0be2a6d1   Pod           metallb-controller-84c7d4d544-sc4bm                         3      0      0      0       0      5h32m
+metallb-system        3acb7b4e-04f8-47b0-801e-c93e0342bcfa   Pod           metallb-speaker-64qsm                                       3      0      0      0       0      5h32m
+metallb-system        c8bc9850-5dc9-4d45-aead-a9b0185c05f5   Deployment    metallb-controller                                          3      1      0      0       0      5h32m
+metallb-system        ca804d8c-d76e-4c0b-bb5c-0e52bf70cfea   Pod           metallb-speaker-vkf46                                       3      0      0      0       0      5h32m
+tigera-operator       00ed39f4-a68c-4b01-a459-38b1bbf8857c   ReplicaSet    tigera-operator-6cf4cccc57                                  3      0      0      0       0      5h32m
+tigera-operator       b288e0e1-a153-4125-988a-6a00a2729fae   Deployment    tigera-operator                                             3      1      0      0       0      5h32m
+tigera-operator       cff7a841-c2a5-410b-b575-a634069b5837   Pod           tigera-operator-6cf4cccc57-8p5wr                            3      0      0      0       0      5h32m
+tipsbank-auditoria    21c23924-6f3a-4e4c-a6ae-e764fef0d475   Pod           auditoria-69dffc8c99-f45jp                                  3      0      0      0       0      5h32m
+tipsbank-auditoria    3575ff41-30ef-467f-9e66-b4a176ca472e   ReplicaSet    auditoria-b5bc479fb                                         3      0      0      0       0      5h32m
+tipsbank-auditoria    3916e86c-f090-48d3-830d-e4792115aba8   ReplicaSet    auditoria-659555485f                                        3      0      0      0       0      5h32m
+tipsbank-auditoria    3985ee2a-4dd0-498b-a79e-ce2be31a435e   ReplicaSet    auditoria-6cb497b8c5                                        3      0      0      0       0      5h32m
+tipsbank-auditoria    4f6f1510-88d6-42c6-97b8-9817d528c201   ReplicaSet    auditoria-7fd5c4f477                                        3      0      0      0       0      5h32m
+tipsbank-auditoria    539a3381-3e51-4608-ac9c-6c4ec03c2c7e   ReplicaSet    auditoria-fb47ff566                                         3      0      0      0       0      5h32m
+tipsbank-auditoria    63180ea3-62d3-407c-9f33-bee9352e2a38   ReplicaSet    auditoria-8657559b7f                                        3      0      0      0       0      5h32m
+tipsbank-auditoria    65e9bdb0-30f0-494a-ba6f-679437c8c3b4   Deployment    auditoria                                                   4      0      0      0       0      5h32m
+tipsbank-auditoria    66e5022e-10e7-47ad-8399-94ebec5dd395   ReplicaSet    auditoria-86d479b57b                                        3      0      0      0       0      5h32m
+tipsbank-auditoria    8956b432-e255-49ed-9ab9-b901a05d8edf   ReplicaSet    auditoria-69dffc8c99                                        3      0      0      0       0      5h32m
+tipsbank-auditoria    93abcaaf-638b-4e3f-8f70-dfad71f4436f   ReplicaSet    auditoria-6c859b8d87                                        3      0      0      0       0      5h32m
+tipsbank-auditoria    cdd4345a-9403-4515-be60-d7c167517079   ReplicaSet    auditoria-767479b94f                                        3      0      0      0       0      5h32m
+tipsbank-auditoria    ec19ea15-83f1-46fd-b44f-d58b1468c3ba   Pod           auditoria-69dffc8c99-q6sfq                                  3      0      0      0       0      5h32m
+tipsbank-auditoria    f5ee4166-cfa7-4cc5-8639-0872916ae428   ReplicaSet    auditoria-845b4664d                                         3      0      0      0       0      5h32m
+tipsbank-contas       18addcdb-4927-4ddd-8936-0bcd4a718447   Deployment    api-contas                                                  4      0      0      0       0      5h32m
+tipsbank-contas       238fc93a-2c92-4ec4-b112-90efa6741797   ReplicaSet    api-contas-64554bbd                                         3      0      0      0       0      5h32m
+tipsbank-contas       494ea847-c531-45e4-9c58-5752708f81bf   Pod           postgres-replica-0                                          3      0      0      0       0      5h32m
+tipsbank-contas       591c8f32-acd0-4e71-aa57-3a55896df8bd   Pod           api-contas-67dcb8b76c-fbfkm                                 3      0      0      0       0      5h32m
+tipsbank-contas       5f533c4a-403c-4c6e-8450-c87c791a7f04   ReplicaSet    api-contas-68f86bffcc                                       3      0      0      0       0      5h32m
+tipsbank-contas       6576d691-857b-4fbf-8ad1-9bf0b4e1f0f6   ReplicaSet    api-contas-c574fcd6b                                        3      0      0      0       0      5h32m
+tipsbank-contas       69bb76ea-0b05-4794-abde-a43169e1618e   Pod           postgres-0                                                  3      0      0      0       0      5h32m
+tipsbank-contas       6de9388f-874c-4ea3-9d96-fcac679d6e0f   ReplicaSet    api-contas-6f58f96b9f                                       3      0      0      0       0      5h32m
+tipsbank-contas       90e38008-2df4-4f0c-9e02-9dd64c81ae45   Pod           api-contas-67dcb8b76c-pb6nt                                 3      0      0      0       0      5h32m
+tipsbank-contas       9ea6922e-c774-47c2-8e2f-9828be267289   ReplicaSet    api-contas-65d86d5dc7                                       3      0      0      0       0      5h32m
+tipsbank-contas       9f183207-5241-4844-8249-65efe5be2fa2   StatefulSet   postgres-replica                                            4      0      0      0       0      5h32m
+tipsbank-contas       9f705a18-24c0-4981-9601-85cafeafa382   ReplicaSet    api-contas-5958f4d65                                        3      0      0      0       0      5h32m
+tipsbank-contas       a3c97984-3c6a-43ce-813c-edc39507bdbd   ReplicaSet    api-contas-594c4dbd5b                                       3      0      0      0       0      5h32m
+tipsbank-contas       a7081e56-97d7-44f8-81d7-067c9feed53c   ReplicaSet    api-contas-67dcb8b76c                                       3      0      0      0       0      5h32m
+tipsbank-contas       abcc2f25-db91-49a8-86d9-df0d257687eb   ReplicaSet    api-contas-d4b9fd5fc                                        3      0      0      0       0      5h32m
+tipsbank-contas       b6e1cef1-3e6d-4ddd-bff7-3890d5d7c6f8   ReplicaSet    api-contas-856f59f7d6                                       3      0      0      0       0      5h32m
+tipsbank-contas       c3882251-a0ef-4caf-9918-4b32efa87016   StatefulSet   postgres                                                    4      0      0      0       0      5h32m
+tipsbank-contas       c69d4da7-f89a-4cc9-b32e-cc019477295b   ReplicaSet    api-contas-6c4cbcc8b9                                       3      0      0      0       0      5h32m
+tipsbank-monitoring   1a4ffd6b-d5df-4bcc-93bc-80e487c88d13   DaemonSet     kube-prometheus-stack-prometheus-node-exporter              3      1      0      0       0      5h32m
+tipsbank-monitoring   1b05a7a4-c57c-47f7-be75-3318340820b8   Pod           kube-prometheus-stack-grafana-5647658b96-5z4pg              2      1      0      0       0      5h32m
+tipsbank-monitoring   1f47e14b-4e1a-424c-b3c8-bd8be371793e   ReplicaSet    kube-prometheus-stack-operator-7d6bdd985b                   3      0      0      0       0      5h32m
+tipsbank-monitoring   2c8fd8b9-094a-40ac-b08c-e893ca7440da   Pod           node-collector-zgw7q                                        3      0      0      0       0      5h32m
+tipsbank-monitoring   2f162a05-d829-4f86-bd69-99ca7ab0ffc0   Pod           kube-prometheus-stack-kube-state-metrics-58474dc949-sbl78   3      0      0      0       0      5h32m
+tipsbank-monitoring   4fdf661b-0305-4218-aa21-2e89077a3339   Pod           kube-prometheus-stack-prometheus-node-exporter-jfftq        3      0      0      0       0      5h32m
+tipsbank-monitoring   597d7c43-ba00-4bec-b528-26d73ef5ea81   Pod           node-collector-6pnc5                                        3      0      0      0       0      5h32m
+tipsbank-monitoring   59b1dc3d-0d86-4f17-bc23-f4094005e80b   DaemonSet     node-collector                                              4      0      0      0       0      5h32m
+tipsbank-monitoring   5bab7d37-1030-4fa4-b278-2b2f2e578d38   StatefulSet   alertmanager-kube-prometheus-stack-alertmanager             3      1      0      0       0      5h32m
+tipsbank-monitoring   93a0b2e5-0b94-42f8-a926-03efcbbf8e77   ReplicaSet    kube-prometheus-stack-kube-state-metrics-58474dc949         3      0      0      0       0      5h32m
+tipsbank-monitoring   99311d80-5c8a-4bca-9e67-f06934efdd20   Deployment    kube-prometheus-stack-operator                              3      1      0      0       0      5h32m
+tipsbank-monitoring   a0875b2b-a99d-4d56-90c2-40d12b4b0083   Pod           alertmanager-kube-prometheus-stack-alertmanager-0           3      0      0      0       0      5h32m
+tipsbank-monitoring   b62a3680-9697-4613-b0f6-071cc01a8d9c   Pod           prometheus-kube-prometheus-stack-prometheus-0               3      0      0      0       0      5h32m
+tipsbank-monitoring   bbfe9281-1be9-4709-a080-8166a6a996b4   Deployment    kube-prometheus-stack-kube-state-metrics                    3      1      0      0       0      5h32m
+tipsbank-monitoring   cdebfff3-d3e3-43c8-92c3-fbc1ec572656   ReplicaSet    kube-prometheus-stack-grafana-5647658b96                    2      1      0      0       0      5h32m
+tipsbank-monitoring   d3c8f389-8c45-4a8e-965f-f79c4ab33612   Pod           kube-prometheus-stack-prometheus-node-exporter-5qmkw        3      0      0      0       0      5h32m
+tipsbank-monitoring   d43e1147-e55e-4e0a-85d0-b759c1d2d66f   ReplicaSet    locust-94b7fdffb                                            3      0      0      0       0      5h32m
+tipsbank-monitoring   d615eb9d-27d2-4362-885a-f78ed8bbb833   StatefulSet   prometheus-kube-prometheus-stack-prometheus                 3      1      0      0       0      5h32m
+tipsbank-monitoring   d85d92d3-ee5b-404b-ae56-3cc1e5bfa2fb   Deployment    locust                                                      3      1      0      0       0      5h32m
+tipsbank-monitoring   e18a4aaa-704c-4abf-bbd8-685ed18ee4a0   Pod           kube-prometheus-stack-prometheus-node-exporter-hwm8m        3      0      0      0       0      5h32m
+tipsbank-monitoring   e1fc38ce-05c3-4d50-be6c-b32d9180241c   Deployment    kube-prometheus-stack-grafana                               2      2      0      0       0      5h32m
+tipsbank-monitoring   e6fc7559-9c00-42c7-a904-0791f20a4326   Pod           locust-94b7fdffb-v4hrq                                      3      0      0      0       0      5h32m
+tipsbank-monitoring   fceb3cd2-b350-4ea3-8bab-0aee3558d60e   Pod           kube-prometheus-stack-operator-7d6bdd985b-llvkj             3      0      0      0       0      5h32m
+tipsbank-transacoes   0e891829-60be-46cd-bb94-eab27ba01ec7   ReplicaSet    api-transacoes-5cb7cc9b8b                                   3      0      0      0       0      5h32m
+tipsbank-transacoes   5462e565-1e21-4494-8824-c544ced323cb   ReplicaSet    api-transacoes-f96d7c44d                                    3      0      0      0       0      5h32m
+tipsbank-transacoes   54beadd3-1348-49eb-aa09-eb27c0d4692a   Deployment    api-transacoes                                              4      0      0      0       0      5h32m
+tipsbank-transacoes   57b53c87-dbe8-43b8-a379-c08de48f4103   ReplicaSet    api-transacoes-659558d96c                                   3      0      0      0       0      5h32m
+tipsbank-transacoes   90ac9b2d-30f4-4752-a6e1-1ebddcae8d6d   Pod           api-transacoes-659558d96c-h7wfl                             3      0      0      0       0      5h32m
+tipsbank-transacoes   910c5ef1-5459-456c-a2bb-9ed7b8cbd57a   Pod           api-transacoes-659558d96c-ktvwr                             3      0      0      0       0      5h30m
+tipsbank-transacoes   a04b7add-3ae3-4e94-8c71-aff386b71a63   ReplicaSet    api-transacoes-68d8f9fb4b                                   3      0      0      0       0      5h32m
+tipsbank-transacoes   a13728c1-7c77-4966-8a41-256f072fc7c7   ReplicaSet    api-transacoes-d56bff9bc                                    3      0      0      0       0      5h32m
+tipsbank-transacoes   e9205fec-3dc3-4662-991c-faaf6eeb8dec   Pod           api-transacoes-659558d96c-tdhnl                             3      0      0      0       0      93s
+tipsbank-transacoes   f0a926a2-907f-4786-9256-3de1ba8566c3   ReplicaSet    api-transacoes-f76f7c5c8                                    3      0      0      0       0      5h32m
+tipsbank-web          16821df3-8fa5-4066-8d13-3d6dafdf6646   ReplicaSet    web-674cdbcdb9                                              3      0      0      0       0      5h32m
+tipsbank-web          17245ec8-7acf-4b0c-b4c2-26710976720b   Pod           web-744bdd6fd8-bgw6j                                        3      0      0      0       0      5h32m
+tipsbank-web          2dc4ffb4-554c-4432-9253-bb6a8970875e   ReplicaSet    web-744bdd6fd8                                              3      0      0      0       0      5h32m
+tipsbank-web          34b4e549-12a8-4b77-871b-4fa2588aee50   ReplicaSet    web-6bc8b8c546                                              3      0      0      0       0      5h32m
+tipsbank-web          51498666-17fe-41e9-bd01-12d4ccf229e9   ReplicaSet    web-757cf45b8c                                              3      0      0      0       0      5h32m
+tipsbank-web          62d64a56-80f4-4f21-a487-56292ec27447   ReplicaSet    web-7df6cdd49f                                              3      0      0      0       0      5h32m
+tipsbank-web          93dbbe7d-edd2-477a-9cf2-8a511db9da33   ReplicaSet    web-bdc86b8fc                                               3      0      0      0       0      5h32m
+tipsbank-web          994930ad-4793-4129-9343-d754526fadf6   ReplicaSet    web-75dff7dfc6                                              3      0      0      0       0      5h32m
+tipsbank-web          a7676b73-1397-4f4b-aec0-91acc7f3770e   ReplicaSet    web-544946b4d9                                              3      0      0      0       0      5h32m
+tipsbank-web          ca48ac98-ea5f-49e6-a8df-542554a676cf   Pod           web-744bdd6fd8-dm246                                        3      0      0      0       0      5h32m
+tipsbank-web          dbec34bc-3045-462a-aa7b-9200eff13aef   ReplicaSet    web-b94f466b5                                               3      0      0      0       0      5h32m
+tipsbank-web          ec5c23f1-b566-4a2b-9fa4-bcd4f6fb30e8   Deployment    web                                                         4      0      0      0       0      5h32m
+tipsbank-web          efc3e929-d9f9-4a72-a9e2-d1200fa9348a   ReplicaSet    web-5bbb54df69                                              3      0      0      0       0      5h32m
+tipsbank-web          f32f6b16-2e8c-4e0a-ba26-9dcbeb3b06e9   ReplicaSet    web-769c8c8fd5                                              3      0      0      0       0      5h32m
+❯ kubectl get clusterpolicyreport
+No resources found
+❯ kubectl describe policyreport -n tipsbank-contas
+Name:         18addcdb-4927-4ddd-8936-0bcd4a718447
+Namespace:    tipsbank-contas
+Labels:       app.kubernetes.io/managed-by=kyverno
+Annotations:  <none>
+API Version:  wgpolicyk8s.io/v1alpha2
+Kind:         PolicyReport
+Metadata:
+  Creation Timestamp:  2026-05-18T15:29:22Z
+  Generation:          14
+  Owner References:
+    API Version:     apps/v1
+    Kind:            Deployment
+    Name:            api-contas
+    UID:             18addcdb-4927-4ddd-8936-0bcd4a718447
+  Resource Version:  5413647
+  UID:               9f1efa45-0fbf-43b2-abd5-ef38843459b2
+Results:
+  Category:  Security
+  Message:   validation rule 'autogen-disallow-tag-latest' passed.
+  Policy:    disallow-latest-tag
+  Properties:
+    Process:  background scan
+  Result:     pass
+  Rule:       autogen-disallow-tag-latest
+  Scored:     true
+  Source:     kyverno
+  Timestamp:
+    Nanos:    0
+    Seconds:  1779138005
+  Category:   Security
+  Message:    validation rule 'autogen-require-image-tag' passed.
+  Policy:     disallow-latest-tag
+  Properties:
+    Process:  background scan
+  Result:     pass
+  Rule:       autogen-require-image-tag
+  Scored:     true
+  Source:     kyverno
+  Timestamp:
+    Nanos:    0
+    Seconds:  1779138005
+  Category:   Security
+  Message:    validation rule 'autogen-disallow-root-user' passed.
+  Policy:     disallow-root-user
+  Properties:
+    Process:  background scan
+  Result:     pass
+  Rule:       autogen-disallow-root-user
+  Scored:     true
+  Source:     kyverno
+  Timestamp:
+    Nanos:    0
+    Seconds:  1779138005
+  Message:    validation rule 'require-app-team-env' passed.
+  Policy:     require-labels
+  Properties:
+    Process:  background scan
+  Result:     pass
+  Rule:       require-app-team-env
+  Scored:     true
+  Source:     kyverno
+  Timestamp:
+    Nanos:    0
+    Seconds:  1779138005
+Scope:
+  API Version:  apps/v1
+  Kind:         Deployment
+  Name:         api-contas
+  Namespace:    tipsbank-contas
+  UID:          18addcdb-4927-4ddd-8936-0bcd4a718447
+Summary:
+  Error:  0
+  Fail:   0
+  Pass:   4
+  Skip:   0
+  Warn:   0
+Events:   <none>
+
+
+Name:         238fc93a-2c92-4ec4-b112-90efa6741797
+Namespace:    tipsbank-contas
+Labels:       app.kubernetes.io/managed-by=kyverno
+Annotations:  <none>
+API Version:  wgpolicyk8s.io/v1alpha2
+Kind:         PolicyReport
+Metadata:
+  Creation Timestamp:  2026-05-18T15:29:23Z
+  Generation:          12
+  Owner References:
+    API Version:     apps/v1
+    Kind:            ReplicaSet
+    Name:            api-contas-64554bbd
+    UID:             238fc93a-2c92-4ec4-b112-90efa6741797
+  Resource Version:  5411457
+  UID:               b5ec9d8f-f248-4e80-acb1-15c4f935dbb3
+Results:
+  Category:  Security
+  Message:   validation rule 'autogen-disallow-tag-latest' passed.
+  Policy:    disallow-latest-tag
+  Properties:
+    Process:  background scan
+  Result:     pass
+  Rule:       autogen-disallow-tag-latest
+  Scored:     true
+  Source:     kyverno
+  Timestamp:
+    Nanos:    0
+    Seconds:  1779137618
+  Category:   Security
+  Message:    validation rule 'autogen-require-image-tag' passed.
+  Policy:     disallow-latest-tag
+  Properties:
+    Process:  background scan
+  Result:     pass
+  Rule:       autogen-require-image-tag
+  Scored:     true
+  Source:     kyverno
+  Timestamp:
+    Nanos:    0
+    Seconds:  1779137618
+  Category:   Security
+  Message:    validation rule 'autogen-disallow-root-user' passed.
+  Policy:     disallow-root-user
+  Properties:
+    Process:  background scan
+  Result:     pass
+  Rule:       autogen-disallow-root-user
+  Scored:     true
+  Source:     kyverno
+  Timestamp:
+    Nanos:    0
+    Seconds:  1779137618
+Scope:
+  API Version:  apps/v1
+  Kind:         ReplicaSet
+  Name:         api-contas-64554bbd
+  Namespace:    tipsbank-contas
+  UID:          238fc93a-2c92-4ec4-b112-90efa6741797
+Summary:
+  Error:  0
+  Fail:   0
+  Pass:   3
+  Skip:   0
+  Warn:   0
+Events:   <none>
+
+
+Name:         494ea847-c531-45e4-9c58-5752708f81bf
+Namespace:    tipsbank-contas
+Labels:       app.kubernetes.io/managed-by=kyverno
+Annotations:  <none>
+API Version:  wgpolicyk8s.io/v1alpha2
+Kind:         PolicyReport
+Metadata:
+  Creation Timestamp:  2026-05-18T15:29:16Z
+  Generation:          12
+  Owner References:
+    API Version:     v1
+    Kind:            Pod
+    Name:            postgres-replica-0
+    UID:             494ea847-c531-45e4-9c58-5752708f81bf
+  Resource Version:  5411384
+  UID:               3a2fc8a1-ddec-4317-ac5b-4a07bcd63bb3
+Results:
+  Category:  Security
+  Message:   validation rule 'disallow-tag-latest' passed.
+  Policy:    disallow-latest-tag
+  Properties:
+    Process:  background scan
+  Result:     pass
+  Rule:       disallow-tag-latest
+  Scored:     true
+  Source:     kyverno
+  Timestamp:
+    Nanos:    0
+    Seconds:  1779137615
+  Category:   Security
+  Message:    validation rule 'require-image-tag' passed.
+  Policy:     disallow-latest-tag
+  Properties:
+    Process:  background scan
+  Result:     pass
+  Rule:       require-image-tag
+  Scored:     true
+  Source:     kyverno
+  Timestamp:
+    Nanos:    0
+    Seconds:  1779137615
+  Category:   Security
+  Message:    validation rule 'disallow-root-user' passed.
+  Policy:     disallow-root-user
+  Properties:
+    Process:  background scan
+  Result:     pass
+  Rule:       disallow-root-user
+  Scored:     true
+  Source:     kyverno
+  Timestamp:
+    Nanos:    0
+    Seconds:  1779137615
+Scope:
+  API Version:  v1
+  Kind:         Pod
+  Name:         postgres-replica-0
+  Namespace:    tipsbank-contas
+  UID:          494ea847-c531-45e4-9c58-5752708f81bf
+Summary:
+  Error:  0
+  Fail:   0
+  Pass:   3
+  Skip:   0
+  Warn:   0
+Events:   <none>
+
+
+Name:         591c8f32-acd0-4e71-aa57-3a55896df8bd
+Namespace:    tipsbank-contas
+Labels:       app.kubernetes.io/managed-by=kyverno
+Annotations:  <none>
+API Version:  wgpolicyk8s.io/v1alpha2
+Kind:         PolicyReport
+Metadata:
+  Creation Timestamp:  2026-05-18T15:29:17Z
+  Generation:          12
+  Owner References:
+    API Version:     v1
+    Kind:            Pod
+    Name:            api-contas-67dcb8b76c-fbfkm
+    UID:             591c8f32-acd0-4e71-aa57-3a55896df8bd
+  Resource Version:  5411258
+  UID:               0455a5f2-da23-48b9-b615-0db3728cf39b
+Results:
+  Category:  Security
+  Message:   validation rule 'disallow-tag-latest' passed.
+  Policy:    disallow-latest-tag
+  Properties:
+    Process:  background scan
+  Result:     pass
+  Rule:       disallow-tag-latest
+  Scored:     true
+  Source:     kyverno
+  Timestamp:
+    Nanos:    0
+    Seconds:  1779137616
+  Category:   Security
+  Message:    validation rule 'require-image-tag' passed.
+  Policy:     disallow-latest-tag
+  Properties:
+    Process:  background scan
+  Result:     pass
+  Rule:       require-image-tag
+  Scored:     true
+  Source:     kyverno
+  Timestamp:
+    Nanos:    0
+    Seconds:  1779137616
+  Category:   Security
+  Message:    validation rule 'disallow-root-user' passed.
+  Policy:     disallow-root-user
+  Properties:
+    Process:  background scan
+  Result:     pass
+  Rule:       disallow-root-user
+  Scored:     true
+  Source:     kyverno
+  Timestamp:
+    Nanos:    0
+    Seconds:  1779137616
+Scope:
+  API Version:  v1
+  Kind:         Pod
+  Name:         api-contas-67dcb8b76c-fbfkm
+  Namespace:    tipsbank-contas
+  UID:          591c8f32-acd0-4e71-aa57-3a55896df8bd
+Summary:
+  Error:  0
+  Fail:   0
+  Pass:   3
+  Skip:   0
+  Warn:   0
+Events:   <none>
+
+
+Name:         5f533c4a-403c-4c6e-8450-c87c791a7f04
+Namespace:    tipsbank-contas
+Labels:       app.kubernetes.io/managed-by=kyverno
+Annotations:  <none>
+API Version:  wgpolicyk8s.io/v1alpha2
+Kind:         PolicyReport
+Metadata:
+  Creation Timestamp:  2026-05-18T15:29:22Z
+  Generation:          12
+  Owner References:
+    API Version:     apps/v1
+    Kind:            ReplicaSet
+    Name:            api-contas-68f86bffcc
+    UID:             5f533c4a-403c-4c6e-8450-c87c791a7f04
+  Resource Version:  5411430
+  UID:               fba22108-499e-4155-a283-16a0a5358681
+Results:
+  Category:  Security
+  Message:   validation rule 'autogen-disallow-tag-latest' passed.
+  Policy:    disallow-latest-tag
+  Properties:
+    Process:  background scan
+  Result:     pass
+  Rule:       autogen-disallow-tag-latest
+  Scored:     true
+  Source:     kyverno
+  Timestamp:
+    Nanos:    0
+    Seconds:  1779137618
+  Category:   Security
+  Message:    validation rule 'autogen-require-image-tag' passed.
+  Policy:     disallow-latest-tag
+  Properties:
+    Process:  background scan
+  Result:     pass
+  Rule:       autogen-require-image-tag
+  Scored:     true
+  Source:     kyverno
+  Timestamp:
+    Nanos:    0
+    Seconds:  1779137618
+  Category:   Security
+  Message:    validation rule 'autogen-disallow-root-user' passed.
+  Policy:     disallow-root-user
+  Properties:
+    Process:  background scan
+  Result:     pass
+  Rule:       autogen-disallow-root-user
+  Scored:     true
+  Source:     kyverno
+  Timestamp:
+    Nanos:    0
+    Seconds:  1779137618
+Scope:
+  API Version:  apps/v1
+  Kind:         ReplicaSet
+  Name:         api-contas-68f86bffcc
+  Namespace:    tipsbank-contas
+  UID:          5f533c4a-403c-4c6e-8450-c87c791a7f04
+Summary:
+  Error:  0
+  Fail:   0
+  Pass:   3
+  Skip:   0
+  Warn:   0
+Events:   <none>
+
+
+Name:         6576d691-857b-4fbf-8ad1-9bf0b4e1f0f6
+Namespace:    tipsbank-contas
+Labels:       app.kubernetes.io/managed-by=kyverno
+Annotations:  <none>
+API Version:  wgpolicyk8s.io/v1alpha2
+Kind:         PolicyReport
+Metadata:
+  Creation Timestamp:  2026-05-18T15:29:23Z
+  Generation:          12
+  Owner References:
+    API Version:     apps/v1
+    Kind:            ReplicaSet
+    Name:            api-contas-c574fcd6b
+    UID:             6576d691-857b-4fbf-8ad1-9bf0b4e1f0f6
+  Resource Version:  5411482
+  UID:               c9eb18af-f287-4937-b6e3-28f80d88d299
+Results:
+  Category:  Security
+  Message:   validation rule 'autogen-disallow-tag-latest' passed.
+  Policy:    disallow-latest-tag
+  Properties:
+    Process:  background scan
+  Result:     pass
+  Rule:       autogen-disallow-tag-latest
+  Scored:     true
+  Source:     kyverno
+  Timestamp:
+    Nanos:    0
+    Seconds:  1779137620
+  Category:   Security
+  Message:    validation rule 'autogen-require-image-tag' passed.
+  Policy:     disallow-latest-tag
+  Properties:
+    Process:  background scan
+  Result:     pass
+  Rule:       autogen-require-image-tag
+  Scored:     true
+  Source:     kyverno
+  Timestamp:
+    Nanos:    0
+    Seconds:  1779137620
+  Category:   Security
+  Message:    validation rule 'autogen-disallow-root-user' passed.
+  Policy:     disallow-root-user
+  Properties:
+    Process:  background scan
+  Result:     pass
+  Rule:       autogen-disallow-root-user
+  Scored:     true
+  Source:     kyverno
+  Timestamp:
+    Nanos:    0
+    Seconds:  1779137620
+Scope:
+  API Version:  apps/v1
+  Kind:         ReplicaSet
+  Name:         api-contas-c574fcd6b
+  Namespace:    tipsbank-contas
+  UID:          6576d691-857b-4fbf-8ad1-9bf0b4e1f0f6
+Summary:
+  Error:  0
+  Fail:   0
+  Pass:   3
+  Skip:   0
+  Warn:   0
+Events:   <none>
+
+
+Name:         69bb76ea-0b05-4794-abde-a43169e1618e
+Namespace:    tipsbank-contas
+Labels:       app.kubernetes.io/managed-by=kyverno
+Annotations:  <none>
+API Version:  wgpolicyk8s.io/v1alpha2
+Kind:         PolicyReport
+Metadata:
+  Creation Timestamp:  2026-05-18T15:29:17Z
+  Generation:          12
+  Owner References:
+    API Version:     v1
+    Kind:            Pod
+    Name:            postgres-0
+    UID:             69bb76ea-0b05-4794-abde-a43169e1618e
+  Resource Version:  5411243
+  UID:               24ad2724-89d8-49e3-8dab-5e9635347ff7
+Results:
+  Category:  Security
+  Message:   validation rule 'disallow-tag-latest' passed.
+  Policy:    disallow-latest-tag
+  Properties:
+    Process:  background scan
+  Result:     pass
+  Rule:       disallow-tag-latest
+  Scored:     true
+  Source:     kyverno
+  Timestamp:
+    Nanos:    0
+    Seconds:  1779137616
+  Category:   Security
+  Message:    validation rule 'require-image-tag' passed.
+  Policy:     disallow-latest-tag
+  Properties:
+    Process:  background scan
+  Result:     pass
+  Rule:       require-image-tag
+  Scored:     true
+  Source:     kyverno
+  Timestamp:
+    Nanos:    0
+    Seconds:  1779137616
+  Category:   Security
+  Message:    validation rule 'disallow-root-user' passed.
+  Policy:     disallow-root-user
+  Properties:
+    Process:  background scan
+  Result:     pass
+  Rule:       disallow-root-user
+  Scored:     true
+  Source:     kyverno
+  Timestamp:
+    Nanos:    0
+    Seconds:  1779137616
+Scope:
+  API Version:  v1
+  Kind:         Pod
+  Name:         postgres-0
+  Namespace:    tipsbank-contas
+  UID:          69bb76ea-0b05-4794-abde-a43169e1618e
+Summary:
+  Error:  0
+  Fail:   0
+  Pass:   3
+  Skip:   0
+  Warn:   0
+Events:   <none>
+
+
+Name:         6de9388f-874c-4ea3-9d96-fcac679d6e0f
+Namespace:    tipsbank-contas
+Labels:       app.kubernetes.io/managed-by=kyverno
+Annotations:  <none>
+API Version:  wgpolicyk8s.io/v1alpha2
+Kind:         PolicyReport
+Metadata:
+  Creation Timestamp:  2026-05-18T15:29:23Z
+  Generation:          12
+  Owner References:
+    API Version:     apps/v1
+    Kind:            ReplicaSet
+    Name:            api-contas-6f58f96b9f
+    UID:             6de9388f-874c-4ea3-9d96-fcac679d6e0f
+  Resource Version:  5411461
+  UID:               742b8b46-77ec-4f50-a9e7-543edbe1e544
+Results:
+  Category:  Security
+  Message:   validation rule 'autogen-disallow-tag-latest' passed.
+  Policy:    disallow-latest-tag
+  Properties:
+    Process:  background scan
+  Result:     pass
+  Rule:       autogen-disallow-tag-latest
+  Scored:     true
+  Source:     kyverno
+  Timestamp:
+    Nanos:    0
+    Seconds:  1779137619
+  Category:   Security
+  Message:    validation rule 'autogen-require-image-tag' passed.
+  Policy:     disallow-latest-tag
+  Properties:
+    Process:  background scan
+  Result:     pass
+  Rule:       autogen-require-image-tag
+  Scored:     true
+  Source:     kyverno
+  Timestamp:
+    Nanos:    0
+    Seconds:  1779137619
+  Category:   Security
+  Message:    validation rule 'autogen-disallow-root-user' passed.
+  Policy:     disallow-root-user
+  Properties:
+    Process:  background scan
+  Result:     pass
+  Rule:       autogen-disallow-root-user
+  Scored:     true
+  Source:     kyverno
+  Timestamp:
+    Nanos:    0
+    Seconds:  1779137619
+Scope:
+  API Version:  apps/v1
+  Kind:         ReplicaSet
+  Name:         api-contas-6f58f96b9f
+  Namespace:    tipsbank-contas
+  UID:          6de9388f-874c-4ea3-9d96-fcac679d6e0f
+Summary:
+  Error:  0
+  Fail:   0
+  Pass:   3
+  Skip:   0
+  Warn:   0
+Events:   <none>
+
+
+Name:         90e38008-2df4-4f0c-9e02-9dd64c81ae45
+Namespace:    tipsbank-contas
+Labels:       app.kubernetes.io/managed-by=kyverno
+Annotations:  <none>
+API Version:  wgpolicyk8s.io/v1alpha2
+Kind:         PolicyReport
+Metadata:
+  Creation Timestamp:  2026-05-18T15:29:18Z
+  Generation:          12
+  Owner References:
+    API Version:     v1
+    Kind:            Pod
+    Name:            api-contas-67dcb8b76c-pb6nt
+    UID:             90e38008-2df4-4f0c-9e02-9dd64c81ae45
+  Resource Version:  5411292
+  UID:               2a4815cc-9030-406a-a83d-ea3b9a709507
+Results:
+  Category:  Security
+  Message:   validation rule 'disallow-tag-latest' passed.
+  Policy:    disallow-latest-tag
+  Properties:
+    Process:  background scan
+  Result:     pass
+  Rule:       disallow-tag-latest
+  Scored:     true
+  Source:     kyverno
+  Timestamp:
+    Nanos:    0
+    Seconds:  1779137616
+  Category:   Security
+  Message:    validation rule 'require-image-tag' passed.
+  Policy:     disallow-latest-tag
+  Properties:
+    Process:  background scan
+  Result:     pass
+  Rule:       require-image-tag
+  Scored:     true
+  Source:     kyverno
+  Timestamp:
+    Nanos:    0
+    Seconds:  1779137616
+  Category:   Security
+  Message:    validation rule 'disallow-root-user' passed.
+  Policy:     disallow-root-user
+  Properties:
+    Process:  background scan
+  Result:     pass
+  Rule:       disallow-root-user
+  Scored:     true
+  Source:     kyverno
+  Timestamp:
+    Nanos:    0
+    Seconds:  1779137616
+Scope:
+  API Version:  v1
+  Kind:         Pod
+  Name:         api-contas-67dcb8b76c-pb6nt
+  Namespace:    tipsbank-contas
+  UID:          90e38008-2df4-4f0c-9e02-9dd64c81ae45
+Summary:
+  Error:  0
+  Fail:   0
+  Pass:   3
+  Skip:   0
+  Warn:   0
+Events:   <none>
+
+
+Name:         9ea6922e-c774-47c2-8e2f-9828be267289
+Namespace:    tipsbank-contas
+Labels:       app.kubernetes.io/managed-by=kyverno
+Annotations:  <none>
+API Version:  wgpolicyk8s.io/v1alpha2
+Kind:         PolicyReport
+Metadata:
+  Creation Timestamp:  2026-05-18T15:29:23Z
+  Generation:          12
+  Owner References:
+    API Version:     apps/v1
+    Kind:            ReplicaSet
+    Name:            api-contas-65d86d5dc7
+    UID:             9ea6922e-c774-47c2-8e2f-9828be267289
+  Resource Version:  5411514
+  UID:               244b1639-d01f-4947-b6d8-fc25d1f9a75a
+Results:
+  Category:  Security
+  Message:   validation rule 'autogen-disallow-tag-latest' passed.
+  Policy:    disallow-latest-tag
+  Properties:
+    Process:  background scan
+  Result:     pass
+  Rule:       autogen-disallow-tag-latest
+  Scored:     true
+  Source:     kyverno
+  Timestamp:
+    Nanos:    0
+    Seconds:  1779137621
+  Category:   Security
+  Message:    validation rule 'autogen-require-image-tag' passed.
+  Policy:     disallow-latest-tag
+  Properties:
+    Process:  background scan
+  Result:     pass
+  Rule:       autogen-require-image-tag
+  Scored:     true
+  Source:     kyverno
+  Timestamp:
+    Nanos:    0
+    Seconds:  1779137621
+  Category:   Security
+  Message:    validation rule 'autogen-disallow-root-user' passed.
+  Policy:     disallow-root-user
+  Properties:
+    Process:  background scan
+  Result:     pass
+  Rule:       autogen-disallow-root-user
+  Scored:     true
+  Source:     kyverno
+  Timestamp:
+    Nanos:    0
+    Seconds:  1779137621
+Scope:
+  API Version:  apps/v1
+  Kind:         ReplicaSet
+  Name:         api-contas-65d86d5dc7
+  Namespace:    tipsbank-contas
+  UID:          9ea6922e-c774-47c2-8e2f-9828be267289
+Summary:
+  Error:  0
+  Fail:   0
+  Pass:   3
+  Skip:   0
+  Warn:   0
+Events:   <none>
+
+
+Name:         9f183207-5241-4844-8249-65efe5be2fa2
+Namespace:    tipsbank-contas
+Labels:       app.kubernetes.io/managed-by=kyverno
+Annotations:  <none>
+API Version:  wgpolicyk8s.io/v1alpha2
+Kind:         PolicyReport
+Metadata:
+  Creation Timestamp:  2026-05-18T15:29:24Z
+  Generation:          13
+  Owner References:
+    API Version:     apps/v1
+    Kind:            StatefulSet
+    Name:            postgres-replica
+    UID:             9f183207-5241-4844-8249-65efe5be2fa2
+  Resource Version:  5411672
+  UID:               9ac0b4d8-602e-45c3-9055-714559132865
+Results:
+  Category:  Security
+  Message:   validation rule 'autogen-disallow-tag-latest' passed.
+  Policy:    disallow-latest-tag
+  Properties:
+    Process:  background scan
+  Result:     pass
+  Rule:       autogen-disallow-tag-latest
+  Scored:     true
+  Source:     kyverno
+  Timestamp:
+    Nanos:    0
+    Seconds:  1779137622
+  Category:   Security
+  Message:    validation rule 'autogen-require-image-tag' passed.
+  Policy:     disallow-latest-tag
+  Properties:
+    Process:  background scan
+  Result:     pass
+  Rule:       autogen-require-image-tag
+  Scored:     true
+  Source:     kyverno
+  Timestamp:
+    Nanos:    0
+    Seconds:  1779137622
+  Category:   Security
+  Message:    validation rule 'autogen-disallow-root-user' passed.
+  Policy:     disallow-root-user
+  Properties:
+    Process:  background scan
+  Result:     pass
+  Rule:       autogen-disallow-root-user
+  Scored:     true
+  Source:     kyverno
+  Timestamp:
+    Nanos:    0
+    Seconds:  1779137622
+  Message:    validation rule 'require-app-team-env' passed.
+  Policy:     require-labels
+  Properties:
+    Process:  background scan
+  Result:     pass
+  Rule:       require-app-team-env
+  Scored:     true
+  Source:     kyverno
+  Timestamp:
+    Nanos:    0
+    Seconds:  1779137622
+Scope:
+  API Version:  apps/v1
+  Kind:         StatefulSet
+  Name:         postgres-replica
+  Namespace:    tipsbank-contas
+  UID:          9f183207-5241-4844-8249-65efe5be2fa2
+Summary:
+  Error:  0
+  Fail:   0
+  Pass:   4
+  Skip:   0
+  Warn:   0
+Events:   <none>
+
+
+Name:         9f705a18-24c0-4981-9601-85cafeafa382
+Namespace:    tipsbank-contas
+Labels:       app.kubernetes.io/managed-by=kyverno
+Annotations:  <none>
+API Version:  wgpolicyk8s.io/v1alpha2
+Kind:         PolicyReport
+Metadata:
+  Creation Timestamp:  2026-05-18T15:29:23Z
+  Generation:          12
+  Owner References:
+    API Version:     apps/v1
+    Kind:            ReplicaSet
+    Name:            api-contas-5958f4d65
+    UID:             9f705a18-24c0-4981-9601-85cafeafa382
+  Resource Version:  5411504
+  UID:               62913704-579c-448e-8bc4-b89288864b8a
+Results:
+  Category:  Security
+  Message:   validation rule 'autogen-disallow-tag-latest' passed.
+  Policy:    disallow-latest-tag
+  Properties:
+    Process:  background scan
+  Result:     pass
+  Rule:       autogen-disallow-tag-latest
+  Scored:     true
+  Source:     kyverno
+  Timestamp:
+    Nanos:    0
+    Seconds:  1779137621
+  Category:   Security
+  Message:    validation rule 'autogen-require-image-tag' passed.
+  Policy:     disallow-latest-tag
+  Properties:
+    Process:  background scan
+  Result:     pass
+  Rule:       autogen-require-image-tag
+  Scored:     true
+  Source:     kyverno
+  Timestamp:
+    Nanos:    0
+    Seconds:  1779137621
+  Category:   Security
+  Message:    validation rule 'autogen-disallow-root-user' passed.
+  Policy:     disallow-root-user
+  Properties:
+    Process:  background scan
+  Result:     pass
+  Rule:       autogen-disallow-root-user
+  Scored:     true
+  Source:     kyverno
+  Timestamp:
+    Nanos:    0
+    Seconds:  1779137621
+Scope:
+  API Version:  apps/v1
+  Kind:         ReplicaSet
+  Name:         api-contas-5958f4d65
+  Namespace:    tipsbank-contas
+  UID:          9f705a18-24c0-4981-9601-85cafeafa382
+Summary:
+  Error:  0
+  Fail:   0
+  Pass:   3
+  Skip:   0
+  Warn:   0
+Events:   <none>
+
+
+Name:         a3c97984-3c6a-43ce-813c-edc39507bdbd
+Namespace:    tipsbank-contas
+Labels:       app.kubernetes.io/managed-by=kyverno
+Annotations:  <none>
+API Version:  wgpolicyk8s.io/v1alpha2
+Kind:         PolicyReport
+Metadata:
+  Creation Timestamp:  2026-05-18T15:29:24Z
+  Generation:          12
+  Owner References:
+    API Version:     apps/v1
+    Kind:            ReplicaSet
+    Name:            api-contas-594c4dbd5b
+    UID:             a3c97984-3c6a-43ce-813c-edc39507bdbd
+  Resource Version:  5411584
+  UID:               fc336add-6856-4a4f-8ba8-c8108ef7b05d
+Results:
+  Category:  Security
+  Message:   validation rule 'autogen-disallow-tag-latest' passed.
+  Policy:    disallow-latest-tag
+  Properties:
+    Process:  background scan
+  Result:     pass
+  Rule:       autogen-disallow-tag-latest
+  Scored:     true
+  Source:     kyverno
+  Timestamp:
+    Nanos:    0
+    Seconds:  1779137618
+  Category:   Security
+  Message:    validation rule 'autogen-require-image-tag' passed.
+  Policy:     disallow-latest-tag
+  Properties:
+    Process:  background scan
+  Result:     pass
+  Rule:       autogen-require-image-tag
+  Scored:     true
+  Source:     kyverno
+  Timestamp:
+    Nanos:    0
+    Seconds:  1779137618
+  Category:   Security
+  Message:    validation rule 'autogen-disallow-root-user' passed.
+  Policy:     disallow-root-user
+  Properties:
+    Process:  background scan
+  Result:     pass
+  Rule:       autogen-disallow-root-user
+  Scored:     true
+  Source:     kyverno
+  Timestamp:
+    Nanos:    0
+    Seconds:  1779137618
+Scope:
+  API Version:  apps/v1
+  Kind:         ReplicaSet
+  Name:         api-contas-594c4dbd5b
+  Namespace:    tipsbank-contas
+  UID:          a3c97984-3c6a-43ce-813c-edc39507bdbd
+Summary:
+  Error:  0
+  Fail:   0
+  Pass:   3
+  Skip:   0
+  Warn:   0
+Events:   <none>
+
+
+Name:         a7081e56-97d7-44f8-81d7-067c9feed53c
+Namespace:    tipsbank-contas
+Labels:       app.kubernetes.io/managed-by=kyverno
+Annotations:  <none>
+API Version:  wgpolicyk8s.io/v1alpha2
+Kind:         PolicyReport
+Metadata:
+  Creation Timestamp:  2026-05-18T15:29:22Z
+  Generation:          12
+  Owner References:
+    API Version:     apps/v1
+    Kind:            ReplicaSet
+    Name:            api-contas-67dcb8b76c
+    UID:             a7081e56-97d7-44f8-81d7-067c9feed53c
+  Resource Version:  5411596
+  UID:               5c9f44ba-6b2e-4bf0-b5fc-633a7cda4861
+Results:
+  Category:  Security
+  Message:   validation rule 'autogen-disallow-tag-latest' passed.
+  Policy:    disallow-latest-tag
+  Properties:
+    Process:  background scan
+  Result:     pass
+  Rule:       autogen-disallow-tag-latest
+  Scored:     true
+  Source:     kyverno
+  Timestamp:
+    Nanos:    0
+    Seconds:  1779137618
+  Category:   Security
+  Message:    validation rule 'autogen-require-image-tag' passed.
+  Policy:     disallow-latest-tag
+  Properties:
+    Process:  background scan
+  Result:     pass
+  Rule:       autogen-require-image-tag
+  Scored:     true
+  Source:     kyverno
+  Timestamp:
+    Nanos:    0
+    Seconds:  1779137618
+  Category:   Security
+  Message:    validation rule 'autogen-disallow-root-user' passed.
+  Policy:     disallow-root-user
+  Properties:
+    Process:  background scan
+  Result:     pass
+  Rule:       autogen-disallow-root-user
+  Scored:     true
+  Source:     kyverno
+  Timestamp:
+    Nanos:    0
+    Seconds:  1779137618
+Scope:
+  API Version:  apps/v1
+  Kind:         ReplicaSet
+  Name:         api-contas-67dcb8b76c
+  Namespace:    tipsbank-contas
+  UID:          a7081e56-97d7-44f8-81d7-067c9feed53c
+Summary:
+  Error:  0
+  Fail:   0
+  Pass:   3
+  Skip:   0
+  Warn:   0
+Events:   <none>
+
+
+Name:         abcc2f25-db91-49a8-86d9-df0d257687eb
+Namespace:    tipsbank-contas
+Labels:       app.kubernetes.io/managed-by=kyverno
+Annotations:  <none>
+API Version:  wgpolicyk8s.io/v1alpha2
+Kind:         PolicyReport
+Metadata:
+  Creation Timestamp:  2026-05-18T15:29:23Z
+  Generation:          12
+  Owner References:
+    API Version:     apps/v1
+    Kind:            ReplicaSet
+    Name:            api-contas-d4b9fd5fc
+    UID:             abcc2f25-db91-49a8-86d9-df0d257687eb
+  Resource Version:  5411582
+  UID:               8a0a956f-8872-4c67-b2a9-0de6c9dc7040
+Results:
+  Category:  Security
+  Message:   validation rule 'autogen-disallow-tag-latest' passed.
+  Policy:    disallow-latest-tag
+  Properties:
+    Process:  background scan
+  Result:     pass
+  Rule:       autogen-disallow-tag-latest
+  Scored:     true
+  Source:     kyverno
+  Timestamp:
+    Nanos:    0
+    Seconds:  1779137618
+  Category:   Security
+  Message:    validation rule 'autogen-require-image-tag' passed.
+  Policy:     disallow-latest-tag
+  Properties:
+    Process:  background scan
+  Result:     pass
+  Rule:       autogen-require-image-tag
+  Scored:     true
+  Source:     kyverno
+  Timestamp:
+    Nanos:    0
+    Seconds:  1779137618
+  Category:   Security
+  Message:    validation rule 'autogen-disallow-root-user' passed.
+  Policy:     disallow-root-user
+  Properties:
+    Process:  background scan
+  Result:     pass
+  Rule:       autogen-disallow-root-user
+  Scored:     true
+  Source:     kyverno
+  Timestamp:
+    Nanos:    0
+    Seconds:  1779137618
+Scope:
+  API Version:  apps/v1
+  Kind:         ReplicaSet
+  Name:         api-contas-d4b9fd5fc
+  Namespace:    tipsbank-contas
+  UID:          abcc2f25-db91-49a8-86d9-df0d257687eb
+Summary:
+  Error:  0
+  Fail:   0
+  Pass:   3
+  Skip:   0
+  Warn:   0
+Events:   <none>
+
+
+Name:         b6e1cef1-3e6d-4ddd-bff7-3890d5d7c6f8
+Namespace:    tipsbank-contas
+Labels:       app.kubernetes.io/managed-by=kyverno
+Annotations:  <none>
+API Version:  wgpolicyk8s.io/v1alpha2
+Kind:         PolicyReport
+Metadata:
+  Creation Timestamp:  2026-05-18T15:29:23Z
+  Generation:          12
+  Owner References:
+    API Version:     apps/v1
+    Kind:            ReplicaSet
+    Name:            api-contas-856f59f7d6
+    UID:             b6e1cef1-3e6d-4ddd-bff7-3890d5d7c6f8
+  Resource Version:  5411432
+  UID:               1e47453d-46c2-4634-a5ce-ea641500e390
+Results:
+  Category:  Security
+  Message:   validation rule 'autogen-disallow-tag-latest' passed.
+  Policy:    disallow-latest-tag
+  Properties:
+    Process:  background scan
+  Result:     pass
+  Rule:       autogen-disallow-tag-latest
+  Scored:     true
+  Source:     kyverno
+  Timestamp:
+    Nanos:    0
+    Seconds:  1779137618
+  Category:   Security
+  Message:    validation rule 'autogen-require-image-tag' passed.
+  Policy:     disallow-latest-tag
+  Properties:
+    Process:  background scan
+  Result:     pass
+  Rule:       autogen-require-image-tag
+  Scored:     true
+  Source:     kyverno
+  Timestamp:
+    Nanos:    0
+    Seconds:  1779137618
+  Category:   Security
+  Message:    validation rule 'autogen-disallow-root-user' passed.
+  Policy:     disallow-root-user
+  Properties:
+    Process:  background scan
+  Result:     pass
+  Rule:       autogen-disallow-root-user
+  Scored:     true
+  Source:     kyverno
+  Timestamp:
+    Nanos:    0
+    Seconds:  1779137618
+Scope:
+  API Version:  apps/v1
+  Kind:         ReplicaSet
+  Name:         api-contas-856f59f7d6
+  Namespace:    tipsbank-contas
+  UID:          b6e1cef1-3e6d-4ddd-bff7-3890d5d7c6f8
+Summary:
+  Error:  0
+  Fail:   0
+  Pass:   3
+  Skip:   0
+  Warn:   0
+Events:   <none>
+
+
+Name:         c3882251-a0ef-4caf-9918-4b32efa87016
+Namespace:    tipsbank-contas
+Labels:       app.kubernetes.io/managed-by=kyverno
+Annotations:  <none>
+API Version:  wgpolicyk8s.io/v1alpha2
+Kind:         PolicyReport
+Metadata:
+  Creation Timestamp:  2026-05-18T15:29:24Z
+  Generation:          15
+  Owner References:
+    API Version:     apps/v1
+    Kind:            StatefulSet
+    Name:            postgres
+    UID:             c3882251-a0ef-4caf-9918-4b32efa87016
+  Resource Version:  5413808
+  UID:               fd7f8ffc-05d7-4d7d-bc4c-481e579880ba
+Results:
+  Category:  Security
+  Message:   validation rule 'autogen-disallow-tag-latest' passed.
+  Policy:    disallow-latest-tag
+  Properties:
+    Process:  background scan
+  Result:     pass
+  Rule:       autogen-disallow-tag-latest
+  Scored:     true
+  Source:     kyverno
+  Timestamp:
+    Nanos:    0
+    Seconds:  1779138025
+  Category:   Security
+  Message:    validation rule 'autogen-require-image-tag' passed.
+  Policy:     disallow-latest-tag
+  Properties:
+    Process:  background scan
+  Result:     pass
+  Rule:       autogen-require-image-tag
+  Scored:     true
+  Source:     kyverno
+  Timestamp:
+    Nanos:    0
+    Seconds:  1779138025
+  Category:   Security
+  Message:    validation rule 'autogen-disallow-root-user' passed.
+  Policy:     disallow-root-user
+  Properties:
+    Process:  background scan
+  Result:     pass
+  Rule:       autogen-disallow-root-user
+  Scored:     true
+  Source:     kyverno
+  Timestamp:
+    Nanos:    0
+    Seconds:  1779138025
+  Message:    validation rule 'require-app-team-env' passed.
+  Policy:     require-labels
+  Properties:
+    Process:  background scan
+  Result:     pass
+  Rule:       require-app-team-env
+  Scored:     true
+  Source:     kyverno
+  Timestamp:
+    Nanos:    0
+    Seconds:  1779138025
+Scope:
+  API Version:  apps/v1
+  Kind:         StatefulSet
+  Name:         postgres
+  Namespace:    tipsbank-contas
+  UID:          c3882251-a0ef-4caf-9918-4b32efa87016
+Summary:
+  Error:  0
+  Fail:   0
+  Pass:   4
+  Skip:   0
+  Warn:   0
+Events:   <none>
+
+
+Name:         c69d4da7-f89a-4cc9-b32e-cc019477295b
+Namespace:    tipsbank-contas
+Labels:       app.kubernetes.io/managed-by=kyverno
+Annotations:  <none>
+API Version:  wgpolicyk8s.io/v1alpha2
+Kind:         PolicyReport
+Metadata:
+  Creation Timestamp:  2026-05-18T15:29:23Z
+  Generation:          12
+  Owner References:
+    API Version:     apps/v1
+    Kind:            ReplicaSet
+    Name:            api-contas-6c4cbcc8b9
+    UID:             c69d4da7-f89a-4cc9-b32e-cc019477295b
+  Resource Version:  5411460
+  UID:               a91cfe3a-8ced-46d2-a423-6aae5889f6c3
+Results:
+  Category:  Security
+  Message:   validation rule 'autogen-disallow-tag-latest' passed.
+  Policy:    disallow-latest-tag
+  Properties:
+    Process:  background scan
+  Result:     pass
+  Rule:       autogen-disallow-tag-latest
+  Scored:     true
+  Source:     kyverno
+  Timestamp:
+    Nanos:    0
+    Seconds:  1779137619
+  Category:   Security
+  Message:    validation rule 'autogen-require-image-tag' passed.
+  Policy:     disallow-latest-tag
+  Properties:
+    Process:  background scan
+  Result:     pass
+  Rule:       autogen-require-image-tag
+  Scored:     true
+  Source:     kyverno
+  Timestamp:
+    Nanos:    0
+    Seconds:  1779137619
+  Category:   Security
+  Message:    validation rule 'autogen-disallow-root-user' passed.
+  Policy:     disallow-root-user
+  Properties:
+    Process:  background scan
+  Result:     pass
+  Rule:       autogen-disallow-root-user
+  Scored:     true
+  Source:     kyverno
+  Timestamp:
+    Nanos:    0
+    Seconds:  1779137619
+Scope:
+  API Version:  apps/v1
+  Kind:         ReplicaSet
+  Name:         api-contas-6c4cbcc8b9
+  Namespace:    tipsbank-contas
+  UID:          c69d4da7-f89a-4cc9-b32e-cc019477295b
+Summary:
+  Error:  0
+  Fail:   0
+  Pass:   3
+  Skip:   0
+  Warn:   0
+Events:   <none>
+
+    /mnt/c/Users/felip/Documents/Projetos/tipsbank  on   main ⇡9 ▓▒░                                                               ░▒▓ at 18:02:36  
+❯ 
