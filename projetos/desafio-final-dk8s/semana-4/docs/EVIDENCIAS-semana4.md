@@ -379,3 +379,324 @@ Isso é por design do Kyverno:
 - O **background scanner** avalia os recursos existentes e gera `PolicyReport` com os resultados, mas **não mata pods** — ele é read-only.
 
 Para forçar a re-validação de um pod existente, é necessário recriá-lo (delete + recreate, ou rollout restart no Deployment).
+
+---
+
+### Etapa 4.2 — Kyverno: Mutate (injetar securityContext)
+
+**Data de conclusão:** 2026-05-19
+
+#### Objetivo segundo o MANUAL-ALUNO.md
+
+O Kyverno injeta automaticamente `runAsNonRoot: true`, `readOnlyRootFilesystem: true` e `allowPrivilegeEscalation: false` em qualquer pod novo criado nos namespaces TipsBank — sem precisar declarar o securityContext em cada Deployment individualmente.
+
+#### Critérios de aceite do manual
+
+- Pod criado sem securityContext recebe o contexto mutado pelo Kyverno
+- Todas as 3 APIs do TipsBank continuam funcionando com root filesystem read-only
+
+#### Status dos critérios
+
+| Critério | Status | Evidência |
+|---|---|---|
+| Pod sem securityContext recebe mutação | **Atendido** | `kubectl get pod teste-mutate -o jsonpath='{.spec.containers[0].securityContext}'` → 3 campos injetados |
+| 3 APIs funcionando com readOnlyRootFilesystem | **Atendido** | Todos os pods Running após rollout restart; `curl https://tipsbank.staypuff.info/healthz` → ok |
+
+---
+
+#### Passo 1 — Corrigir o log-forwarder (ajuste necessário antes da policy)
+
+Antes de criar a ClusterPolicy de Mutate, foi necessário corrigir o sidecar `log-forwarder` no deployment `api-transacoes`. O container usava `busybox:1.36` sem nenhum `securityContext` declarado — o container runtime usa o UID padrão da imagem, que para o busybox é UID 0 (root).
+
+Quando a policy de mutate injetou `runAsNonRoot: true`, o kubelet rejeitou o container com:
+
+```
+Warning  Failed  kubelet  Error: container has runAsNonRoot and image will run as root
+(pod: "api-transacoes-554f5844b6-zdk6k_tipsbank-transacoes", container: log-forwarder)
+```
+
+O pod ficou em `CreateContainerConfigError` repetidamente — o container `api-transacoes` principal subia (Running), mas o sidecar ficava em `Waiting`. O rolling update ficou travado: o novo ReplicaSet não conseguia escalar, o antigo não era descomissionado.
+
+**Fix**: adicionar `securityContext.runAsUser: 65532` ao container `log-forwarder` no manifest. UID 65532 é o mesmo usado pelo container principal `api-transacoes` (imagem Distroless). O `sh` e o `tail -F` funcionam perfeitamente como qualquer UID não-root — nenhuma mudança de comportamento.
+
+```yaml
+# k8s/tipsbank-transacoes/transacoes-deployment.yaml
+containers:
+  - name: log-forwarder
+    image: busybox:1.36
+    securityContext:
+      runAsUser: 65532    # ← linha adicionada
+    command: [...]
+```
+
+```bash
+kubectl apply -f k8s/tipsbank-transacoes/transacoes-deployment.yaml
+# → deployment.apps/api-transacoes configured
+```
+
+**Por que UID 65532 especificamente?** Por consistência com o container principal. O `api-transacoes` (Distroless) cria `/var/log/app/app.log` com permissão `0644` (owner=rw, others=r). O log-forwarder com UID 65532 acessa o arquivo como owner — permissão `rw-`. Mesmo sem `fsGroup`, `0644` é legível por qualquer UID (`others readable`). O `tail -F` só lê do arquivo, nunca cria temporários — `readOnlyRootFilesystem: true` é seguro.
+
+---
+
+#### Passo 2 — ClusterPolicy: `mutate-security-context`
+
+**Arquivo:** `k8s/kyverno/mutate-security-context.yaml`
+
+```yaml
+apiVersion: kyverno.io/v1
+kind: ClusterPolicy
+metadata:
+  name: mutate-security-context
+  labels:
+    rule: mutate-security-context
+    app.kubernetes.io/part-of: tipsbank
+  annotations:
+    policies.kyverno.io/title: Mutate Security Context
+    policies.kyverno.io/category: Security
+    policies.kyverno.io/severity: High
+    policies.kyverno.io/description: Injeta runAsNonRoot, readOnlyRootFilesystem e allowPrivilegeEscalation em tipsbank.
+spec:
+  rules:
+    - name: inject-security-context
+      match:
+        any:
+          - resources:
+              kinds:
+                - Pod
+              namespaces:
+                - tipsbank-contas
+                - tipsbank-transacoes
+                - tipsbank-auditoria
+                - tipsbank-web
+      mutate:
+        foreach:
+          - list: "request.object.spec.containers[]"
+            patchStrategicMerge:
+              spec:
+                containers:
+                  - (name): "{{ element.name }}"
+                    securityContext:
+                      +(runAsNonRoot): true
+                      +(readOnlyRootFilesystem): true
+                      +(allowPrivilegeEscalation): false
+```
+
+**Anatomia técnica:**
+
+| Elemento | Função |
+|---|---|
+| `foreach` + `list: "request.object.spec.containers[]"` | Itera sobre cada container em `spec.containers` — exclui `initContainers` (campo separado) |
+| `(name): "{{ element.name }}"` | Anchor de matching — instrui o strategic merge a aplicar o patch no container com aquele nome específico, não em todos |
+| `+(campo): valor` | Anchor de adição condicional — insere o campo **apenas se ele não estiver declarado**; respeita valores já existentes no manifest |
+| `patchStrategicMerge` | Mecanismo de patch que entende a semântica do Kubernetes (arrays de containers têm chave `name`) |
+
+**Por que `+()` e não o campo direto?** `+(runAsNonRoot): true` adiciona se ausente; se o manifest já tiver `runAsNonRoot: false` (caso específico de um container que explicitamente precisa de comportamento diferente), o valor é preservado. `runAsNonRoot: true` sem `+` sobrescreveria sempre, podendo quebrar casos de uso legítimos.
+
+**Fluxo de admissão — por que Mutate roda antes de Validate:**
+
+```
+kubectl apply
+    ↓
+kube-apiserver
+    ↓
+[Mutating Webhooks]  ← Kyverno Mutate injeta securityContext
+    ↓
+[Validating Webhooks] ← Kyverno Validate checa o recurso já mutado
+    ↓
+etcd
+```
+
+A policy `disallow-root-user` da Etapa 4.1 valida que `runAsUser ≠ 0`. Com o Mutate rodando primeiro, o securityContext chega ao webhook de validação já com os campos corretos — as duas layers se complementam.
+
+```bash
+kubectl apply -f k8s/kyverno/mutate-security-context.yaml
+# clusterpolicy.kyverno.io/mutate-security-context created
+
+kubectl get cpol mutate-security-context
+# NAME                      ADMISSION   BACKGROUND   READY   AGE   MESSAGE
+# mutate-security-context   true        true         True    28s   Ready
+```
+
+**Autogen do Kyverno:** assim como na Etapa 4.1, o Kyverno gerou automaticamente as regras equivalentes para `Deployment`, `StatefulSet`, `DaemonSet`, `Job`, `CronJob` — visíveis em `kubectl describe cpol mutate-security-context` na seção `Status.Autogen`.
+
+---
+
+#### Passo 3 — Teste de mutação com pod simples
+
+```bash
+kubectl run teste-mutate \
+  --image=felipestaypuff/tipsbank-api-contas:v1.0.0 \
+  --restart=Never \
+  -n tipsbank-contas
+# pod/teste-mutate created
+
+kubectl get pod teste-mutate -n tipsbank-contas \
+  -o jsonpath='{.spec.containers[0].securityContext}' | jq
+```
+
+**Output:**
+```json
+{
+  "allowPrivilegeEscalation": false,
+  "readOnlyRootFilesystem": true,
+  "runAsNonRoot": true
+}
+```
+
+O manifest do pod `teste-mutate` não declarou nenhum `securityContext`. Todos os 3 campos foram injetados pelo Kyverno antes de chegar ao etcd — transparente para quem fez o deploy.
+
+```bash
+kubectl delete pod teste-mutate -n tipsbank-contas
+# pod "teste-mutate" deleted
+```
+
+---
+
+#### Passo 4 — Rollout restart em todos os deployments
+
+O Kyverno Mutate só age em requisições novas (CREATE/UPDATE). Pods já em Running não são afetados retroativamente. Para que os workloads existentes recebam a injeção, é necessário recriar os pods via `rollout restart`.
+
+```bash
+kubectl rollout restart deployment/api-contas -n tipsbank-contas
+kubectl rollout status deployment/api-contas -n tipsbank-contas
+# Waiting for deployment "api-contas" rollout to finish: 1 old replicas are pending termination...
+# deployment "api-contas" successfully rolled out
+
+kubectl rollout restart deployment/auditoria -n tipsbank-auditoria
+kubectl rollout status deployment/auditoria -n tipsbank-auditoria
+# deployment "auditoria" successfully rolled out
+
+kubectl rollout restart deployment/api-transacoes -n tipsbank-transacoes
+kubectl rollout status deployment/api-transacoes -n tipsbank-transacoes
+# deployment "api-transacoes" successfully rolled out
+```
+
+**Por que auditoria não quebra com `readOnlyRootFilesystem: true`?**
+
+A auditoria escreve em `/data` — mas `/data` é um **volume NFS montado separadamente** (PVC `auditoria-pvc`). O root filesystem do container (`/`) fica read-only. Volumes externos (PVC, emptyDir, ConfigMap) possuem suas próprias permissões independentes do root filesystem.
+
+---
+
+#### Passo 5 — Web deployment: `emptyDir` para `/tmp` (nginx)
+
+O nginx-unprivileged escreve arquivos temporários em `/tmp` (`nginx.pid`, `proxy_temp`, etc.). Com `readOnlyRootFilesystem: true` injetado, o container falhou ao tentar criar esses arquivos.
+
+**Fix**: montar um `emptyDir` em `/tmp` no web deployment:
+
+```yaml
+containers:
+  - name: web
+    volumeMounts:
+      - name: tmp-dir
+        mountPath: /tmp    # ← necessário para nginx com readOnlyRootFilesystem
+volumes:
+  - name: tmp-dir
+    emptyDir: {}
+```
+
+```bash
+kubectl apply -f k8s/tipsbank-web/web-deployment.yaml
+kubectl rollout restart deployment/web -n tipsbank-web
+# deployment "web" successfully rolled out
+
+curl -sk https://tipsbank.staypuff.info/healthz
+# ok
+```
+
+`emptyDir` existe enquanto o pod existe e é descartado quando o pod morre — adequado para dados temporários do processo nginx.
+
+---
+
+#### Verificação final — securityContext injetado em produção
+
+```bash
+# api-contas (container sem securityContext no manifest original)
+kubectl get pod -n tipsbank-contas -l app=api-contas \
+  -o jsonpath='{.items[0].spec.containers[0].securityContext}' | jq
+```
+```json
+{
+  "allowPrivilegeEscalation": false,
+  "readOnlyRootFilesystem": true,
+  "runAsNonRoot": true
+}
+```
+
+```bash
+# api-transacoes log-forwarder (runAsUser declarado + campos injetados pelo Kyverno)
+kubectl get pod -n tipsbank-transacoes -l app=api-transacoes \
+  -o jsonpath='{.items[0].spec.containers[1].securityContext}' | jq
+```
+```json
+{
+  "allowPrivilegeEscalation": false,
+  "readOnlyRootFilesystem": true,
+  "runAsNonRoot": true,
+  "runAsUser": 65532
+}
+```
+
+```bash
+# Estado final de todos os pods
+kubectl get pod -n tipsbank-contas
+# NAME                          READY   STATUS    RESTARTS   AGE
+# api-contas-69dcd554b7-jbrpg   1/1     Running   0          40m
+# api-contas-69dcd554b7-t8q98   1/1     Running   0          40m
+# postgres-0                    1/1     Running   0          2d9h
+# postgres-replica-0            1/1     Running   0          9d
+
+kubectl get pod -n tipsbank-transacoes
+# NAME                              READY   STATUS    RESTARTS   AGE
+# api-transacoes-54fbdf557d-j8dh4   2/2     Running   0          38m
+# api-transacoes-54fbdf557d-j94bw   2/2     Running   0          38m
+# api-transacoes-54fbdf557d-nm4sr   2/2     Running   0          38m
+
+kubectl get pod -n tipsbank-auditoria
+# NAME                         READY   STATUS    RESTARTS   AGE
+# auditoria-7b59664544-8bbmr   1/1     Running   0          39m
+# auditoria-7b59664544-t7442   1/1     Running   0          40m
+
+kubectl get pod -n tipsbank-web
+# NAME                   READY   STATUS    RESTARTS   AGE
+# web-8584b5698b-pqnjf   1/1     Running   0          15m
+# web-8584b5698b-r54jp   1/1     Running   0          15m
+
+# Estado final das 4 ClusterPolicies
+kubectl get cpol
+# NAME                      ADMISSION   BACKGROUND   READY   AGE     MESSAGE
+# disallow-latest-tag       true        true         True    26h     Ready
+# disallow-root-user        true        true         True    30h     Ready
+# mutate-security-context   true        true         True    91m     Ready
+# require-labels            true        true         True    25h     Ready
+```
+
+---
+
+#### Problemas encontrados no caminho
+
+##### Bug — `CreateContainerConfigError` no sidecar log-forwarder
+
+**Sintoma**: Após aplicar o deployment sem `runAsUser` no log-forwarder com a policy de mutate já ativa, o pod ficou em estado misto: container `api-transacoes` `Running/Ready`, container `log-forwarder` em `Waiting/CreateContainerConfigError`.
+
+**Diagnóstico** via `kubectl describe pod`:
+```
+Warning  Failed  kubelet  Error: container has runAsNonRoot and image will run as root
+(pod: "api-transacoes-554f5844b6-zdk6k_tipsbank-transacoes", container: log-forwarder)
+```
+
+**Causa raiz**: O Kyverno injetou `runAsNonRoot: true` no log-forwarder. O container runtime (containerd) verificou o UID padrão da imagem `busybox:1.36` — que é UID 0 (root). Com `runAsNonRoot: true` e UID efetivo = 0, o runtime recusa iniciar o container — isso é um mecanismo de segurança do próprio Linux container runtime, não do Kubernetes.
+
+**Impacto no rolling update**: Com `maxUnavailable: 0` e `maxSurge: 1`, o Kubernetes não derrubou os pods antigos enquanto os novos não ficassem Ready. O resultado foi um rolling update travado: o novo ReplicaSet tinha 1 pod em `1/2 Running` (log-forwarder aguardando), o antigo mantinha 3 pods running. Após vários `kubectl apply` e diagnóstico, o manifeste foi corrigido com `runAsUser: 65532` e o deployment funcionou.
+
+**Fix aplicado**: `securityContext.runAsUser: 65532` no container `log-forwarder`. Após o fix, o rolling update completou com sucesso — confirmado em `kubectl get pod -n tipsbank-transacoes -w`.
+
+---
+
+#### Lição técnica: Mutate não retroage e não derruba pods existentes
+
+O Kyverno Mutate age **exclusivamente em requisições de admission** (CREATE, UPDATE). Pods já em Running nunca passam novamente pelo webhook de admissão enquanto estão saudáveis.
+
+Isso tem implicações práticas importantes em produção:
+- Após criar uma policy de Mutate, os workloads existentes **não recebem** a injeção automaticamente
+- O `kyverno-background-controller` faz **background scan** nos recursos existentes e gera `PolicyReport`, mas é **read-only** — não modifica nem mata pods
+- Para garantir que todos os pods estejam com o securityContext injetado, é necessário `rollout restart` em cada deployment — o que recria os pods e faz cada novo pod passar pelo webhook de admissão
