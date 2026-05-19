@@ -1,0 +1,1927 @@
+git push -u origin main
+Found existing alias for "git push". You should use: "gp"
+Enumerating objects: 135, done.
+Counting objects: 100% (135/135), done.
+Delta compression using up to 24 threads
+Compressing objects: 100% (115/115), done.
+Writing objects: 100% (115/115), 2.01 MiB | 10.73 MiB/s, done.
+Total 115 (delta 75), reused 0 (delta 0), pack-reused 0
+remote: Resolving deltas: 100% (75/75), completed with 18 local objects.
+To github.com:felipesoaresti/tipsbank.git
+   beeee44..9b685b9  main -> main
+branch 'main' set up to track 'origin/main'.
+❯ k apply -f k8s/kyverno/mutate-security-context.yaml
+clusterpolicy.kyverno.io/mutate-security-context created
+❯ k get cpol mutate-security-context
+NAME                      ADMISSION   BACKGROUND   READY   AGE   MESSAGE
+mutate-security-context   true        true         True    28s   Ready
+❯ k describe cpol mutate-security-context
+Name:         mutate-security-context
+Namespace:    
+Labels:       app.kubernetes.io/part-of=tipsbank
+              rule=mutate-security-context
+Annotations:  policies.kyverno.io/category: Security
+              policies.kyverno.io/description: Injeta runAsNonRoot, readOnlyRootFilesystem e allowPrivilegeEscalation em tipsbank.
+              policies.kyverno.io/severity: High
+              policies.kyverno.io/title: Mutate Security Context
+API Version:  kyverno.io/v1
+Kind:         ClusterPolicy
+Metadata:
+  Creation Timestamp:  2026-05-19T20:52:57Z
+  Generation:          1
+  Resource Version:    5859710
+  UID:                 21833321-ac6b-42b1-839f-eafbc3476a62
+Spec:
+  Admission:     true
+  Background:    true
+  Emit Warning:  false
+  Rules:
+    Match:
+      Any:
+        Resources:
+          Kinds:
+            Pod
+          Namespaces:
+            tipsbank-contas
+            tipsbank-transacoes
+            tipsbank-auditoria
+            tipsbank-web
+    Mutate:
+      Foreach:
+        List:  request.object.spec.containers[]
+        Patch Strategic Merge:
+          Spec:
+            Containers:
+              (name):  {{ element.name }}
+              Security Context:
+                +(allowPrivilegeEscalation):  false
+                +(readOnlyRootFilesystem):    true
+                +(runAsNonRoot):              true
+    Name:                                     inject-security-context
+    Skip Background Requests:                 true
+  Validation Failure Action:                  Audit
+Status:
+  Autogen:
+    Rules:
+      Match:
+        Any:
+          Resources:
+            Kinds:
+              apps/v1/DaemonSet
+              apps/v1/Deployment
+              batch/v1/Job
+              apps/v1/ReplicaSet
+              v1/ReplicationController
+              apps/v1/StatefulSet
+            Namespaces:
+              tipsbank-contas
+              tipsbank-transacoes
+              tipsbank-auditoria
+              tipsbank-web
+        Resources:
+      Mutate:
+        Foreach:
+          List:  request.object.spec.template.spec.containers[]
+          Patch Strategic Merge:
+            Spec:
+              Template:
+                Spec:
+                  Containers:
+                    (name):  {{ element.name }}
+                    Security Context:
+                      +(allowPrivilegeEscalation):  false
+                      +(readOnlyRootFilesystem):    true
+                      +(runAsNonRoot):              true
+      Name:                                         autogen-inject-security-context
+      Skip Background Requests:                     true
+      Match:
+        Any:
+          Resources:
+            Kinds:
+              batch/v1/CronJob
+            Namespaces:
+              tipsbank-contas
+              tipsbank-transacoes
+              tipsbank-auditoria
+              tipsbank-web
+        Resources:
+      Mutate:
+        Foreach:
+          List:  request.object.spec.jobTemplate.spec.template.spec.containers[]
+          Patch Strategic Merge:
+            Spec:
+              Job Template:
+                Spec:
+                  Template:
+                    Spec:
+                      Containers:
+                        (name):  {{ element.name }}
+                        Security Context:
+                          +(allowPrivilegeEscalation):  false
+                          +(readOnlyRootFilesystem):    true
+                          +(runAsNonRoot):              true
+      Name:                                             autogen-cronjob-inject-security-context
+      Skip Background Requests:                         true
+  Conditions:
+    Last Transition Time:  2026-05-19T20:52:57Z
+    Message:               Ready
+    Reason:                Succeeded
+    Status:                True
+    Type:                  Ready
+  Rulecount:
+    Generate:      0
+    Mutate:        1
+    Validate:      0
+    Verifyimages:  0
+  Validatingadmissionpolicy:
+    Generated:  false
+    Message:    
+Events:         <none>
+
+    /mnt/c/Users/felip/Documents/Projetos/tipsbank  on   main !2 ?1 ▓▒░                                                            ░▒▓ at 17:53:31  
+❯ 
+❯ k apply -f k8s/tipsbank-transacoes/transacoes-deployment.yaml
+deployment.apps/api-transacoes configured
+service/api-transacoes unchanged
+❯ k describe -n tipsbank-transacoes deploy api-transacoes
+Name:                   api-transacoes
+Namespace:              tipsbank-transacoes
+CreationTimestamp:      Sun, 26 Apr 2026 23:52:10 -0300
+Labels:                 app=api-transacoes
+                        app.kubernetes.io/name=api-transacoes
+                        app.kubernetes.io/part-of=tipsbank
+                        env=production
+                        team=tipsbank
+Annotations:            deployment.kubernetes.io/revision: 17
+Selector:               app=api-transacoes
+Replicas:               3 desired | 1 updated | 4 total | 2 available | 2 unavailable
+StrategyType:           RollingUpdate
+MinReadySeconds:        0
+RollingUpdateStrategy:  0 max unavailable, 1 max surge
+Pod Template:
+  Labels:       app=api-transacoes
+                app.kubernetes.io/name=api-transacoes
+                app.kubernetes.io/part-of=tipsbank
+  Annotations:  kubectl.kubernetes.io/restartedAt: 2026-05-08T23:10:44-03:00
+  Init Containers:
+   init-postgres:
+    Image:      busybox:1.36
+    Port:       <none>
+    Host Port:  <none>
+    Command:
+      sh
+      -c
+      until nc -z postgres-service.tipsbank-contas.svc.cluster.local 5432; do
+        echo "Verificando conexão com Postgres..."
+        sleep 3
+      done
+      
+    Environment:  <none>
+    Mounts:       <none>
+   init-api-contas:
+    Image:      busybox:1.36
+    Port:       <none>
+    Host Port:  <none>
+    Command:
+      sh
+      -c
+      until wget -q --spider http://api-contas.tipsbank-contas.svc.cluster.local:8080/health/live; do
+        echo "Verificando se api-contas esta live..."
+        sleep 3
+        done
+      
+    Environment:  <none>
+    Mounts:       <none>
+  Containers:
+   api-transacoes:
+    Image:      felipestaypuff/tipsbank-api-transacoes:v2.0.0
+    Port:       8080/TCP (api-transacoes)
+    Host Port:  0/TCP (api-transacoes)
+    Limits:
+      cpu:     500m
+      memory:  256Mi
+    Requests:
+      cpu:      100m
+      memory:   128Mi
+    Liveness:   http-get http://:8080/health/live delay=0s timeout=3s period=10s #success=1 #failure=3
+    Readiness:  http-get http://:8080/health/ready delay=0s timeout=3s period=5s #success=1 #failure=3
+    Startup:    http-get http://:8080/health/startup delay=0s timeout=1s period=5s #success=1 #failure=30
+    Environment:
+      DB_URL:         <set to the key 'DB_URL' in secret 'transacoes-secret'>             Optional: false
+      CONTAS_URL:     <set to the key 'CONTAS_URL' of config map 'transacoes-config'>     Optional: false
+      AUDITORIA_URL:  <set to the key 'AUDITORIA_URL' of config map 'transacoes-config'>  Optional: false
+      APP_VERSION:    <set to the key 'APP_VERSION' of config map 'transacoes-config'>    Optional: false
+      LOG_LEVEL:      <set to the key 'LOG_LEVEL' of config map 'transacoes-config'>      Optional: false
+    Mounts:
+      /var/log/app from app-logs (rw)
+   log-forwarder:
+    Image:      busybox:1.36
+    Port:       <none>
+    Host Port:  <none>
+    Command:
+      sh
+      -c
+      until [ -f /var/log/app/app.log ]; do echo "Aguardando o arquivo de log ser criado..."; sleep 1; done;
+      tail -F /var/log/app/app.log
+      
+    Limits:
+      cpu:     50m
+      memory:  32Mi
+    Requests:
+      cpu:        10m
+      memory:     16Mi
+    Environment:  <none>
+    Mounts:
+      /var/log/app from app-logs (rw)
+  Volumes:
+   app-logs:
+    Type:          EmptyDir (a temporary directory that shares a pod's lifetime)
+    Medium:        
+    SizeLimit:     <unset>
+  Node-Selectors:  <none>
+  Tolerations:     <none>
+Conditions:
+  Type           Status  Reason
+  ----           ------  ------
+  Progressing    True    ReplicaSetUpdated
+  Available      False   MinimumReplicasUnavailable
+OldReplicaSets:  api-transacoes-f96d7c44d (0/0 replicas created), api-transacoes-5cb7cc9b8b (0/0 replicas created), api-transacoes-d56bff9bc (0/0 replicas created), api-transacoes-f76f7c5c8 (0/0 replicas created), api-transacoes-68d8f9fb4b (0/0 replicas created), api-transacoes-659558d96c (3/3 replicas created)
+NewReplicaSet:   api-transacoes-554f5844b6 (1/1 replicas created)
+Events:
+  Type    Reason             Age                 From                   Message
+  ----    ------             ----                ----                   -------
+  Normal  ScalingReplicaSet  25s (x3 over 29h)   deployment-controller  Scaled down replica set api-transacoes-659558d96c from 3 to 2
+  Normal  ScalingReplicaSet  25s                 deployment-controller  Scaled up replica set api-transacoes-554f5844b6 from 0 to 1
+  Normal  ScalingReplicaSet  16s (x4 over 2d6h)  deployment-controller  Scaled up replica set api-transacoes-659558d96c from 2 to 3
+❯ k get pod  -n tipsbank-transacoes
+NAME                              READY   STATUS                       RESTARTS   AGE
+api-transacoes-554f5844b6-zdk6k   1/2     CreateContainerConfigError   0          101s
+api-transacoes-659558d96c-h7wfl   2/2     Running                      0          2d6h
+api-transacoes-659558d96c-tdhnl   2/2     Running                      0          23h
+api-transacoes-659558d96c-tpgqr   1/2     CreateContainerConfigError   0          92s
+❯ k logs -n tipsbank-transacoes api-transacoes-554f5844b6-zdk6k
+Defaulted container "api-transacoes" out of: api-transacoes, log-forwarder, init-postgres (init), init-api-contas (init)
+INFO:     Started server process [1]
+INFO:     Waiting for application startup.
+{"ts":"2026-05-19 20:57:17,512","level":"INFO","service":"api-transacoes","msg":"bootstrap versao=v1"}
+INFO:     Application startup complete.
+INFO:     Uvicorn running on http://0.0.0.0:8080 (Press CTRL+C to quit)
+INFO:     192.168.3.41:43592 - "GET /health/startup HTTP/1.1" 200 OK
+INFO:     192.168.3.41:43594 - "GET /health/ready HTTP/1.1" 200 OK
+INFO:     192.168.3.41:43604 - "GET /health/ready HTTP/1.1" 200 OK
+INFO:     192.168.3.41:59326 - "GET /health/live HTTP/1.1" 200 OK
+INFO:     192.168.3.41:59332 - "GET /health/ready HTTP/1.1" 200 OK
+INFO:     192.168.3.41:59348 - "GET /health/ready HTTP/1.1" 200 OK
+INFO:     10.244.209.236:44052 - "GET /metrics HTTP/1.1" 200 OK
+INFO:     192.168.3.41:45892 - "GET /health/live HTTP/1.1" 200 OK
+INFO:     192.168.3.41:45898 - "GET /health/ready HTTP/1.1" 200 OK
+INFO:     192.168.3.41:45906 - "GET /health/ready HTTP/1.1" 200 OK
+INFO:     192.168.3.41:40614 - "GET /health/live HTTP/1.1" 200 OK
+INFO:     192.168.3.41:40618 - "GET /health/ready HTTP/1.1" 200 OK
+INFO:     192.168.3.41:40626 - "GET /health/ready HTTP/1.1" 200 OK
+INFO:     192.168.3.41:37540 - "GET /health/live HTTP/1.1" 200 OK
+INFO:     192.168.3.41:37542 - "GET /health/ready HTTP/1.1" 200 OK
+INFO:     192.168.3.41:37556 - "GET /health/ready HTTP/1.1" 200 OK
+INFO:     10.244.209.236:41230 - "GET /metrics HTTP/1.1" 200 OK
+INFO:     192.168.3.41:50512 - "GET /health/live HTTP/1.1" 200 OK
+INFO:     192.168.3.41:50528 - "GET /health/ready HTTP/1.1" 200 OK
+INFO:     192.168.3.41:50534 - "GET /health/ready HTTP/1.1" 200 OK
+INFO:     192.168.3.41:56480 - "GET /health/live HTTP/1.1" 200 OK
+INFO:     192.168.3.41:56474 - "GET /health/ready HTTP/1.1" 200 OK
+INFO:     192.168.3.41:56496 - "GET /health/ready HTTP/1.1" 200 OK
+INFO:     192.168.3.41:42122 - "GET /health/live HTTP/1.1" 200 OK
+INFO:     192.168.3.41:42136 - "GET /health/ready HTTP/1.1" 200 OK
+INFO:     192.168.3.41:42152 - "GET /health/ready HTTP/1.1" 200 OK
+INFO:     10.244.209.236:60498 - "GET /metrics HTTP/1.1" 200 OK
+INFO:     192.168.3.41:49732 - "GET /health/live HTTP/1.1" 200 OK
+INFO:     192.168.3.41:49740 - "GET /health/ready HTTP/1.1" 200 OK
+INFO:     192.168.3.41:49750 - "GET /health/ready HTTP/1.1" 200 OK
+INFO:     192.168.3.41:36492 - "GET /health/live HTTP/1.1" 200 OK
+INFO:     192.168.3.41:36502 - "GET /health/ready HTTP/1.1" 200 OK
+INFO:     192.168.3.41:36504 - "GET /health/ready HTTP/1.1" 200 OK
+INFO:     192.168.3.41:47564 - "GET /health/live HTTP/1.1" 200 OK
+INFO:     192.168.3.41:47568 - "GET /health/ready HTTP/1.1" 200 OK
+INFO:     192.168.3.41:47584 - "GET /health/ready HTTP/1.1" 200 OK
+INFO:     10.244.209.236:54864 - "GET /metrics HTTP/1.1" 200 OK
+INFO:     192.168.3.41:51784 - "GET /health/live HTTP/1.1" 200 OK
+INFO:     192.168.3.41:51788 - "GET /health/ready HTTP/1.1" 200 OK
+INFO:     192.168.3.41:51792 - "GET /health/ready HTTP/1.1" 200 OK
+INFO:     192.168.3.41:34838 - "GET /health/live HTTP/1.1" 200 OK
+INFO:     192.168.3.41:34840 - "GET /health/ready HTTP/1.1" 200 OK
+INFO:     192.168.3.41:34850 - "GET /health/ready HTTP/1.1" 200 OK
+INFO:     192.168.3.41:48440 - "GET /health/live HTTP/1.1" 200 OK
+INFO:     192.168.3.41:48442 - "GET /health/ready HTTP/1.1" 200 OK
+INFO:     192.168.3.41:48454 - "GET /health/ready HTTP/1.1" 200 OK
+INFO:     10.244.209.236:53666 - "GET /metrics HTTP/1.1" 200 OK
+INFO:     192.168.3.41:44110 - "GET /health/live HTTP/1.1" 200 OK
+INFO:     192.168.3.41:44126 - "GET /health/ready HTTP/1.1" 200 OK
+INFO:     192.168.3.41:44142 - "GET /health/ready HTTP/1.1" 200 OK
+INFO:     192.168.3.41:59408 - "GET /health/live HTTP/1.1" 200 OK
+INFO:     192.168.3.41:59414 - "GET /health/ready HTTP/1.1" 200 OK
+INFO:     192.168.3.41:59416 - "GET /health/ready HTTP/1.1" 200 OK
+INFO:     192.168.3.41:58496 - "GET /health/live HTTP/1.1" 200 OK
+INFO:     192.168.3.41:58498 - "GET /health/ready HTTP/1.1" 200 OK
+INFO:     192.168.3.41:58500 - "GET /health/ready HTTP/1.1" 200 OK
+INFO:     10.244.209.236:41952 - "GET /metrics HTTP/1.1" 200 OK
+INFO:     192.168.3.41:57136 - "GET /health/live HTTP/1.1" 200 OK
+INFO:     192.168.3.41:57152 - "GET /health/ready HTTP/1.1" 200 OK
+INFO:     192.168.3.41:57162 - "GET /health/ready HTTP/1.1" 200 OK
+INFO:     192.168.3.41:38648 - "GET /health/live HTTP/1.1" 200 OK
+INFO:     192.168.3.41:38656 - "GET /health/ready HTTP/1.1" 200 OK
+INFO:     192.168.3.41:38664 - "GET /health/ready HTTP/1.1" 200 OK
+INFO:     192.168.3.41:40232 - "GET /health/live HTTP/1.1" 200 OK
+INFO:     192.168.3.41:40234 - "GET /health/ready HTTP/1.1" 200 OK
+INFO:     192.168.3.41:40238 - "GET /health/ready HTTP/1.1" 200 OK
+INFO:     10.244.209.236:33346 - "GET /metrics HTTP/1.1" 200 OK
+INFO:     192.168.3.41:36712 - "GET /health/live HTTP/1.1" 200 OK
+INFO:     192.168.3.41:36726 - "GET /health/ready HTTP/1.1" 200 OK
+INFO:     192.168.3.41:36740 - "GET /health/ready HTTP/1.1" 200 OK
+❯ k logs -n tipsbank-transacoes -c log-forwarder
+error: expected 'logs [-f] [-p] (POD | TYPE/NAME) [-c CONTAINER]'.
+POD or TYPE/NAME is a required argument for the logs command
+See 'kubectl logs -h' for help and examples
+❯ k logs -n tipsbank-transacoes transacoes-554f5844b6-zdk6k
+error: error from server (NotFound): pods "transacoes-554f5844b6-zdk6k" not found in namespace "tipsbank-transacoes"
+❯ k logs -n tipsbank-transacoes api-transacoes-554f5844b6-zdk6k
+Defaulted container "api-transacoes" out of: api-transacoes, log-forwarder, init-postgres (init), init-api-contas (init)
+INFO:     Started server process [1]
+INFO:     Waiting for application startup.
+{"ts":"2026-05-19 20:57:17,512","level":"INFO","service":"api-transacoes","msg":"bootstrap versao=v1"}
+INFO:     Application startup complete.
+INFO:     Uvicorn running on http://0.0.0.0:8080 (Press CTRL+C to quit)
+INFO:     192.168.3.41:43592 - "GET /health/startup HTTP/1.1" 200 OK
+INFO:     192.168.3.41:43594 - "GET /health/ready HTTP/1.1" 200 OK
+INFO:     192.168.3.41:43604 - "GET /health/ready HTTP/1.1" 200 OK
+INFO:     192.168.3.41:59326 - "GET /health/live HTTP/1.1" 200 OK
+INFO:     192.168.3.41:59332 - "GET /health/ready HTTP/1.1" 200 OK
+INFO:     192.168.3.41:59348 - "GET /health/ready HTTP/1.1" 200 OK
+INFO:     10.244.209.236:44052 - "GET /metrics HTTP/1.1" 200 OK
+INFO:     192.168.3.41:45892 - "GET /health/live HTTP/1.1" 200 OK
+INFO:     192.168.3.41:45898 - "GET /health/ready HTTP/1.1" 200 OK
+INFO:     192.168.3.41:45906 - "GET /health/ready HTTP/1.1" 200 OK
+INFO:     192.168.3.41:40614 - "GET /health/live HTTP/1.1" 200 OK
+INFO:     192.168.3.41:40618 - "GET /health/ready HTTP/1.1" 200 OK
+INFO:     192.168.3.41:40626 - "GET /health/ready HTTP/1.1" 200 OK
+INFO:     192.168.3.41:37540 - "GET /health/live HTTP/1.1" 200 OK
+INFO:     192.168.3.41:37542 - "GET /health/ready HTTP/1.1" 200 OK
+INFO:     192.168.3.41:37556 - "GET /health/ready HTTP/1.1" 200 OK
+INFO:     10.244.209.236:41230 - "GET /metrics HTTP/1.1" 200 OK
+INFO:     192.168.3.41:50512 - "GET /health/live HTTP/1.1" 200 OK
+INFO:     192.168.3.41:50528 - "GET /health/ready HTTP/1.1" 200 OK
+INFO:     192.168.3.41:50534 - "GET /health/ready HTTP/1.1" 200 OK
+INFO:     192.168.3.41:56480 - "GET /health/live HTTP/1.1" 200 OK
+INFO:     192.168.3.41:56474 - "GET /health/ready HTTP/1.1" 200 OK
+INFO:     192.168.3.41:56496 - "GET /health/ready HTTP/1.1" 200 OK
+INFO:     192.168.3.41:42122 - "GET /health/live HTTP/1.1" 200 OK
+INFO:     192.168.3.41:42136 - "GET /health/ready HTTP/1.1" 200 OK
+INFO:     192.168.3.41:42152 - "GET /health/ready HTTP/1.1" 200 OK
+INFO:     10.244.209.236:60498 - "GET /metrics HTTP/1.1" 200 OK
+INFO:     192.168.3.41:49732 - "GET /health/live HTTP/1.1" 200 OK
+INFO:     192.168.3.41:49740 - "GET /health/ready HTTP/1.1" 200 OK
+INFO:     192.168.3.41:49750 - "GET /health/ready HTTP/1.1" 200 OK
+INFO:     192.168.3.41:36492 - "GET /health/live HTTP/1.1" 200 OK
+INFO:     192.168.3.41:36502 - "GET /health/ready HTTP/1.1" 200 OK
+INFO:     192.168.3.41:36504 - "GET /health/ready HTTP/1.1" 200 OK
+INFO:     192.168.3.41:47564 - "GET /health/live HTTP/1.1" 200 OK
+INFO:     192.168.3.41:47568 - "GET /health/ready HTTP/1.1" 200 OK
+INFO:     192.168.3.41:47584 - "GET /health/ready HTTP/1.1" 200 OK
+INFO:     10.244.209.236:54864 - "GET /metrics HTTP/1.1" 200 OK
+INFO:     192.168.3.41:51784 - "GET /health/live HTTP/1.1" 200 OK
+INFO:     192.168.3.41:51788 - "GET /health/ready HTTP/1.1" 200 OK
+INFO:     192.168.3.41:51792 - "GET /health/ready HTTP/1.1" 200 OK
+INFO:     192.168.3.41:34838 - "GET /health/live HTTP/1.1" 200 OK
+INFO:     192.168.3.41:34840 - "GET /health/ready HTTP/1.1" 200 OK
+INFO:     192.168.3.41:34850 - "GET /health/ready HTTP/1.1" 200 OK
+INFO:     192.168.3.41:48440 - "GET /health/live HTTP/1.1" 200 OK
+INFO:     192.168.3.41:48442 - "GET /health/ready HTTP/1.1" 200 OK
+INFO:     192.168.3.41:48454 - "GET /health/ready HTTP/1.1" 200 OK
+INFO:     10.244.209.236:53666 - "GET /metrics HTTP/1.1" 200 OK
+INFO:     192.168.3.41:44110 - "GET /health/live HTTP/1.1" 200 OK
+INFO:     192.168.3.41:44126 - "GET /health/ready HTTP/1.1" 200 OK
+INFO:     192.168.3.41:44142 - "GET /health/ready HTTP/1.1" 200 OK
+INFO:     192.168.3.41:59408 - "GET /health/live HTTP/1.1" 200 OK
+INFO:     192.168.3.41:59414 - "GET /health/ready HTTP/1.1" 200 OK
+INFO:     192.168.3.41:59416 - "GET /health/ready HTTP/1.1" 200 OK
+INFO:     192.168.3.41:58496 - "GET /health/live HTTP/1.1" 200 OK
+INFO:     192.168.3.41:58498 - "GET /health/ready HTTP/1.1" 200 OK
+INFO:     192.168.3.41:58500 - "GET /health/ready HTTP/1.1" 200 OK
+INFO:     10.244.209.236:41952 - "GET /metrics HTTP/1.1" 200 OK
+INFO:     192.168.3.41:57136 - "GET /health/live HTTP/1.1" 200 OK
+INFO:     192.168.3.41:57152 - "GET /health/ready HTTP/1.1" 200 OK
+INFO:     192.168.3.41:57162 - "GET /health/ready HTTP/1.1" 200 OK
+INFO:     192.168.3.41:38648 - "GET /health/live HTTP/1.1" 200 OK
+INFO:     192.168.3.41:38656 - "GET /health/ready HTTP/1.1" 200 OK
+INFO:     192.168.3.41:38664 - "GET /health/ready HTTP/1.1" 200 OK
+INFO:     192.168.3.41:40232 - "GET /health/live HTTP/1.1" 200 OK
+INFO:     192.168.3.41:40234 - "GET /health/ready HTTP/1.1" 200 OK
+INFO:     192.168.3.41:40238 - "GET /health/ready HTTP/1.1" 200 OK
+INFO:     10.244.209.236:33346 - "GET /metrics HTTP/1.1" 200 OK
+INFO:     192.168.3.41:36712 - "GET /health/live HTTP/1.1" 200 OK
+INFO:     192.168.3.41:36726 - "GET /health/ready HTTP/1.1" 200 OK
+INFO:     192.168.3.41:36740 - "GET /health/ready HTTP/1.1" 200 OK
+INFO:     192.168.3.41:34396 - "GET /health/live HTTP/1.1" 200 OK
+INFO:     192.168.3.41:34400 - "GET /health/ready HTTP/1.1" 200 OK
+INFO:     192.168.3.41:34404 - "GET /health/ready HTTP/1.1" 200 OK
+INFO:     192.168.3.41:38674 - "GET /health/live HTTP/1.1" 200 OK
+INFO:     192.168.3.41:38680 - "GET /health/ready HTTP/1.1" 200 OK
+INFO:     192.168.3.41:38682 - "GET /health/ready HTTP/1.1" 200 OK
+INFO:     10.244.209.236:60270 - "GET /metrics HTTP/1.1" 200 OK
+INFO:     192.168.3.41:40152 - "GET /health/live HTTP/1.1" 200 OK
+INFO:     192.168.3.41:40166 - "GET /health/ready HTTP/1.1" 200 OK
+INFO:     192.168.3.41:40180 - "GET /health/ready HTTP/1.1" 200 OK
+INFO:     192.168.3.41:56646 - "GET /health/live HTTP/1.1" 200 OK
+INFO:     192.168.3.41:56654 - "GET /health/ready HTTP/1.1" 200 OK
+INFO:     192.168.3.41:56666 - "GET /health/ready HTTP/1.1" 200 OK
+INFO:     192.168.3.41:41478 - "GET /health/live HTTP/1.1" 200 OK
+INFO:     192.168.3.41:41494 - "GET /health/ready HTTP/1.1" 200 OK
+INFO:     192.168.3.41:41510 - "GET /health/ready HTTP/1.1" 200 OK
+INFO:     10.244.209.236:44380 - "GET /metrics HTTP/1.1" 200 OK
+INFO:     192.168.3.41:42794 - "GET /health/live HTTP/1.1" 200 OK
+INFO:     192.168.3.41:42800 - "GET /health/ready HTTP/1.1" 200 OK
+INFO:     192.168.3.41:42804 - "GET /health/ready HTTP/1.1" 200 OK
+INFO:     192.168.3.41:49952 - "GET /health/live HTTP/1.1" 200 OK
+INFO:     192.168.3.41:49956 - "GET /health/ready HTTP/1.1" 200 OK
+INFO:     192.168.3.41:49970 - "GET /health/ready HTTP/1.1" 200 OK
+INFO:     192.168.3.41:43180 - "GET /health/live HTTP/1.1" 200 OK
+INFO:     192.168.3.41:43196 - "GET /health/ready HTTP/1.1" 200 OK
+INFO:     192.168.3.41:43210 - "GET /health/ready HTTP/1.1" 200 OK
+INFO:     10.244.209.236:56836 - "GET /metrics HTTP/1.1" 200 OK
+INFO:     192.168.3.41:59988 - "GET /health/live HTTP/1.1" 200 OK
+INFO:     192.168.3.41:60004 - "GET /health/ready HTTP/1.1" 200 OK
+INFO:     192.168.3.41:60018 - "GET /health/ready HTTP/1.1" 200 OK
+INFO:     192.168.3.41:32954 - "GET /health/live HTTP/1.1" 200 OK
+INFO:     192.168.3.41:32956 - "GET /health/ready HTTP/1.1" 200 OK
+INFO:     192.168.3.41:32958 - "GET /health/ready HTTP/1.1" 200 OK
+INFO:     192.168.3.41:54010 - "GET /health/live HTTP/1.1" 200 OK
+INFO:     192.168.3.41:54022 - "GET /health/ready HTTP/1.1" 200 OK
+INFO:     192.168.3.41:54026 - "GET /health/ready HTTP/1.1" 200 OK
+INFO:     10.244.209.236:40480 - "GET /metrics HTTP/1.1" 200 OK
+INFO:     192.168.3.41:36348 - "GET /health/live HTTP/1.1" 200 OK
+INFO:     192.168.3.41:36350 - "GET /health/ready HTTP/1.1" 200 OK
+INFO:     192.168.3.41:36364 - "GET /health/ready HTTP/1.1" 200 OK
+INFO:     192.168.3.41:44214 - "GET /health/live HTTP/1.1" 200 OK
+INFO:     192.168.3.41:44220 - "GET /health/ready HTTP/1.1" 200 OK
+❯ k describe pod  -n tipsbank-transacoes api-transacoes-554f5844b6-zdk6k
+Name:             api-transacoes-554f5844b6-zdk6k
+Namespace:        tipsbank-transacoes
+Priority:         0
+Service Account:  default
+Node:             tb-worker1/192.168.3.41
+Start Time:       Tue, 19 May 2026 17:57:08 -0300
+Labels:           app=api-transacoes
+                  app.kubernetes.io/name=api-transacoes
+                  app.kubernetes.io/part-of=tipsbank
+                  pod-template-hash=554f5844b6
+Annotations:      cni.projectcalico.org/containerID: c605f5545c003d82cd646fc59467fa7982d1bdca4a73b3c091bf723257a6c725
+                  cni.projectcalico.org/podIP: 10.244.209.232/32
+                  cni.projectcalico.org/podIPs: 10.244.209.232/32
+                  kubectl.kubernetes.io/restartedAt: 2026-05-08T23:10:44-03:00
+Status:           Pending
+IP:               10.244.209.232
+IPs:
+  IP:           10.244.209.232
+Controlled By:  ReplicaSet/api-transacoes-554f5844b6
+Init Containers:
+  init-postgres:
+    Container ID:  containerd://62ad5ad0b59d8b6057f0178e8177eef8ac1f7f156ff039647d40b4861574e3ce
+    Image:         busybox:1.36
+    Image ID:      docker.io/library/busybox@sha256:73aaf090f3d85aa34ee199857f03fa3a95c8ede2ffd4cc2cdb5b94e566b11662
+    Port:          <none>
+    Host Port:     <none>
+    Command:
+      sh
+      -c
+      until nc -z postgres-service.tipsbank-contas.svc.cluster.local 5432; do
+        echo "Verificando conexão com Postgres..."
+        sleep 3
+      done
+      
+    State:          Terminated
+      Reason:       Completed
+      Exit Code:    0
+      Started:      Tue, 19 May 2026 17:57:09 -0300
+      Finished:     Tue, 19 May 2026 17:57:10 -0300
+    Ready:          True
+    Restart Count:  0
+    Environment:    <none>
+    Mounts:
+      /var/run/secrets/kubernetes.io/serviceaccount from kube-api-access-svx9d (ro)
+  init-api-contas:
+    Container ID:  containerd://c82491d979abb9024aba90e59fa024f0f8e66ba3b33af680a3d00f3550d40605
+    Image:         busybox:1.36
+    Image ID:      docker.io/library/busybox@sha256:73aaf090f3d85aa34ee199857f03fa3a95c8ede2ffd4cc2cdb5b94e566b11662
+    Port:          <none>
+    Host Port:     <none>
+    Command:
+      sh
+      -c
+      until wget -q --spider http://api-contas.tipsbank-contas.svc.cluster.local:8080/health/live; do
+        echo "Verificando se api-contas esta live..."
+        sleep 3
+        done
+      
+    State:          Terminated
+      Reason:       Completed
+      Exit Code:    0
+      Started:      Tue, 19 May 2026 17:57:11 -0300
+      Finished:     Tue, 19 May 2026 17:57:11 -0300
+    Ready:          True
+    Restart Count:  0
+    Environment:    <none>
+    Mounts:
+      /var/run/secrets/kubernetes.io/serviceaccount from kube-api-access-svx9d (ro)
+Containers:
+  api-transacoes:
+    Container ID:   containerd://e1783c365982236eddcfa7aa9e8c31ceb1d11ddbc4e672a0a86455ace10e0bec
+    Image:          felipestaypuff/tipsbank-api-transacoes:v2.0.0
+    Image ID:       docker.io/felipestaypuff/tipsbank-api-transacoes@sha256:8eee80a5b966562779a3b95a0304562a3dfbe97f5d486ff58fce5099c9840fca
+    Port:           8080/TCP (api-transacoes)
+    Host Port:      0/TCP (api-transacoes)
+    State:          Running
+      Started:      Tue, 19 May 2026 17:57:12 -0300
+    Ready:          True
+    Restart Count:  0
+    Limits:
+      cpu:     500m
+      memory:  256Mi
+    Requests:
+      cpu:      100m
+      memory:   128Mi
+    Liveness:   http-get http://:8080/health/live delay=0s timeout=3s period=10s #success=1 #failure=3
+    Readiness:  http-get http://:8080/health/ready delay=0s timeout=3s period=5s #success=1 #failure=3
+    Startup:    http-get http://:8080/health/startup delay=0s timeout=1s period=5s #success=1 #failure=30
+    Environment:
+      DB_URL:         <set to the key 'DB_URL' in secret 'transacoes-secret'>             Optional: false
+      CONTAS_URL:     <set to the key 'CONTAS_URL' of config map 'transacoes-config'>     Optional: false
+      AUDITORIA_URL:  <set to the key 'AUDITORIA_URL' of config map 'transacoes-config'>  Optional: false
+      APP_VERSION:    <set to the key 'APP_VERSION' of config map 'transacoes-config'>    Optional: false
+      LOG_LEVEL:      <set to the key 'LOG_LEVEL' of config map 'transacoes-config'>      Optional: false
+    Mounts:
+      /var/log/app from app-logs (rw)
+      /var/run/secrets/kubernetes.io/serviceaccount from kube-api-access-svx9d (ro)
+  log-forwarder:
+    Container ID:  
+    Image:         busybox:1.36
+    Image ID:      
+    Port:          <none>
+    Host Port:     <none>
+    Command:
+      sh
+      -c
+      until [ -f /var/log/app/app.log ]; do echo "Aguardando o arquivo de log ser criado..."; sleep 1; done;
+      tail -F /var/log/app/app.log
+      
+    State:          Waiting
+      Reason:       CreateContainerConfigError
+    Ready:          False
+    Restart Count:  0
+    Limits:
+      cpu:     50m
+      memory:  32Mi
+    Requests:
+      cpu:        10m
+      memory:     16Mi
+    Environment:  <none>
+    Mounts:
+      /var/log/app from app-logs (rw)
+      /var/run/secrets/kubernetes.io/serviceaccount from kube-api-access-svx9d (ro)
+Conditions:
+  Type                        Status
+  PodReadyToStartContainers   True
+  Initialized                 True
+  Ready                       False
+  ContainersReady             False
+  PodScheduled                True
+Volumes:
+  app-logs:
+    Type:       EmptyDir (a temporary directory that shares a pod's lifetime)
+    Medium:     
+    SizeLimit:  <unset>
+  kube-api-access-svx9d:
+    Type:                    Projected (a volume that contains injected data from multiple sources)
+    TokenExpirationSeconds:  3607
+    ConfigMapName:           kube-root-ca.crt
+    Optional:                false
+    DownwardAPI:             true
+QoS Class:                   Burstable
+Node-Selectors:              <none>
+Tolerations:                 node.kubernetes.io/not-ready:NoExecute op=Exists for 300s
+                             node.kubernetes.io/unreachable:NoExecute op=Exists for 300s
+Events:
+  Type     Reason     Age                   From               Message
+  ----     ------     ----                  ----               -------
+  Normal   Scheduled  6m22s                 default-scheduler  Successfully assigned tipsbank-transacoes/api-transacoes-554f5844b6-zdk6k to tb-worker1
+  Normal   Pulled     6m21s                 kubelet            Container image "busybox:1.36" already present on machine and can be accessed by the pod
+  Normal   Created    6m21s                 kubelet            Container created
+  Normal   Started    6m20s                 kubelet            Container started
+  Normal   Pulled     6m20s                 kubelet            Container image "busybox:1.36" already present on machine and can be accessed by the pod
+  Normal   Started    6m19s                 kubelet            Container started
+  Normal   Created    6m19s                 kubelet            Container created
+  Normal   Pulled     6m18s                 kubelet            Container image "felipestaypuff/tipsbank-api-transacoes:v2.0.0" already present on machine and can be accessed by the pod
+  Normal   Created    6m18s                 kubelet            Container created
+  Normal   Started    6m18s                 kubelet            Container started
+  Warning  Unhealthy  6m17s                 kubelet            Startup probe failed: Get "http://10.244.209.232:8080/health/startup": dial tcp 10.244.209.232:8080: connect: connection refused
+  Normal   Pulled     76s (x29 over 6m18s)  kubelet            Container image "busybox:1.36" already present on machine and can be accessed by the pod
+  Warning  Failed     76s (x29 over 6m18s)  kubelet            Error: container has runAsNonRoot and image will run as root (pod: "api-transacoes-554f5844b6-zdk6k_tipsbank-transacoes(710f8cd4-0dbd-4c64-845e-0c2c986ba071)", container: log-forwarder)
+❯ k apply -f k8s/tipsbank-transacoes/transacoes-deployment.yaml
+deployment.apps/api-transacoes configured
+service/api-transacoes unchanged
+❯ k logs -n tipsbank-transacoes transacoes-554f5844b6-zdk6k
+error: error from server (NotFound): pods "transacoes-554f5844b6-zdk6k" not found in namespace "tipsbank-transacoes"
+❯ k apply -f k8s/tipsbank-transacoes/transacoes-deployment.yaml
+deployment.apps/api-transacoes configured
+service/api-transacoes unchanged
+❯ k logs -n tipsbank-transacoes api-transacoes-7558cf5d9c-xvqxt
+error: error from server (NotFound): pods "api-transacoes-7558cf5d9c-xvqxt" not found in namespace "tipsbank-transacoes"
+❯ k describe -n tipsbank-transacoes api-transacoes-7558cf5d9c-xvqxt
+error: the server doesn't have a resource type "api-transacoes-7558cf5d9c-xvqxt"
+❯ k describe -n tipsbank-transacoes api-transacoes
+error: the server doesn't have a resource type "api-transacoes"
+❯ k describe pod -n tipsbank-transacoes api-transacoes-659558d96c-tdhnl
+Name:             api-transacoes-659558d96c-tdhnl
+Namespace:        tipsbank-transacoes
+Priority:         0
+Service Account:  default
+Node:             tb-worker2/192.168.3.42
+Start Time:       Mon, 18 May 2026 18:00:18 -0300
+Labels:           app=api-transacoes
+                  app.kubernetes.io/name=api-transacoes
+                  app.kubernetes.io/part-of=tipsbank
+                  pod-template-hash=659558d96c
+Annotations:      cni.projectcalico.org/containerID: 850f69a847a2e1b424c851c241d5f4e731c173a623463def73c30e2f2a255b05
+                  cni.projectcalico.org/podIP: 10.244.247.10/32
+                  cni.projectcalico.org/podIPs: 10.244.247.10/32
+                  kubectl.kubernetes.io/restartedAt: 2026-05-08T23:10:44-03:00
+Status:           Running
+IP:               10.244.247.10
+IPs:
+  IP:           10.244.247.10
+Controlled By:  ReplicaSet/api-transacoes-659558d96c
+Init Containers:
+  init-postgres:
+    Container ID:  containerd://bcbaf007b632aaf4a40d0e316a9dd44b7ef5ccc020d3d63140bc46a593048d44
+    Image:         busybox:1.36
+    Image ID:      docker.io/library/busybox@sha256:73aaf090f3d85aa34ee199857f03fa3a95c8ede2ffd4cc2cdb5b94e566b11662
+    Port:          <none>
+    Host Port:     <none>
+    Command:
+      sh
+      -c
+      until nc -z postgres-service.tipsbank-contas.svc.cluster.local 5432; do
+        echo "Verificando conexão com Postgres..."
+        sleep 3
+      done
+      
+    State:          Terminated
+      Reason:       Completed
+      Exit Code:    0
+      Started:      Mon, 18 May 2026 18:00:19 -0300
+      Finished:     Mon, 18 May 2026 18:00:19 -0300
+    Ready:          True
+    Restart Count:  0
+    Environment:    <none>
+    Mounts:
+      /var/run/secrets/kubernetes.io/serviceaccount from kube-api-access-vg9jb (ro)
+  init-api-contas:
+    Container ID:  containerd://aeea275ddb2fa31bed4d31a2ae602f4217a0a07e1fa9895324fb6af228eddda3
+    Image:         busybox:1.36
+    Image ID:      docker.io/library/busybox@sha256:73aaf090f3d85aa34ee199857f03fa3a95c8ede2ffd4cc2cdb5b94e566b11662
+    Port:          <none>
+    Host Port:     <none>
+    Command:
+      sh
+      -c
+      until wget -q --spider http://api-contas.tipsbank-contas.svc.cluster.local:8080/health/live; do
+        echo "Verificando se api-contas esta live..."
+        sleep 3
+        done
+      
+    State:          Terminated
+      Reason:       Completed
+      Exit Code:    0
+      Started:      Mon, 18 May 2026 18:00:20 -0300
+      Finished:     Mon, 18 May 2026 18:00:20 -0300
+    Ready:          True
+    Restart Count:  0
+    Environment:    <none>
+    Mounts:
+      /var/run/secrets/kubernetes.io/serviceaccount from kube-api-access-vg9jb (ro)
+Containers:
+  api-transacoes:
+    Container ID:   containerd://0d03a83f964a70d26811e00b394b6d828dc8148b40b00c4a3f069ebaec0ceb74
+    Image:          felipestaypuff/tipsbank-api-transacoes:v2.0.0
+    Image ID:       docker.io/felipestaypuff/tipsbank-api-transacoes@sha256:8eee80a5b966562779a3b95a0304562a3dfbe97f5d486ff58fce5099c9840fca
+    Port:           8080/TCP (api-transacoes)
+    Host Port:      0/TCP (api-transacoes)
+    State:          Running
+      Started:      Mon, 18 May 2026 18:00:21 -0300
+    Ready:          True
+    Restart Count:  0
+    Limits:
+      cpu:     500m
+      memory:  256Mi
+    Requests:
+      cpu:      100m
+      memory:   128Mi
+    Liveness:   http-get http://:8080/health/live delay=0s timeout=3s period=10s #success=1 #failure=3
+    Readiness:  http-get http://:8080/health/ready delay=0s timeout=3s period=5s #success=1 #failure=3
+    Startup:    http-get http://:8080/health/startup delay=0s timeout=1s period=5s #success=1 #failure=30
+    Environment:
+      DB_URL:         <set to the key 'DB_URL' in secret 'transacoes-secret'>             Optional: false
+      CONTAS_URL:     <set to the key 'CONTAS_URL' of config map 'transacoes-config'>     Optional: false
+      AUDITORIA_URL:  <set to the key 'AUDITORIA_URL' of config map 'transacoes-config'>  Optional: false
+      APP_VERSION:    <set to the key 'APP_VERSION' of config map 'transacoes-config'>    Optional: false
+      LOG_LEVEL:      <set to the key 'LOG_LEVEL' of config map 'transacoes-config'>      Optional: false
+    Mounts:
+      /var/log/app from app-logs (rw)
+      /var/run/secrets/kubernetes.io/serviceaccount from kube-api-access-vg9jb (ro)
+  log-forwarder:
+    Container ID:  containerd://3c8d458c3a5cb6711c510ed048d7889372da7bbba7ae499dd3b2d5c813dc8609
+    Image:         busybox:1.36
+    Image ID:      docker.io/library/busybox@sha256:73aaf090f3d85aa34ee199857f03fa3a95c8ede2ffd4cc2cdb5b94e566b11662
+    Port:          <none>
+    Host Port:     <none>
+    Command:
+      sh
+      -c
+      until [ -f /var/log/app/app.log ]; do echo "Aguardando o arquivo de log ser criado..."; sleep 1; done;
+      tail -F /var/log/app/app.log
+      
+    State:          Running
+      Started:      Mon, 18 May 2026 18:00:21 -0300
+    Ready:          True
+    Restart Count:  0
+    Limits:
+      cpu:     50m
+      memory:  32Mi
+    Requests:
+      cpu:        10m
+      memory:     16Mi
+    Environment:  <none>
+    Mounts:
+      /var/log/app from app-logs (rw)
+      /var/run/secrets/kubernetes.io/serviceaccount from kube-api-access-vg9jb (ro)
+Conditions:
+  Type                        Status
+  PodReadyToStartContainers   True
+  Initialized                 True
+  Ready                       True
+  ContainersReady             True
+  PodScheduled                True
+Volumes:
+  app-logs:
+    Type:       EmptyDir (a temporary directory that shares a pod's lifetime)
+    Medium:     
+    SizeLimit:  <unset>
+  kube-api-access-vg9jb:
+    Type:                    Projected (a volume that contains injected data from multiple sources)
+    TokenExpirationSeconds:  3607
+    ConfigMapName:           kube-root-ca.crt
+    Optional:                false
+    DownwardAPI:             true
+QoS Class:                   Burstable
+Node-Selectors:              <none>
+Tolerations:                 node.kubernetes.io/not-ready:NoExecute op=Exists for 300s
+                             node.kubernetes.io/unreachable:NoExecute op=Exists for 300s
+Events:                      <none>
+❯ k describe pod -n tipsbank-transacoes api-transacoes-659558d96c-h7wfl
+Name:             api-transacoes-659558d96c-h7wfl
+Namespace:        tipsbank-transacoes
+Priority:         0
+Service Account:  default
+Node:             tb-worker1/192.168.3.41
+Start Time:       Sun, 17 May 2026 11:35:21 -0300
+Labels:           app=api-transacoes
+                  app.kubernetes.io/name=api-transacoes
+                  app.kubernetes.io/part-of=tipsbank
+                  pod-template-hash=659558d96c
+Annotations:      cni.projectcalico.org/containerID: 543418ed18d771414aaad3268f9e4a40cf9d67dfb9d7ada23b698df2b571ceec
+                  cni.projectcalico.org/podIP: 10.244.209.206/32
+                  cni.projectcalico.org/podIPs: 10.244.209.206/32
+                  kubectl.kubernetes.io/restartedAt: 2026-05-08T23:10:44-03:00
+Status:           Running
+IP:               10.244.209.206
+IPs:
+  IP:           10.244.209.206
+Controlled By:  ReplicaSet/api-transacoes-659558d96c
+Init Containers:
+  init-postgres:
+    Container ID:  containerd://24be1dbccf2b75bbbd2ac2f71963564f219dd3fa4bf343cda539a96652fe0644
+    Image:         busybox:1.36
+    Image ID:      docker.io/library/busybox@sha256:73aaf090f3d85aa34ee199857f03fa3a95c8ede2ffd4cc2cdb5b94e566b11662
+    Port:          <none>
+    Host Port:     <none>
+    Command:
+      sh
+      -c
+      until nc -z postgres-service.tipsbank-contas.svc.cluster.local 5432; do
+        echo "Verificando conexão com Postgres..."
+        sleep 3
+      done
+      
+    State:          Terminated
+      Reason:       Completed
+      Exit Code:    0
+      Started:      Sun, 17 May 2026 11:35:22 -0300
+      Finished:     Sun, 17 May 2026 11:35:22 -0300
+    Ready:          True
+    Restart Count:  0
+    Environment:    <none>
+    Mounts:
+      /var/run/secrets/kubernetes.io/serviceaccount from kube-api-access-8zjc2 (ro)
+  init-api-contas:
+    Container ID:  containerd://a1ab10bd6c3ed4363c54605234163dd52484d31aadbe9795d0e5e3c03c7770e8
+    Image:         busybox:1.36
+    Image ID:      docker.io/library/busybox@sha256:73aaf090f3d85aa34ee199857f03fa3a95c8ede2ffd4cc2cdb5b94e566b11662
+    Port:          <none>
+    Host Port:     <none>
+    Command:
+      sh
+      -c
+      until wget -q --spider http://api-contas.tipsbank-contas.svc.cluster.local:8080/health/live; do
+        echo "Verificando se api-contas esta live..."
+        sleep 3
+        done
+      
+    State:          Terminated
+      Reason:       Completed
+      Exit Code:    0
+      Started:      Sun, 17 May 2026 11:35:23 -0300
+      Finished:     Sun, 17 May 2026 11:35:23 -0300
+    Ready:          True
+    Restart Count:  0
+    Environment:    <none>
+    Mounts:
+      /var/run/secrets/kubernetes.io/serviceaccount from kube-api-access-8zjc2 (ro)
+Containers:
+  api-transacoes:
+    Container ID:   containerd://fcb6334becbed869c448b8965abb6bd69d43d2c3e64e3a7e257993e1d3e31bc3
+    Image:          felipestaypuff/tipsbank-api-transacoes:v2.0.0
+    Image ID:       docker.io/felipestaypuff/tipsbank-api-transacoes@sha256:8eee80a5b966562779a3b95a0304562a3dfbe97f5d486ff58fce5099c9840fca
+    Port:           8080/TCP (api-transacoes)
+    Host Port:      0/TCP (api-transacoes)
+    State:          Running
+      Started:      Sun, 17 May 2026 11:35:24 -0300
+    Ready:          True
+    Restart Count:  0
+    Limits:
+      cpu:     500m
+      memory:  256Mi
+    Requests:
+      cpu:      100m
+      memory:   128Mi
+    Liveness:   http-get http://:8080/health/live delay=0s timeout=3s period=10s #success=1 #failure=3
+    Readiness:  http-get http://:8080/health/ready delay=0s timeout=3s period=5s #success=1 #failure=3
+    Startup:    http-get http://:8080/health/startup delay=0s timeout=1s period=5s #success=1 #failure=30
+    Environment:
+      DB_URL:         <set to the key 'DB_URL' in secret 'transacoes-secret'>             Optional: false
+      CONTAS_URL:     <set to the key 'CONTAS_URL' of config map 'transacoes-config'>     Optional: false
+      AUDITORIA_URL:  <set to the key 'AUDITORIA_URL' of config map 'transacoes-config'>  Optional: false
+      APP_VERSION:    <set to the key 'APP_VERSION' of config map 'transacoes-config'>    Optional: false
+      LOG_LEVEL:      <set to the key 'LOG_LEVEL' of config map 'transacoes-config'>      Optional: false
+    Mounts:
+      /var/log/app from app-logs (rw)
+      /var/run/secrets/kubernetes.io/serviceaccount from kube-api-access-8zjc2 (ro)
+  log-forwarder:
+    Container ID:  containerd://9f784b3c298c2f60a213d9ffefee208c6c58533363136e8b681b19e38f4a10f3
+    Image:         busybox:1.36
+    Image ID:      docker.io/library/busybox@sha256:73aaf090f3d85aa34ee199857f03fa3a95c8ede2ffd4cc2cdb5b94e566b11662
+    Port:          <none>
+    Host Port:     <none>
+    Command:
+      sh
+      -c
+      until [ -f /var/log/app/app.log ]; do echo "Aguardando o arquivo de log ser criado..."; sleep 1; done;
+      tail -F /var/log/app/app.log
+      
+    State:          Running
+      Started:      Sun, 17 May 2026 11:35:25 -0300
+    Ready:          True
+    Restart Count:  0
+    Limits:
+      cpu:     50m
+      memory:  32Mi
+    Requests:
+      cpu:        10m
+      memory:     16Mi
+    Environment:  <none>
+    Mounts:
+      /var/log/app from app-logs (rw)
+      /var/run/secrets/kubernetes.io/serviceaccount from kube-api-access-8zjc2 (ro)
+Conditions:
+  Type                        Status
+  PodReadyToStartContainers   True
+  Initialized                 True
+  Ready                       True
+  ContainersReady             True
+  PodScheduled                True
+Volumes:
+  app-logs:
+    Type:       EmptyDir (a temporary directory that shares a pod's lifetime)
+    Medium:     
+    SizeLimit:  <unset>
+  kube-api-access-8zjc2:
+    Type:                    Projected (a volume that contains injected data from multiple sources)
+    TokenExpirationSeconds:  3607
+    ConfigMapName:           kube-root-ca.crt
+    Optional:                false
+    DownwardAPI:             true
+QoS Class:                   Burstable
+Node-Selectors:              <none>
+Tolerations:                 node.kubernetes.io/not-ready:NoExecute op=Exists for 300s
+                             node.kubernetes.io/unreachable:NoExecute op=Exists for 300s
+Events:                      <none>
+❯ k describe pod -n tipsbank-transacoes api-transacoes-659558d96c-rgltt
+Name:             api-transacoes-659558d96c-rgltt
+Namespace:        tipsbank-transacoes
+Priority:         0
+Service Account:  default
+Node:             tb-worker1/192.168.3.41
+Start Time:       Tue, 19 May 2026 18:16:34 -0300
+Labels:           app=api-transacoes
+                  app.kubernetes.io/name=api-transacoes
+                  app.kubernetes.io/part-of=tipsbank
+                  pod-template-hash=659558d96c
+Annotations:      cni.projectcalico.org/containerID: 01ebb575bc7e685e9ac7b1c952e8df03e072a5fde8a8baa9cc571f1eaa634e4b
+                  cni.projectcalico.org/podIP: 10.244.209.230/32
+                  cni.projectcalico.org/podIPs: 10.244.209.230/32
+                  kubectl.kubernetes.io/restartedAt: 2026-05-08T23:10:44-03:00
+Status:           Pending
+IP:               10.244.209.230
+IPs:
+  IP:           10.244.209.230
+Controlled By:  ReplicaSet/api-transacoes-659558d96c
+Init Containers:
+  init-postgres:
+    Container ID:  containerd://4e5d519c3e20b4b0761440ca1d0c7d40cf9bd6967c6970ef2b7b5db16f38637c
+    Image:         busybox:1.36
+    Image ID:      docker.io/library/busybox@sha256:73aaf090f3d85aa34ee199857f03fa3a95c8ede2ffd4cc2cdb5b94e566b11662
+    Port:          <none>
+    Host Port:     <none>
+    Command:
+      sh
+      -c
+      until nc -z postgres-service.tipsbank-contas.svc.cluster.local 5432; do
+        echo "Verificando conexão com Postgres..."
+        sleep 3
+      done
+      
+    State:          Terminated
+      Reason:       Completed
+      Exit Code:    0
+      Started:      Tue, 19 May 2026 18:16:35 -0300
+      Finished:     Tue, 19 May 2026 18:16:35 -0300
+    Ready:          True
+    Restart Count:  0
+    Environment:    <none>
+    Mounts:
+      /var/run/secrets/kubernetes.io/serviceaccount from kube-api-access-r7ssz (ro)
+  init-api-contas:
+    Container ID:  containerd://ade8343d3004451d07754d7fae59defa5f45e820ccc7ab3c6428341b27fa6504
+    Image:         busybox:1.36
+    Image ID:      docker.io/library/busybox@sha256:73aaf090f3d85aa34ee199857f03fa3a95c8ede2ffd4cc2cdb5b94e566b11662
+    Port:          <none>
+    Host Port:     <none>
+    Command:
+      sh
+      -c
+      until wget -q --spider http://api-contas.tipsbank-contas.svc.cluster.local:8080/health/live; do
+        echo "Verificando se api-contas esta live..."
+        sleep 3
+        done
+      
+    State:          Terminated
+      Reason:       Completed
+      Exit Code:    0
+      Started:      Tue, 19 May 2026 18:16:36 -0300
+      Finished:     Tue, 19 May 2026 18:16:36 -0300
+    Ready:          True
+    Restart Count:  0
+    Environment:    <none>
+    Mounts:
+      /var/run/secrets/kubernetes.io/serviceaccount from kube-api-access-r7ssz (ro)
+Containers:
+  api-transacoes:
+    Container ID:   containerd://2ca9b5b5b99ac7b34bd31ebdcbac8bbb9daae5dd20a9bb2766709a0de765da46
+    Image:          felipestaypuff/tipsbank-api-transacoes:v2.0.0
+    Image ID:       docker.io/felipestaypuff/tipsbank-api-transacoes@sha256:8eee80a5b966562779a3b95a0304562a3dfbe97f5d486ff58fce5099c9840fca
+    Port:           8080/TCP (api-transacoes)
+    Host Port:      0/TCP (api-transacoes)
+    State:          Running
+      Started:      Tue, 19 May 2026 18:16:37 -0300
+    Ready:          True
+    Restart Count:  0
+    Limits:
+      cpu:     500m
+      memory:  256Mi
+    Requests:
+      cpu:      100m
+      memory:   128Mi
+    Liveness:   http-get http://:8080/health/live delay=0s timeout=3s period=10s #success=1 #failure=3
+    Readiness:  http-get http://:8080/health/ready delay=0s timeout=3s period=5s #success=1 #failure=3
+    Startup:    http-get http://:8080/health/startup delay=0s timeout=1s period=5s #success=1 #failure=30
+    Environment:
+      DB_URL:         <set to the key 'DB_URL' in secret 'transacoes-secret'>             Optional: false
+      CONTAS_URL:     <set to the key 'CONTAS_URL' of config map 'transacoes-config'>     Optional: false
+      AUDITORIA_URL:  <set to the key 'AUDITORIA_URL' of config map 'transacoes-config'>  Optional: false
+      APP_VERSION:    <set to the key 'APP_VERSION' of config map 'transacoes-config'>    Optional: false
+      LOG_LEVEL:      <set to the key 'LOG_LEVEL' of config map 'transacoes-config'>      Optional: false
+    Mounts:
+      /var/log/app from app-logs (rw)
+      /var/run/secrets/kubernetes.io/serviceaccount from kube-api-access-r7ssz (ro)
+  log-forwarder:
+    Container ID:  
+    Image:         busybox:1.36
+    Image ID:      
+    Port:          <none>
+    Host Port:     <none>
+    Command:
+      sh
+      -c
+      until [ -f /var/log/app/app.log ]; do echo "Aguardando o arquivo de log ser criado..."; sleep 1; done;
+      tail -F /var/log/app/app.log
+      
+    State:          Waiting
+      Reason:       CreateContainerConfigError
+    Ready:          False
+    Restart Count:  0
+    Limits:
+      cpu:     50m
+      memory:  32Mi
+    Requests:
+      cpu:        10m
+      memory:     16Mi
+    Environment:  <none>
+    Mounts:
+      /var/log/app from app-logs (rw)
+      /var/run/secrets/kubernetes.io/serviceaccount from kube-api-access-r7ssz (ro)
+Conditions:
+  Type                        Status
+  PodReadyToStartContainers   True
+  Initialized                 True
+  Ready                       False
+  ContainersReady             False
+  PodScheduled                True
+Volumes:
+  app-logs:
+    Type:       EmptyDir (a temporary directory that shares a pod's lifetime)
+    Medium:     
+    SizeLimit:  <unset>
+  kube-api-access-r7ssz:
+    Type:                    Projected (a volume that contains injected data from multiple sources)
+    TokenExpirationSeconds:  3607
+    ConfigMapName:           kube-root-ca.crt
+    Optional:                false
+    DownwardAPI:             true
+QoS Class:                   Burstable
+Node-Selectors:              <none>
+Tolerations:                 node.kubernetes.io/not-ready:NoExecute op=Exists for 300s
+                             node.kubernetes.io/unreachable:NoExecute op=Exists for 300s
+Events:
+  Type     Reason     Age                     From               Message
+  ----     ------     ----                    ----               -------
+  Normal   Scheduled  4m47s                   default-scheduler  Successfully assigned tipsbank-transacoes/api-transacoes-659558d96c-rgltt to tb-worker1
+  Normal   Pulled     4m46s                   kubelet            Container image "busybox:1.36" already present on machine and can be accessed by the pod
+  Normal   Created    4m46s                   kubelet            Container created
+  Normal   Started    4m46s                   kubelet            Container started
+  Normal   Started    4m45s                   kubelet            Container started
+  Normal   Created    4m45s                   kubelet            Container created
+  Normal   Pulled     4m45s                   kubelet            Container image "busybox:1.36" already present on machine and can be accessed by the pod
+  Normal   Pulled     4m44s                   kubelet            Container image "felipestaypuff/tipsbank-api-transacoes:v2.0.0" already present on machine and can be accessed by the pod
+  Normal   Created    4m44s                   kubelet            Container created
+  Normal   Started    4m44s                   kubelet            Container started
+  Warning  Unhealthy  4m41s                   kubelet            Startup probe failed: Get "http://10.244.209.230:8080/health/startup": dial tcp 10.244.209.230:8080: connect: connection refused
+  Normal   Pulled     2m49s (x16 over 4m44s)  kubelet            Container image "busybox:1.36" already present on machine and can be accessed by the pod
+  Warning  Failed     60s (x24 over 4m44s)    kubelet            Error: container has runAsNonRoot and image will run as root (pod: "api-transacoes-659558d96c-rgltt_tipsbank-transacoes(e7e35abf-2855-4e3f-bc5e-8c83a8942c7d)", container: log-forwarder)
+❯ k apply -f k8s/tipsbank-transacoes/transacoes-deployment.yaml
+deployment.apps/api-transacoes configured
+service/api-transacoes unchanged
+❯ k get pod -n tipsbank-transacoes
+NAME                              READY   STATUS            RESTARTS   AGE
+api-transacoes-659558d96c-h7wfl   2/2     Running           0          2d6h
+api-transacoes-659558d96c-tdhnl   2/2     Running           0          24h
+api-transacoes-fdd978ffc-kzcvv    0/2     PodInitializing   0          6s
+❯ k get pod -n tipsbank-transacoes
+NAME                              READY   STATUS    RESTARTS   AGE
+api-transacoes-659558d96c-h7wfl   2/2     Running   0          2d6h
+api-transacoes-659558d96c-tdhnl   2/2     Running   0          24h
+api-transacoes-fdd978ffc-kzcvv    1/2     Running   0          9s
+❯ k get pod -n tipsbank-transacoes
+NAME                              READY   STATUS    RESTARTS   AGE
+api-transacoes-659558d96c-h7wfl   2/2     Running   0          2d6h
+api-transacoes-659558d96c-tdhnl   2/2     Running   0          24h
+api-transacoes-fdd978ffc-kzcvv    1/2     Running   0          10s
+❯ k get pod -n tipsbank-transacoes
+NAME                              READY   STATUS    RESTARTS   AGE
+api-transacoes-659558d96c-h7wfl   2/2     Running   0          2d6h
+api-transacoes-659558d96c-tdhnl   2/2     Running   0          24h
+api-transacoes-fdd978ffc-kzcvv    1/2     Running   0          11s
+❯ k get pod -n tipsbank-transacoes
+NAME                              READY   STATUS     RESTARTS   AGE
+api-transacoes-659558d96c-bfxcc   0/2     Init:0/2   0          0s
+api-transacoes-659558d96c-h7wfl   2/2     Running    0          2d6h
+api-transacoes-659558d96c-tdhnl   2/2     Running    0          24h
+api-transacoes-fdd978ffc-kzcvv    1/2     Running    0          12s
+❯ k get pod -n tipsbank-transacoes
+NAME                              READY   STATUS     RESTARTS   AGE
+api-transacoes-659558d96c-bfxcc   0/2     Init:0/2   0          1s
+api-transacoes-659558d96c-h7wfl   2/2     Running    0          2d6h
+api-transacoes-659558d96c-tdhnl   2/2     Running    0          24h
+api-transacoes-fdd978ffc-kzcvv    1/2     Running    0          13s
+❯ k get pod -n tipsbank-transacoes
+NAME                              READY   STATUS     RESTARTS   AGE
+api-transacoes-659558d96c-bfxcc   0/2     Init:1/2   0          2s
+api-transacoes-659558d96c-h7wfl   2/2     Running    0          2d6h
+api-transacoes-659558d96c-tdhnl   2/2     Running    0          24h
+api-transacoes-fdd978ffc-kzcvv    1/2     Running    0          14s
+❯ k get pod -n tipsbank-transacoes
+NAME                              READY   STATUS            RESTARTS   AGE
+api-transacoes-659558d96c-bfxcc   0/2     PodInitializing   0          2s
+api-transacoes-659558d96c-h7wfl   2/2     Running           0          2d6h
+api-transacoes-659558d96c-tdhnl   2/2     Running           0          24h
+api-transacoes-fdd978ffc-kzcvv    1/2     Running           0          14s
+❯ k get pod -n tipsbank-transacoes
+NAME                              READY   STATUS            RESTARTS   AGE
+api-transacoes-659558d96c-bfxcc   0/2     PodInitializing   0          3s
+api-transacoes-659558d96c-h7wfl   2/2     Running           0          2d6h
+api-transacoes-659558d96c-tdhnl   2/2     Running           0          24h
+api-transacoes-fdd978ffc-kzcvv    1/2     Running           0          15s
+❯ k get pod -n tipsbank-transacoes
+NAME                              READY   STATUS                       RESTARTS   AGE
+api-transacoes-659558d96c-bfxcc   0/2     CreateContainerConfigError   0          4s
+api-transacoes-659558d96c-h7wfl   2/2     Running                      0          2d6h
+api-transacoes-659558d96c-tdhnl   2/2     Running                      0          24h
+api-transacoes-fdd978ffc-kzcvv    1/2     Running                      0          16s
+❯ k get pod -n tipsbank-transacoes
+NAME                              READY   STATUS                       RESTARTS   AGE
+api-transacoes-659558d96c-bfxcc   0/2     CreateContainerConfigError   0          4s
+api-transacoes-659558d96c-h7wfl   2/2     Running                      0          2d6h
+api-transacoes-659558d96c-tdhnl   2/2     Running                      0          24h
+api-transacoes-fdd978ffc-kzcvv    2/2     Running                      0          16s
+❯ k get pod -n tipsbank-transacoes
+NAME                              READY   STATUS        RESTARTS   AGE
+api-transacoes-659558d96c-bfxcc   0/2     Terminating   0          5s
+api-transacoes-659558d96c-h7wfl   2/2     Running       0          2d6h
+api-transacoes-659558d96c-tdhnl   2/2     Running       0          24h
+api-transacoes-fdd978ffc-c9vdz    0/2     Init:0/2      0          0s
+api-transacoes-fdd978ffc-kzcvv    2/2     Running       0          17s
+❯ k get pod -n tipsbank-transacoes
+NAME                              READY   STATUS        RESTARTS   AGE
+api-transacoes-659558d96c-bfxcc   0/2     Terminating   0          6s
+api-transacoes-659558d96c-h7wfl   2/2     Running       0          2d6h
+api-transacoes-659558d96c-tdhnl   2/2     Running       0          24h
+api-transacoes-fdd978ffc-c9vdz    0/2     Init:0/2      0          1s
+api-transacoes-fdd978ffc-kzcvv    2/2     Running       0          18s
+❯ k get pod -n tipsbank-transacoes
+NAME                              READY   STATUS        RESTARTS   AGE
+api-transacoes-659558d96c-bfxcc   0/2     Terminating   0          7s
+api-transacoes-659558d96c-h7wfl   2/2     Running       0          2d6h
+api-transacoes-659558d96c-tdhnl   2/2     Running       0          24h
+api-transacoes-fdd978ffc-c9vdz    0/2     Init:0/2      0          2s
+api-transacoes-fdd978ffc-kzcvv    2/2     Running       0          19s
+❯ k get pod -n tipsbank-transacoes
+NAME                              READY   STATUS        RESTARTS   AGE
+api-transacoes-659558d96c-bfxcc   0/2     Terminating   0          7s
+api-transacoes-659558d96c-h7wfl   2/2     Running       0          2d6h
+api-transacoes-659558d96c-tdhnl   2/2     Running       0          24h
+api-transacoes-fdd978ffc-c9vdz    0/2     Init:0/2      0          2s
+api-transacoes-fdd978ffc-kzcvv    2/2     Running       0          19s
+❯ k get pod -n tipsbank-transacoes
+NAME                              READY   STATUS        RESTARTS   AGE
+api-transacoes-659558d96c-bfxcc   0/2     Terminating   0          8s
+api-transacoes-659558d96c-h7wfl   2/2     Running       0          2d6h
+api-transacoes-659558d96c-tdhnl   2/2     Running       0          24h
+api-transacoes-fdd978ffc-c9vdz    0/2     Init:1/2      0          3s
+api-transacoes-fdd978ffc-kzcvv    2/2     Running       0          20s
+❯ k get pod -n tipsbank-transacoes
+NAME                              READY   STATUS            RESTARTS   AGE
+api-transacoes-659558d96c-bfxcc   0/2     Terminating       0          9s
+api-transacoes-659558d96c-h7wfl   2/2     Running           0          2d6h
+api-transacoes-659558d96c-tdhnl   2/2     Running           0          24h
+api-transacoes-fdd978ffc-c9vdz    0/2     PodInitializing   0          4s
+api-transacoes-fdd978ffc-kzcvv    2/2     Running           0          21s
+❯ k get pod -n tipsbank-transacoes
+NAME                              READY   STATUS            RESTARTS   AGE
+api-transacoes-659558d96c-bfxcc   0/2     Terminating       0          9s
+api-transacoes-659558d96c-h7wfl   2/2     Running           0          2d6h
+api-transacoes-659558d96c-tdhnl   2/2     Running           0          24h
+api-transacoes-fdd978ffc-c9vdz    0/2     PodInitializing   0          4s
+api-transacoes-fdd978ffc-kzcvv    2/2     Running           0          21s
+❯ k get pod -n tipsbank-transacoes
+NAME                              READY   STATUS        RESTARTS   AGE
+api-transacoes-659558d96c-bfxcc   0/2     Terminating   0          10s
+api-transacoes-659558d96c-h7wfl   2/2     Running       0          2d6h
+api-transacoes-659558d96c-tdhnl   2/2     Running       0          24h
+api-transacoes-fdd978ffc-c9vdz    1/2     Running       0          5s
+api-transacoes-fdd978ffc-kzcvv    2/2     Running       0          22s
+❯ k get pod -n tipsbank-transacoes
+NAME                              READY   STATUS    RESTARTS   AGE
+api-transacoes-659558d96c-h7wfl   2/2     Running   0          2d6h
+api-transacoes-659558d96c-tdhnl   2/2     Running   0          24h
+api-transacoes-fdd978ffc-c9vdz    1/2     Running   0          6s
+api-transacoes-fdd978ffc-kzcvv    2/2     Running   0          23s
+❯ k get pod -n tipsbank-transacoes
+NAME                              READY   STATUS    RESTARTS   AGE
+api-transacoes-659558d96c-h7wfl   2/2     Running   0          2d6h
+api-transacoes-659558d96c-tdhnl   2/2     Running   0          24h
+api-transacoes-fdd978ffc-c9vdz    1/2     Running   0          7s
+api-transacoes-fdd978ffc-kzcvv    2/2     Running   0          24s
+❯ k get pod -n tipsbank-transacoes
+NAME                              READY   STATUS    RESTARTS   AGE
+api-transacoes-659558d96c-h7wfl   2/2     Running   0          2d6h
+api-transacoes-659558d96c-tdhnl   2/2     Running   0          24h
+api-transacoes-fdd978ffc-c9vdz    1/2     Running   0          7s
+api-transacoes-fdd978ffc-kzcvv    2/2     Running   0          24s
+❯ k get pod -n tipsbank-transacoes
+NAME                              READY   STATUS    RESTARTS   AGE
+api-transacoes-659558d96c-h7wfl   2/2     Running   0          2d6h
+api-transacoes-659558d96c-tdhnl   2/2     Running   0          24h
+api-transacoes-fdd978ffc-c9vdz    1/2     Running   0          8s
+api-transacoes-fdd978ffc-kzcvv    2/2     Running   0          25s
+❯ k get pod -n tipsbank-transacoes -w
+NAME                              READY   STATUS        RESTARTS   AGE
+api-transacoes-659558d96c-h7wfl   2/2     Running       0          2d6h
+api-transacoes-659558d96c-tdhnl   2/2     Terminating   0          24h
+api-transacoes-fdd978ffc-c9vdz    2/2     Running       0          10s
+api-transacoes-fdd978ffc-kzcvv    2/2     Running       0          27s
+api-transacoes-659558d96c-tdhnl   2/2     Terminating   0          24h
+api-transacoes-fdd978ffc-t54b8    0/2     Pending       0          0s
+api-transacoes-fdd978ffc-t54b8    0/2     Pending       0          0s
+api-transacoes-fdd978ffc-t54b8    0/2     Init:0/2      0          0s
+api-transacoes-fdd978ffc-t54b8    0/2     Init:0/2      0          0s
+api-transacoes-fdd978ffc-t54b8    0/2     Init:1/2      0          2s
+api-transacoes-fdd978ffc-t54b8    0/2     PodInitializing   0          3s
+api-transacoes-fdd978ffc-t54b8    1/2     Running           0          4s
+api-transacoes-fdd978ffc-t54b8    1/2     Running           0          10s
+api-transacoes-fdd978ffc-t54b8    2/2     Running           0          10s
+api-transacoes-659558d96c-h7wfl   2/2     Terminating       0          2d6h
+api-transacoes-659558d96c-h7wfl   2/2     Terminating       0          2d6h
+api-transacoes-659558d96c-tdhnl   1/2     Terminating       0          24h
+api-transacoes-659558d96c-h7wfl   1/2     Terminating       0          2d6h
+ k get api-transacoes-659558d96c-tdhnl   1/2     Terminating       0          24h
+api-transacoes-659558d96c-tdhnl   0/2     Error             0          24h
+api-transacoes-659558d96c-tdhnl   0/2     Error             0          24h
+api-transacoes-659558d96c-tdhnl   0/2     Error             0          24h
+api-transacoes-659558d96c-h7wfl   1/2     Terminating       0          2d6h
+api-transacoes-659558d96c-h7wfl   0/2     Error             0          2d6h
+api-transacoes-659558d96c-h7wfl   0/2     Error             0          2d6h
+api-transacoes-659558d96c-h7wfl   0/2     Error             0          2d6h
+^C
+❯ k get pod -n tipsbank-transacoes
+NAME                             READY   STATUS    RESTARTS   AGE
+api-transacoes-fdd978ffc-c9vdz   2/2     Running   0          60s
+api-transacoes-fdd978ffc-kzcvv   2/2     Running   0          77s
+api-transacoes-fdd978ffc-t54b8   2/2     Running   0          49s
+❯ k get pod -n tipsbank-transacoes
+NAME                             READY   STATUS    RESTARTS   AGE
+api-transacoes-fdd978ffc-c9vdz   2/2     Running   0          66s
+api-transacoes-fdd978ffc-kzcvv   2/2     Running   0          83s
+api-transacoes-fdd978ffc-t54b8   2/2     Running   0          55s
+❯ k get pod -n tipsbank-transacoes
+NAME                             READY   STATUS    RESTARTS   AGE
+api-transacoes-fdd978ffc-c9vdz   2/2     Running   0          69s
+api-transacoes-fdd978ffc-kzcvv   2/2     Running   0          86s
+api-transacoes-fdd978ffc-t54b8   2/2     Running   0          58s
+❯ k get pod -n tipsbank-transacoes -w
+NAME                             READY   STATUS    RESTARTS   AGE
+api-transacoes-fdd978ffc-c9vdz   2/2     Running   0          75s
+api-transacoes-fdd978ffc-kzcvv   2/2     Running   0          92s
+api-transacoes-fdd978ffc-t54b8   2/2     Running   0          64s
+^C
+❯ k logs -n tipsbank-transacoes api-transacoes-fdd978ffc-c9vdz
+Defaulted container "api-transacoes" out of: api-transacoes, log-forwarder, init-postgres (init), init-api-contas (init)
+INFO:     Started server process [1]
+INFO:     Waiting for application startup.
+{"ts":"2026-05-19 21:23:47,975","level":"INFO","service":"api-transacoes","msg":"bootstrap versao=v1"}
+INFO:     Application startup complete.
+INFO:     Uvicorn running on http://0.0.0.0:8080 (Press CTRL+C to quit)
+INFO:     10.244.209.236:42244 - "GET /metrics HTTP/1.1" 200 OK
+INFO:     192.168.3.41:45006 - "GET /health/startup HTTP/1.1" 200 OK
+INFO:     192.168.3.41:45016 - "GET /health/ready HTTP/1.1" 200 OK
+INFO:     192.168.3.41:38744 - "GET /health/ready HTTP/1.1" 200 OK
+INFO:     192.168.3.41:38760 - "GET /health/live HTTP/1.1" 200 OK
+INFO:     192.168.3.41:38776 - "GET /health/ready HTTP/1.1" 200 OK
+INFO:     192.168.3.41:58892 - "GET /health/ready HTTP/1.1" 200 OK
+INFO:     192.168.3.41:58896 - "GET /health/live HTTP/1.1" 200 OK
+INFO:     192.168.3.41:58898 - "GET /health/ready HTTP/1.1" 200 OK
+INFO:     192.168.3.41:57324 - "GET /health/ready HTTP/1.1" 200 OK
+INFO:     10.244.209.236:52376 - "GET /metrics HTTP/1.1" 200 OK
+INFO:     192.168.3.41:57328 - "GET /health/live HTTP/1.1" 200 OK
+INFO:     192.168.3.41:57332 - "GET /health/ready HTTP/1.1" 200 OK
+INFO:     192.168.3.41:54668 - "GET /health/ready HTTP/1.1" 200 OK
+INFO:     192.168.3.41:54676 - "GET /health/live HTTP/1.1" 200 OK
+INFO:     192.168.3.41:54688 - "GET /health/ready HTTP/1.1" 200 OK
+INFO:     192.168.3.41:56244 - "GET /health/ready HTTP/1.1" 200 OK
+INFO:     192.168.3.41:56252 - "GET /health/live HTTP/1.1" 200 OK
+INFO:     192.168.3.41:56268 - "GET /health/ready HTTP/1.1" 200 OK
+INFO:     192.168.3.41:59012 - "GET /health/ready HTTP/1.1" 200 OK
+INFO:     10.244.209.236:47790 - "GET /metrics HTTP/1.1" 200 OK
+INFO:     192.168.3.41:59014 - "GET /health/live HTTP/1.1" 200 OK
+INFO:     192.168.3.41:59016 - "GET /health/ready HTTP/1.1" 200 OK
+INFO:     192.168.3.41:43958 - "GET /health/ready HTTP/1.1" 200 OK
+INFO:     192.168.3.41:43962 - "GET /health/live HTTP/1.1" 200 OK
+INFO:     192.168.3.41:43964 - "GET /health/ready HTTP/1.1" 200 OK
+INFO:     192.168.3.41:52288 - "GET /health/ready HTTP/1.1" 200 OK
+INFO:     192.168.3.41:52298 - "GET /health/live HTTP/1.1" 200 OK
+INFO:     192.168.3.41:52306 - "GET /health/ready HTTP/1.1" 200 OK
+INFO:     192.168.3.41:56744 - "GET /health/ready HTTP/1.1" 200 OK
+INFO:     10.244.209.236:36114 - "GET /metrics HTTP/1.1" 200 OK
+INFO:     192.168.3.41:56748 - "GET /health/live HTTP/1.1" 200 OK
+INFO:     192.168.3.41:56764 - "GET /health/ready HTTP/1.1" 200 OK
+INFO:     192.168.3.41:44578 - "GET /health/ready HTTP/1.1" 200 OK
+INFO:     192.168.3.41:44586 - "GET /health/live HTTP/1.1" 200 OK
+INFO:     192.168.3.41:44602 - "GET /health/ready HTTP/1.1" 200 OK
+❯ k describe  -n tipsbank-transacoes api-transacoes-fdd978ffc-c9vdz
+error: the server doesn't have a resource type "api-transacoes-fdd978ffc-c9vdz"
+❯ k describe -n tipsbank-transacoes pod api-transacoes-fdd978ffc-c9vdz
+Name:             api-transacoes-fdd978ffc-c9vdz
+Namespace:        tipsbank-transacoes
+Priority:         0
+Service Account:  default
+Node:             tb-worker1/192.168.3.41
+Start Time:       Tue, 19 May 2026 18:23:40 -0300
+Labels:           app=api-transacoes
+                  app.kubernetes.io/name=api-transacoes
+                  app.kubernetes.io/part-of=tipsbank
+                  pod-template-hash=fdd978ffc
+Annotations:      cni.projectcalico.org/containerID: a9d01d70757033e4e887687529a91c554d7a62bf6e5231ff5f091be527336628
+                  cni.projectcalico.org/podIP: 10.244.209.254/32
+                  cni.projectcalico.org/podIPs: 10.244.209.254/32
+                  kubectl.kubernetes.io/restartedAt: 2026-05-08T23:10:44-03:00
+Status:           Running
+IP:               10.244.209.254
+IPs:
+  IP:           10.244.209.254
+Controlled By:  ReplicaSet/api-transacoes-fdd978ffc
+Init Containers:
+  init-postgres:
+    Container ID:  containerd://406e734f19bde4ac1d2391ac73e9cba80a6a3129d2c0f99678664df3c22e882d
+    Image:         busybox:1.36
+    Image ID:      docker.io/library/busybox@sha256:73aaf090f3d85aa34ee199857f03fa3a95c8ede2ffd4cc2cdb5b94e566b11662
+    Port:          <none>
+    Host Port:     <none>
+    Command:
+      sh
+      -c
+      until nc -z postgres-service.tipsbank-contas.svc.cluster.local 5432; do
+        echo "Verificando conexão com Postgres..."
+        sleep 3
+      done
+      
+    State:          Terminated
+      Reason:       Completed
+      Exit Code:    0
+      Started:      Tue, 19 May 2026 18:23:42 -0300
+      Finished:     Tue, 19 May 2026 18:23:42 -0300
+    Ready:          True
+    Restart Count:  0
+    Environment:    <none>
+    Mounts:
+      /var/run/secrets/kubernetes.io/serviceaccount from kube-api-access-lvc7m (ro)
+  init-api-contas:
+    Container ID:  containerd://6854cc36c88fbbc4b1b387148bbb31fd2408f7ae1976d348223ba00853f409e2
+    Image:         busybox:1.36
+    Image ID:      docker.io/library/busybox@sha256:73aaf090f3d85aa34ee199857f03fa3a95c8ede2ffd4cc2cdb5b94e566b11662
+    Port:          <none>
+    Host Port:     <none>
+    Command:
+      sh
+      -c
+      until wget -q --spider http://api-contas.tipsbank-contas.svc.cluster.local:8080/health/live; do
+        echo "Verificando se api-contas esta live..."
+        sleep 3
+        done
+      
+    State:          Terminated
+      Reason:       Completed
+      Exit Code:    0
+      Started:      Tue, 19 May 2026 18:23:43 -0300
+      Finished:     Tue, 19 May 2026 18:23:43 -0300
+    Ready:          True
+    Restart Count:  0
+    Environment:    <none>
+    Mounts:
+      /var/run/secrets/kubernetes.io/serviceaccount from kube-api-access-lvc7m (ro)
+Containers:
+  api-transacoes:
+    Container ID:   containerd://6a73168a32293c7c4bdbb79f17a8cdfd83ffd7d36b2170361a010670109c9ad7
+    Image:          felipestaypuff/tipsbank-api-transacoes:v2.0.0
+    Image ID:       docker.io/felipestaypuff/tipsbank-api-transacoes@sha256:8eee80a5b966562779a3b95a0304562a3dfbe97f5d486ff58fce5099c9840fca
+    Port:           8080/TCP (api-transacoes)
+    Host Port:      0/TCP (api-transacoes)
+    State:          Running
+      Started:      Tue, 19 May 2026 18:23:44 -0300
+    Ready:          True
+    Restart Count:  0
+    Limits:
+      cpu:     500m
+      memory:  256Mi
+    Requests:
+      cpu:      100m
+      memory:   128Mi
+    Liveness:   http-get http://:8080/health/live delay=0s timeout=3s period=10s #success=1 #failure=3
+    Readiness:  http-get http://:8080/health/ready delay=0s timeout=3s period=5s #success=1 #failure=3
+    Startup:    http-get http://:8080/health/startup delay=0s timeout=1s period=5s #success=1 #failure=30
+    Environment:
+      DB_URL:         <set to the key 'DB_URL' in secret 'transacoes-secret'>             Optional: false
+      CONTAS_URL:     <set to the key 'CONTAS_URL' of config map 'transacoes-config'>     Optional: false
+      AUDITORIA_URL:  <set to the key 'AUDITORIA_URL' of config map 'transacoes-config'>  Optional: false
+      APP_VERSION:    <set to the key 'APP_VERSION' of config map 'transacoes-config'>    Optional: false
+      LOG_LEVEL:      <set to the key 'LOG_LEVEL' of config map 'transacoes-config'>      Optional: false
+    Mounts:
+      /var/log/app from app-logs (rw)
+      /var/run/secrets/kubernetes.io/serviceaccount from kube-api-access-lvc7m (ro)
+  log-forwarder:
+    Container ID:  containerd://fffbdac7bff74d4a6baa1ac14a8a672a22d750ac69a0c5de3d3061a371f2e2b5
+    Image:         busybox:1.36
+    Image ID:      docker.io/library/busybox@sha256:73aaf090f3d85aa34ee199857f03fa3a95c8ede2ffd4cc2cdb5b94e566b11662
+    Port:          <none>
+    Host Port:     <none>
+    Command:
+      sh
+      -c
+      until [ -f /var/log/app/app.log ]; do echo "Aguardando o arquivo de log ser criado..."; sleep 1; done;
+      tail -F /var/log/app/app.log
+      
+    State:          Running
+      Started:      Tue, 19 May 2026 18:23:44 -0300
+    Ready:          True
+    Restart Count:  0
+    Limits:
+      cpu:     50m
+      memory:  32Mi
+    Requests:
+      cpu:        10m
+      memory:     16Mi
+    Environment:  <none>
+    Mounts:
+      /var/log/app from app-logs (rw)
+      /var/run/secrets/kubernetes.io/serviceaccount from kube-api-access-lvc7m (ro)
+Conditions:
+  Type                        Status
+  PodReadyToStartContainers   True
+  Initialized                 True
+  Ready                       True
+  ContainersReady             True
+  PodScheduled                True
+Volumes:
+  app-logs:
+    Type:       EmptyDir (a temporary directory that shares a pod's lifetime)
+    Medium:     
+    SizeLimit:  <unset>
+  kube-api-access-lvc7m:
+    Type:                    Projected (a volume that contains injected data from multiple sources)
+    TokenExpirationSeconds:  3607
+    ConfigMapName:           kube-root-ca.crt
+    Optional:                false
+    DownwardAPI:             true
+QoS Class:                   Burstable
+Node-Selectors:              <none>
+Tolerations:                 node.kubernetes.io/not-ready:NoExecute op=Exists for 300s
+                             node.kubernetes.io/unreachable:NoExecute op=Exists for 300s
+Events:
+  Type     Reason     Age   From               Message
+  ----     ------     ----  ----               -------
+  Normal   Scheduled  2m9s  default-scheduler  Successfully assigned tipsbank-transacoes/api-transacoes-fdd978ffc-c9vdz to tb-worker1
+  Normal   Pulled     2m8s  kubelet            Container image "busybox:1.36" already present on machine and can be accessed by the pod
+  Normal   Created    2m7s  kubelet            Container created
+  Normal   Started    2m7s  kubelet            Container started
+  Normal   Pulled     2m7s  kubelet            Container image "busybox:1.36" already present on machine and can be accessed by the pod
+  Normal   Created    2m7s  kubelet            Container created
+  Normal   Started    2m6s  kubelet            Container started
+  Normal   Pulled     2m6s  kubelet            Container image "felipestaypuff/tipsbank-api-transacoes:v2.0.0" already present on machine and can be accessed by the pod
+  Normal   Created    2m6s  kubelet            Container created
+  Normal   Started    2m5s  kubelet            Container started
+  Normal   Pulled     2m5s  kubelet            Container image "busybox:1.36" already present on machine and can be accessed by the pod
+  Normal   Created    2m5s  kubelet            Container created
+  Normal   Started    2m5s  kubelet            Container started
+  Warning  Unhealthy  2m4s  kubelet            Startup probe failed: Get "http://10.244.209.254:8080/health/startup": dial tcp 10.244.209.254:8080: connect: connection refused
+❯ k delete -f k8s/tipsbank-transacoes/transacoes-deployment.yaml
+deployment.apps "api-transacoes" deleted from tipsbank-transacoes namespace
+service "api-transacoes" deleted from tipsbank-transacoes namespace
+❯ k get pod -n tipsbank-transacoes -w
+NAME                             READY   STATUS        RESTARTS   AGE
+api-transacoes-fdd978ffc-c9vdz   2/2     Terminating   0          4m11s
+api-transacoes-fdd978ffc-kzcvv   2/2     Terminating   0          4m28s
+api-transacoes-fdd978ffc-t54b8   2/2     Terminating   0          4m
+api-transacoes-fdd978ffc-kzcvv   1/2     Terminating   0          4m36s
+api-transacoes-fdd978ffc-c9vdz   1/2     Terminating   0          4m20s
+api-transacoes-fdd978ffc-t54b8   1/2     Terminating   0          4m10s
+api-transacoes-fdd978ffc-t54b8   1/2     Terminating   0          4m26s
+api-transacoes-fdd978ffc-kzcvv   1/2     Terminating   0          4m54s
+api-transacoes-fdd978ffc-kzcvv   0/2     Error         0          4m54s
+api-transacoes-fdd978ffc-c9vdz   1/2     Terminating   0          4m37s
+api-transacoes-fdd978ffc-kzcvv   0/2     Error         0          4m55s
+api-transacoes-fdd978ffc-kzcvv   0/2     Error         0          4m55s
+api-transacoes-fdd978ffc-t54b8   0/2     Error         0          4m27s
+api-transacoes-fdd978ffc-c9vdz   0/2     Error         0          4m38s
+api-transacoes-fdd978ffc-t54b8   0/2     Error         0          4m28s
+api-transacoes-fdd978ffc-t54b8   0/2     Error         0          4m28s
+api-transacoes-fdd978ffc-c9vdz   0/2     Error         0          4m39s
+api-transacoes-fdd978ffc-c9vdz   0/2     Error         0          4m39s
+^C
+❯ k describe -n tipsbank-transacoes pod api-transacoes-fdd978ffc-c9vdz
+Error from server (NotFound): pods "api-transacoes-fdd978ffc-c9vdz" not found
+❯ k get pod -n tipsbank-transacoes
+No resources found in tipsbank-transacoes namespace.
+❯ k get pod -n tipsbank-transacoes
+No resources found in tipsbank-transacoes namespace.
+❯ k apply -f k8s/tipsbank-transacoes/transacoes-deployment.yaml
+deployment.apps/api-transacoes created
+service/api-transacoes created
+❯ k get pod -n tipsbank-transacoes
+NAME                              READY   STATUS    RESTARTS   AGE
+api-transacoes-6768d8f69f-24vbd   2/2     Running   0          15s
+api-transacoes-6768d8f69f-58j6z   2/2     Running   0          14s
+api-transacoes-6768d8f69f-sqhqh   2/2     Running   0          15s
+❯ k describe -n tipsbank-transacoes pod api-transacoes-6768d8f69f-24vbd
+Name:             api-transacoes-6768d8f69f-24vbd
+Namespace:        tipsbank-transacoes
+Priority:         0
+Service Account:  default
+Node:             tb-worker2/192.168.3.42
+Start Time:       Tue, 19 May 2026 18:29:19 -0300
+Labels:           app=api-transacoes
+                  app.kubernetes.io/name=api-transacoes
+                  app.kubernetes.io/part-of=tipsbank
+                  pod-template-hash=6768d8f69f
+Annotations:      cni.projectcalico.org/containerID: e8dbd9bfcc483dee4e8352ef60a62c009ba6e10c3c7829951b92f56bb04506c9
+                  cni.projectcalico.org/podIP: 10.244.247.17/32
+                  cni.projectcalico.org/podIPs: 10.244.247.17/32
+Status:           Running
+IP:               10.244.247.17
+IPs:
+  IP:           10.244.247.17
+Controlled By:  ReplicaSet/api-transacoes-6768d8f69f
+Init Containers:
+  init-postgres:
+    Container ID:  containerd://2c7f935cdfdbf3e4b1357faac816ba6e6681491ab9b90845c820007c8d91399b
+    Image:         busybox:1.36
+    Image ID:      docker.io/library/busybox@sha256:73aaf090f3d85aa34ee199857f03fa3a95c8ede2ffd4cc2cdb5b94e566b11662
+    Port:          <none>
+    Host Port:     <none>
+    Command:
+      sh
+      -c
+      until nc -z postgres-service.tipsbank-contas.svc.cluster.local 5432; do
+        echo "Verificando conexão com Postgres..."
+        sleep 3
+      done
+      
+    State:          Terminated
+      Reason:       Completed
+      Exit Code:    0
+      Started:      Tue, 19 May 2026 18:29:20 -0300
+      Finished:     Tue, 19 May 2026 18:29:20 -0300
+    Ready:          True
+    Restart Count:  0
+    Environment:    <none>
+    Mounts:
+      /var/run/secrets/kubernetes.io/serviceaccount from kube-api-access-ws98w (ro)
+  init-api-contas:
+    Container ID:  containerd://30b67d8f3d91510ee67f0289bf4d9fc40ca255db8302c7b5a04fb32a965efb4c
+    Image:         busybox:1.36
+    Image ID:      docker.io/library/busybox@sha256:73aaf090f3d85aa34ee199857f03fa3a95c8ede2ffd4cc2cdb5b94e566b11662
+    Port:          <none>
+    Host Port:     <none>
+    Command:
+      sh
+      -c
+      until wget -q --spider http://api-contas.tipsbank-contas.svc.cluster.local:8080/health/live; do
+        echo "Verificando se api-contas esta live..."
+        sleep 3
+        done
+      
+    State:          Terminated
+      Reason:       Completed
+      Exit Code:    0
+      Started:      Tue, 19 May 2026 18:29:21 -0300
+      Finished:     Tue, 19 May 2026 18:29:21 -0300
+    Ready:          True
+    Restart Count:  0
+    Environment:    <none>
+    Mounts:
+      /var/run/secrets/kubernetes.io/serviceaccount from kube-api-access-ws98w (ro)
+Containers:
+  api-transacoes:
+    Container ID:   containerd://919f562416df25d94a8f5875b00cd7bbee21e98aefc97336af2d2fc589e8ad1d
+    Image:          felipestaypuff/tipsbank-api-transacoes:v2.0.0
+    Image ID:       docker.io/felipestaypuff/tipsbank-api-transacoes@sha256:8eee80a5b966562779a3b95a0304562a3dfbe97f5d486ff58fce5099c9840fca
+    Port:           8080/TCP (api-transacoes)
+    Host Port:      0/TCP (api-transacoes)
+    State:          Running
+      Started:      Tue, 19 May 2026 18:29:22 -0300
+    Ready:          True
+    Restart Count:  0
+    Limits:
+      cpu:     500m
+      memory:  256Mi
+    Requests:
+      cpu:      100m
+      memory:   128Mi
+    Liveness:   http-get http://:8080/health/live delay=0s timeout=3s period=10s #success=1 #failure=3
+    Readiness:  http-get http://:8080/health/ready delay=0s timeout=3s period=5s #success=1 #failure=3
+    Startup:    http-get http://:8080/health/startup delay=0s timeout=1s period=5s #success=1 #failure=30
+    Environment:
+      DB_URL:         <set to the key 'DB_URL' in secret 'transacoes-secret'>             Optional: false
+      CONTAS_URL:     <set to the key 'CONTAS_URL' of config map 'transacoes-config'>     Optional: false
+      AUDITORIA_URL:  <set to the key 'AUDITORIA_URL' of config map 'transacoes-config'>  Optional: false
+      APP_VERSION:    <set to the key 'APP_VERSION' of config map 'transacoes-config'>    Optional: false
+      LOG_LEVEL:      <set to the key 'LOG_LEVEL' of config map 'transacoes-config'>      Optional: false
+    Mounts:
+      /var/log/app from app-logs (rw)
+      /var/run/secrets/kubernetes.io/serviceaccount from kube-api-access-ws98w (ro)
+  log-forwarder:
+    Container ID:  containerd://a869c71d0969746a030937363a3ce7ea69af7f5c875626fbb146625fc6010277
+    Image:         busybox:1.36
+    Image ID:      docker.io/library/busybox@sha256:73aaf090f3d85aa34ee199857f03fa3a95c8ede2ffd4cc2cdb5b94e566b11662
+    Port:          <none>
+    Host Port:     <none>
+    Command:
+      sh
+      -c
+      until [ -f /var/log/app/app.log ]; do echo "Aguardando o arquivo de log ser criado..."; sleep 1; done;
+      tail -F /var/log/app/app.log
+      
+    State:          Running
+      Started:      Tue, 19 May 2026 18:29:22 -0300
+    Ready:          True
+    Restart Count:  0
+    Limits:
+      cpu:     50m
+      memory:  32Mi
+    Requests:
+      cpu:        10m
+      memory:     16Mi
+    Environment:  <none>
+    Mounts:
+      /var/log/app from app-logs (rw)
+      /var/run/secrets/kubernetes.io/serviceaccount from kube-api-access-ws98w (ro)
+Conditions:
+  Type                        Status
+  PodReadyToStartContainers   True
+  Initialized                 True
+  Ready                       True
+  ContainersReady             True
+  PodScheduled                True
+Volumes:
+  app-logs:
+    Type:       EmptyDir (a temporary directory that shares a pod's lifetime)
+    Medium:     
+    SizeLimit:  <unset>
+  kube-api-access-ws98w:
+    Type:                    Projected (a volume that contains injected data from multiple sources)
+    TokenExpirationSeconds:  3607
+    ConfigMapName:           kube-root-ca.crt
+    Optional:                false
+    DownwardAPI:             true
+QoS Class:                   Burstable
+Node-Selectors:              <none>
+Tolerations:                 node.kubernetes.io/not-ready:NoExecute op=Exists for 300s
+                             node.kubernetes.io/unreachable:NoExecute op=Exists for 300s
+Events:
+  Type     Reason     Age   From               Message
+  ----     ------     ----  ----               -------
+  Normal   Scheduled  46s   default-scheduler  Successfully assigned tipsbank-transacoes/api-transacoes-6768d8f69f-24vbd to tb-worker2
+  Normal   Pulled     45s   kubelet            Container image "busybox:1.36" already present on machine and can be accessed by the pod
+  Normal   Created    45s   kubelet            Container created
+  Normal   Started    45s   kubelet            Container started
+  Normal   Pulled     44s   kubelet            Container image "busybox:1.36" already present on machine and can be accessed by the pod
+  Normal   Created    44s   kubelet            Container created
+  Normal   Started    44s   kubelet            Container started
+  Normal   Pulled     43s   kubelet            Container image "felipestaypuff/tipsbank-api-transacoes:v2.0.0" already present on machine and can be accessed by the pod
+  Normal   Created    43s   kubelet            Container created
+  Normal   Started    43s   kubelet            Container started
+  Normal   Pulled     43s   kubelet            Container image "busybox:1.36" already present on machine and can be accessed by the pod
+  Normal   Created    43s   kubelet            Container created
+  Normal   Started    43s   kubelet            Container started
+  Warning  Unhealthy  41s   kubelet            Startup probe failed: Get "http://10.244.247.17:8080/health/startup": dial tcp 10.244.247.17:8080: connect: connection refused
+❯ k logs  -n tipsbank-transacoes pod api-transacoes-6768d8f69f-24vbd
+error: error from server (NotFound): pods "pod" not found in namespace "tipsbank-transacoes"
+❯ k logs -n tipsbank-transacoes  api-transacoes-6768d8f69f-24vbd
+Defaulted container "api-transacoes" out of: api-transacoes, log-forwarder, init-postgres (init), init-api-contas (init)
+INFO:     Started server process [1]
+INFO:     Waiting for application startup.
+{"ts":"2026-05-19 21:29:26,966","level":"INFO","service":"api-transacoes","msg":"bootstrap versao=v1"}
+INFO:     Application startup complete.
+INFO:     Uvicorn running on http://0.0.0.0:8080 (Press CTRL+C to quit)
+INFO:     10.244.209.236:49110 - "GET /metrics HTTP/1.1" 200 OK
+INFO:     192.168.3.42:38340 - "GET /health/startup HTTP/1.1" 200 OK
+INFO:     192.168.3.42:38342 - "GET /health/ready HTTP/1.1" 200 OK
+INFO:     192.168.3.42:34004 - "GET /health/ready HTTP/1.1" 200 OK
+INFO:     192.168.3.42:34012 - "GET /health/live HTTP/1.1" 200 OK
+INFO:     192.168.3.42:34024 - "GET /health/ready HTTP/1.1" 200 OK
+INFO:     192.168.3.42:42716 - "GET /health/ready HTTP/1.1" 200 OK
+INFO:     192.168.3.42:42720 - "GET /health/live HTTP/1.1" 200 OK
+INFO:     192.168.3.42:42736 - "GET /health/ready HTTP/1.1" 200 OK
+INFO:     192.168.3.42:51042 - "GET /health/ready HTTP/1.1" 200 OK
+INFO:     10.244.209.236:58286 - "GET /metrics HTTP/1.1" 200 OK
+INFO:     192.168.3.42:51050 - "GET /health/live HTTP/1.1" 200 OK
+INFO:     192.168.3.42:51062 - "GET /health/ready HTTP/1.1" 200 OK
+INFO:     192.168.3.42:42880 - "GET /health/ready HTTP/1.1" 200 OK
+INFO:     192.168.3.42:42896 - "GET /health/live HTTP/1.1" 200 OK
+INFO:     192.168.3.42:42906 - "GET /health/ready HTTP/1.1" 200 OK
+INFO:     192.168.3.42:35670 - "GET /health/ready HTTP/1.1" 200 OK
+INFO:     192.168.3.42:35678 - "GET /health/live HTTP/1.1" 200 OK
+INFO:     192.168.3.42:35686 - "GET /health/ready HTTP/1.1" 200 OK
+INFO:     192.168.3.42:44712 - "GET /health/ready HTTP/1.1" 200 OK
+INFO:     10.244.209.236:33350 - "GET /metrics HTTP/1.1" 200 OK
+INFO:     192.168.3.42:44714 - "GET /health/live HTTP/1.1" 200 OK
+INFO:     192.168.3.42:44722 - "GET /health/ready HTTP/1.1" 200 OK
+INFO:     192.168.3.42:38078 - "GET /health/ready HTTP/1.1" 200 OK
+
+    /mnt/c/Users/felip/Documents/Projetos/tipsbank  on   main !2 ?1 ▓▒░                                                            ░▒▓ at 18:30:37  
+❯ 
+❯ k run teste-mutate \
+  --image=felipestaypuff/tipsbank-api-contas:v1.0.0 \
+  --restart=Never \
+  -n tipsbank-contas
+pod/teste-mutate created
+❯ kubectl get pod teste-mutate -n tipsbank-contas \
+  -o jsonpath='{.spec.containers[0].securityContext}' | jq
+{
+  "allowPrivilegeEscalation": false,
+  "readOnlyRootFilesystem": true,
+  "runAsNonRoot": true
+}
+❯ kubectl delete pod teste-mutate -n tipsbank-contas
+pod "teste-mutate" deleted from tipsbank-contas namespace
+❯ kubectl rollout restart deployment/api-contas -n tipsbank-contas
+deployment.apps/api-contas restarted
+❯ kubectl rollout status deployment/api-contas -n tipsbank-contas
+Waiting for deployment "api-contas" rollout to finish: 1 old replicas are pending termination...
+Waiting for deployment "api-contas" rollout to finish: 1 old replicas are pending termination...
+deployment "api-contas" successfully rolled out
+❯ kubectl rollout restart deployment/auditoria -n tipsbank-auditoria
+deployment.apps/auditoria restarted
+❯ kubectl rollout status deployment/auditoria -n tipsbank-auditoria
+Waiting for deployment "auditoria" rollout to finish: 1 out of 2 new replicas have been updated...
+Waiting for deployment "auditoria" rollout to finish: 1 out of 2 new replicas have been updated...
+Waiting for deployment "auditoria" rollout to finish: 1 out of 2 new replicas have been updated...
+Waiting for deployment "auditoria" rollout to finish: 1 old replicas are pending termination...
+Waiting for deployment "auditoria" rollout to finish: 1 old replicas are pending termination...
+Waiting for deployment "auditoria" rollout to finish: 1 old replicas are pending termination...
+deployment "auditoria" successfully rolled out
+❯ kubectl rollout restart deployment/api-transacoes -n tipsbank-transacoes
+deployment.apps/api-transacoes restarted
+❯ kubectl rollout status deployment/api-transacoes -n tipsbank-transacoes
+Waiting for deployment "api-transacoes" rollout to finish: 1 out of 3 new replicas have been updated...
+Waiting for deployment "api-transacoes" rollout to finish: 1 out of 3 new replicas have been updated...
+Waiting for deployment "api-transacoes" rollout to finish: 1 out of 3 new replicas have been updated...
+Waiting for deployment "api-transacoes" rollout to finish: 2 out of 3 new replicas have been updated...
+Waiting for deployment "api-transacoes" rollout to finish: 2 out of 3 new replicas have been updated...
+Waiting for deployment "api-transacoes" rollout to finish: 2 out of 3 new replicas have been updated...
+Waiting for deployment "api-transacoes" rollout to finish: 1 old replicas are pending termination...
+Waiting for deployment "api-transacoes" rollout to finish: 1 old replicas are pending termination...
+deployment "api-transacoes" successfully rolled out
+❯ kubectl get pod -n tipsbank-transacoes -l app=api-transacoes \
+  -o jsonpath='{.items[0].spec.containers[1].securityContext}' | jq
+{
+  "allowPrivilegeEscalation": false,
+  "readOnlyRootFilesystem": true,
+  "runAsNonRoot": true,
+  "runAsUser": 65532
+}
+❯ git add . && git commit -m "semana 4.2 mutate-security "
+Found existing alias for "git add". You should use: "ga"
+[main f74f6bd] semana 4.2 mutate-security
+ 4 files changed, 46 insertions(+)
+ create mode 100644 k8s/kyverno/mutate-security-context.yaml
+
+    /mnt/c/Users/felip/Documents/Projetos/tipsbank  on   main ⇡1 ▓▒░                                                                          ░▒▓ at 19:03:38  
+❯ k logs  -n tipsbank-transacoes pod api-transacoes-6768d8f69f-24vbd
+error: error from server (NotFound): pods "pod" not found in namespace "tipsbank-transacoes"
+❯ k run teste-mutate \
+  --image=felipestaypuff/tipsbank-api-contas:v1.0.0 \
+  --restart=Never \
+  -n tipsbank-contas
+pod/teste-mutate created
+❯ kubectl get pod teste-mutate -n tipsbank-contas \
+  -o jsonpath='{.spec.containers[0].securityContext}' | jq
+{
+  "allowPrivilegeEscalation": false,
+  "readOnlyRootFilesystem": true,
+  "runAsNonRoot": true
+}
+❯ kubectl delete pod teste-mutate -n tipsbank-contas
+pod "teste-mutate" deleted from tipsbank-contas namespace
+❯ kubectl rollout restart deployment/api-contas -n tipsbank-contas
+deployment.apps/api-contas restarted
+❯ kubectl rollout status deployment/api-contas -n tipsbank-contas
+Waiting for deployment "api-contas" rollout to finish: 1 old replicas are pending termination...
+Waiting for deployment "api-contas" rollout to finish: 1 old replicas are pending termination...
+deployment "api-contas" successfully rolled out
+❯ kubectl rollout restart deployment/auditoria -n tipsbank-auditoria
+deployment.apps/auditoria restarted
+❯ kubectl rollout status deployment/auditoria -n tipsbank-auditoria
+Waiting for deployment "auditoria" rollout to finish: 1 out of 2 new replicas have been updated...
+Waiting for deployment "auditoria" rollout to finish: 1 out of 2 new replicas have been updated...
+Waiting for deployment "auditoria" rollout to finish: 1 out of 2 new replicas have been updated...
+Waiting for deployment "auditoria" rollout to finish: 1 old replicas are pending termination...
+Waiting for deployment "auditoria" rollout to finish: 1 old replicas are pending termination...
+Waiting for deployment "auditoria" rollout to finish: 1 old replicas are pending termination...
+deployment "auditoria" successfully rolled out
+❯ kubectl rollout restart deployment/api-transacoes -n tipsbank-transacoes
+deployment.apps/api-transacoes restarted
+❯ kubectl rollout status deployment/api-transacoes -n tipsbank-transacoes
+Waiting for deployment "api-transacoes" rollout to finish: 1 out of 3 new replicas have been updated...
+Waiting for deployment "api-transacoes" rollout to finish: 1 out of 3 new replicas have been updated...
+Waiting for deployment "api-transacoes" rollout to finish: 1 out of 3 new replicas have been updated...
+Waiting for deployment "api-transacoes" rollout to finish: 2 out of 3 new replicas have been updated...
+Waiting for deployment "api-transacoes" rollout to finish: 2 out of 3 new replicas have been updated...
+Waiting for deployment "api-transacoes" rollout to finish: 2 out of 3 new replicas have been updated...
+Waiting for deployment "api-transacoes" rollout to finish: 1 old replicas are pending termination...
+Waiting for deployment "api-transacoes" rollout to finish: 1 old replicas are pending termination...
+deployment "api-transacoes" successfully rolled out
+❯ kubectl get pod -n tipsbank-transacoes -l app=api-transacoes \
+  -o jsonpath='{.items[0].spec.containers[1].securityContext}' | jq
+{
+  "allowPrivilegeEscalation": false,
+  "readOnlyRootFilesystem": true,
+  "runAsNonRoot": true,
+  "runAsUser": 65532
+}
+❯ git add . && git commit -m "semana 4.2 mutate-security "
+Found existing alias for "git add". You should use: "ga"
+[main f74f6bd] semana 4.2 mutate-security
+ 4 files changed, 46 insertions(+)
+ create mode 100644 k8s/kyverno/mutate-security-context.yaml
+❯ k apply -f k8s/tipsbank-web/web-deployment.yaml
+deployment.apps/web configured
+service/web unchanged
+❯ kubectl rollout restart deployment/web -n tipsbank-web
+deployment.apps/web restarted
+❯ curl -sk https://tipsbank.staypuff.info/healthz
+❯ curl -sk https://tipsbank.staypuff.info/healthz
+❯ kubectl get pod -n tipsbank-contas
+NAME                          READY   STATUS    RESTARTS   AGE
+api-contas-69dcd554b7-jbrpg   1/1     Running   0          40m
+api-contas-69dcd554b7-t8q98   1/1     Running   0          40m
+postgres-0                    1/1     Running   0          2d9h
+postgres-replica-0            1/1     Running   0          9d
+❯ kubectl get pod -n tipsbank-transacoes
+NAME                              READY   STATUS    RESTARTS   AGE
+api-transacoes-54fbdf557d-j8dh4   2/2     Running   0          38m
+api-transacoes-54fbdf557d-j94bw   2/2     Running   0          38m
+api-transacoes-54fbdf557d-nm4sr   2/2     Running   0          38m
+❯ kubectl get pod -n tipsbank-auditoria
+NAME                         READY   STATUS    RESTARTS   AGE
+auditoria-7b59664544-8bbmr   1/1     Running   0          39m
+auditoria-7b59664544-t7442   1/1     Running   0          40m
+❯ kubectl get pod -n tipsbank-web
+NAME                   READY   STATUS    RESTARTS   AGE
+web-8584b5698b-pqnjf   1/1     Running   0          15m
+web-8584b5698b-r54jp   1/1     Running   0          15m
+❯ kubectl get pod -n tipsbank-contas -l app=api-contas \
+  -o jsonpath='{.items[0].spec.containers[0].securityContext}' | jq
+{
+  "allowPrivilegeEscalation": false,
+  "readOnlyRootFilesystem": true,
+  "runAsNonRoot": true
+}
+❯ kubectl get pod -n tipsbank-transacoes -l app=api-transacoes \
+  -o jsonpath='{.items[0].spec.containers[1].securityContext}' | jq
+{
+  "allowPrivilegeEscalation": false,
+  "readOnlyRootFilesystem": true,
+  "runAsNonRoot": true,
+  "runAsUser": 65532
+}
+❯ kubectl get cpol
+NAME                      ADMISSION   BACKGROUND   READY   AGE   MESSAGE
+disallow-latest-tag       true        true         True    26h   Ready
+disallow-root-user        true        true         True    30h   Ready
+mutate-security-context   true        true         True    91m   Ready
+require-labels            true        true         True    25h   Ready
+❯ k apply -f k8s/tipsbank-contas/postgres-statefull.yaml
+statefulset.apps/postgres configured
+service/postgres-service unchanged
+❯ k rollout restart statefulset -n tipsbank-contas postgres
+statefulset.apps/postgres restarted
+
+    /mnt/c/Users/felip/Documents/Projetos/tipsbank  on   main ⇡1 ▓▒░                                                                          ░▒▓ at 19:25:35  
+❯ 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
