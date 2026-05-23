@@ -1,0 +1,61 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: locustfile
+  namespace: tipsbank-monitoring
+data:
+  locustfile.py: |
+    import random
+    import uuid
+    from locust import HttpUser, task, between, events
+
+    CONTAS_CRIADAS: list[str] = []
+
+    class UsuarioBanco(HttpUser):
+        wait_time = between(0.5, 2)
+
+        def on_start(self):
+            documento = "".join(random.choices("0123456789", k=11))
+            payload = {
+                "titular": f"Aluno {uuid.uuid4().hex[:6]}",
+                "documento": documento,
+                "senha": documento,
+                "saldo_inicial": "10000.00",
+            }
+            with self.client.post(
+                "/api/contas/contas",
+                json=payload,
+                name="/api/contas/contas (setup)",
+                catch_response=True,
+            ) as r:
+                if r.status_code == 201:
+                    CONTAS_CRIADAS.append(r.json()["id"])
+                    r.success()
+                else:
+                    r.failure(f"falha criando conta: {r.status_code} {r.text[:100]}")
+
+        @task(3)
+        def transferir(self):
+            if len(CONTAS_CRIADAS) < 2:
+                return
+            origem, destino = random.sample(CONTAS_CRIADAS, 2)
+            valor = round(random.uniform(1, 50), 2)
+            self.client.post(
+                "/api/transacoes/transferencias",
+                json={"origem_id": origem, "destino_id": destino, "valor": str(valor)},
+                name="/api/transacoes/transferencias",
+            )
+
+        @task(1)
+        def consultar_extrato(self):
+            if not CONTAS_CRIADAS:
+                return
+            conta = random.choice(CONTAS_CRIADAS)
+            self.client.get(
+                f"/api/contas/extrato/{conta}",
+                name="/api/contas/extrato/:id",
+            )
+
+    @events.test_stop.add_listener
+    def resumo(environment, **_):
+        print(f"\nContas criadas durante o teste: {len(CONTAS_CRIADAS)}")

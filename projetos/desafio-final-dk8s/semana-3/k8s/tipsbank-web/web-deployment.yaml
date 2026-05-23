@@ -66,6 +66,8 @@ spec:
               mountPath: /etc/nginx/nginx.conf
               subPath: nginx.conf
               readOnly: true
+            - name: tmp-dir
+              mountPath: /tmp
           resources:
             limits:
               memory: "256Mi"
@@ -91,6 +93,8 @@ spec:
         - name: nginx-conf
           configMap:
             name: nginx-conf-v2
+        - name: tmp-dir
+          emptyDir: {}
 
 ---
 apiVersion: v1

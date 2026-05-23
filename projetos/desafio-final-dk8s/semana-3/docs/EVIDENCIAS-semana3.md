@@ -29,8 +29,14 @@ Configurar probes corretas nas APIs, no `web` e no Postgres, e validar reinício
 | Critério | Status | Evidência neste arquivo |
 |---|---|---|
 | Probes configuradas | **Atendido** | Descrições mostram startup/liveness/readiness nas APIs e exec probes no Postgres. |
-| Eventos de restart | **Atendido** | Eventos mostram Unhealthy, BackOff, Created e Started após `kill 1`. |
+| Eventos de restart | **Atendido** | Evidências mostram `NotReady`, incremento de `RESTARTS`, `Created` e `Started` após `kill 1` e nova tentativa com `kill -STOP 1`; neste cluster o evento literal `Killing` não foi emitido/capturado. |
 | Deploy normal sem falha | **Atendido** | Rollouts normais concluíram; `CrashLoopBackOff` apareceu somente no teste controlado de `kill 1`, que era justamente a validação da liveness. |
+
+#### Observações de alinhamento com o manual
+
+- O manual pede `kubectl describe pod`; a evidência usa principalmente `kubectl describe deployment`, que mostra o mesmo template de probes aplicado aos pods, e complementa com `kubectl debug`, `kubectl get pod -w` e `kubectl get events`.
+- O manual pede evento `Killing + Started`. Nas capturas salvas, o kubelet/runtime registrou `Pulled`, `Created` e `Started`, além do pod passar por `NotReady` e incrementar `RESTARTS`. O evento literal `Killing` não apareceu nem na tentativa adicional com `kill -STOP 1`, então a evidência aceita aqui é o ciclo observável de recriação/restart.
+- O teste usou `kubectl debug` com BusyBox porque as imagens das APIs são Distroless e não têm shell para executar o `kill 1` diretamente com `kubectl exec`.
 
 Nesta etapa eu tratei saúde da aplicação como contrato operacional. A ideia foi separar claramente três perguntas: o container já terminou de subir? Ele continua vivo? Ele está pronto para receber tráfego? Parece detalhe, mas é isso que evita mandar requisição para pod meio acordado ou manter pod quebrado fingindo normalidade.
 
@@ -39,7 +45,7 @@ Nesta etapa eu tratei saúde da aplicação como contrato operacional. A ideia f
 - api-contas, api-transacoes, auditoria: 3 probes (startupProbe + livenessProbe + readinessProbe) via httpGet
 - web: 2 probes (livenessProbe + readinessProbe) via httpGet em `/healthz` — sem startupProbe (nginx sobe rápido)
 - postgres: 2 probes (livenessProbe + readinessProbe) via exec `pg_isready -U tipsbank`
-- Teste de liveness validado: `kill 1` no processo principal → kubelet reinicia o container automaticamente
+- Teste de reinício validado: `kill 1` no processo principal → kubelet reinicia o container automaticamente
 - Init containers funcionando como dependency gates (api-transacoes aguarda postgres + api-contas; web aguarda os 3 serviços)
 
 ---
@@ -288,11 +294,11 @@ Events:
 
 ---
 
-#### Critério 7 — Teste liveness: `kill 1` → reinício automático pelo kubelet
+#### Critério 7 — Teste de reinício: `kill 1` → restart automático pelo kubelet
 
-Validação de que a livenessProbe detecta a morte do processo principal e o kubelet reinicia o container.
+Validação de que o pod recupera quando o processo principal morre e o kubelet reinicia o container.
 
-Esse foi o teste mais direto da liveness: matar o processo principal e observar se o kubelet assume a recuperação. O pod passar por `NotReady`, `CrashLoopBackOff` e voltar para `Running` com `RESTARTS` incrementado confirma que a plataforma detectou a falha e reiniciou o container sem intervenção manual.
+Esse teste matou o PID 1 dentro do container principal e observou se o kubelet assumia a recuperação. O pod passar por `NotReady`, `CrashLoopBackOff` e voltar para `Running` com `RESTARTS` incrementado confirma que a plataforma reiniciou o container sem intervenção manual.
 
 ```bash
 # Debug com ephemeral container para acessar namespaces do pod Distroless
@@ -320,7 +326,7 @@ api-transacoes-f96d7c44d-6f8fx   1/2     Running            3 (24s ago)   127m
 api-transacoes-f96d7c44d-6f8fx   2/2     Running            3 (29s ago)   127m
 ```
 
-**Output (`k get events -n tipsbank-transacoes`) — eventos registrados:**
+**Output (`k get events -n tipsbank-transacoes`) — eventos registrados no print salvo:**
 
 ```
 Normal    Pulled      Container image already present on machine
@@ -334,7 +340,71 @@ Normal    Created     Container created
 Normal    Started     Container started
 ```
 
-Confirmação: pod voltou a `2/2 Running` com `RESTARTS: 3` — livenessProbe funcionando corretamente.
+Confirmação: pod voltou a `2/2 Running` com `RESTARTS: 3`. A recuperação automática está comprovada.
+
+#### Critério 7.1 — Tentativa adicional para capturar `Killing` (2026-05-23)
+
+Depois da primeira revisão, repeti o teste manualmente para tentar capturar o evento literal `Killing` pedido no manual. Foram feitas duas abordagens no mesmo pod `api-transacoes-776f74779b-bkrrq`:
+
+- `kill 1`, encerrando o processo principal `python -m uvicorn`.
+- `kill -STOP 1`, travando o processo principal, seguido de `kill 1`.
+
+```bash
+kubectl get pods -n tipsbank-transacoes -l app=api-transacoes
+
+kubectl get events -n tipsbank-transacoes --watch \
+  --field-selector involvedObject.name=api-transacoes-776f74779b-bkrrq
+
+kubectl get pod -n tipsbank-transacoes api-transacoes-776f74779b-bkrrq -w
+
+kubectl debug -it api-transacoes-776f74779b-bkrrq \
+  -n tipsbank-transacoes \
+  --image=busybox:1.36 \
+  --target=api-transacoes \
+  --profile=sysadmin \
+  -- sh
+```
+
+**Output — processo principal e tentativa com `kill -STOP 1`:**
+
+```
+/ # ps
+PID   USER     TIME  COMMAND
+    1 65532     0:01 python -m uvicorn main:app --host 0.0.0.0 --port 8080
+   13 root      0:00 sh
+   19 root      0:00 ps
+/ # kill -STOP 1
+/ # ps
+PID   USER     TIME  COMMAND
+    1 65532     0:02 python -m uvicorn main:app --host 0.0.0.0 --port 8080
+   13 root      0:00 sh
+   20 root      0:00 ps
+/ # kill 1
+```
+
+**Output — pod recreado/reiniciado:**
+
+```
+api-transacoes-776f74779b-bkrrq   1/2   NotReady   0                21h
+api-transacoes-776f74779b-bkrrq   1/2   Running    1 (1s ago)      21h
+api-transacoes-776f74779b-bkrrq   2/2   Running    1 (2s ago)      21h
+api-transacoes-776f74779b-bkrrq   1/2   NotReady   1 (10m ago)     21h
+api-transacoes-776f74779b-bkrrq   1/2   Running    2 (2s ago)      21h
+api-transacoes-776f74779b-bkrrq   2/2   Running    2 (3s ago)      21h
+```
+
+**Output — eventos observados:**
+
+```
+Normal   Pulled    pod/api-transacoes-776f74779b-bkrrq   Container image "busybox:1.36" already present on machine and can be accessed by the pod
+Normal   Created   pod/api-transacoes-776f74779b-bkrrq   Container created
+Normal   Started   pod/api-transacoes-776f74779b-bkrrq   Container started
+Normal   Pulled    pod/api-transacoes-776f74779b-bkrrq   Container image "felipestaypuff/tipsbank-api-transacoes:v2.0.0" already present on machine and can be accessed by the pod
+Normal   Created   pod/api-transacoes-776f74779b-bkrrq   Container created
+Normal   Started   pod/api-transacoes-776f74779b-bkrrq   Container started
+```
+
+Conclusão da tentativa adicional: mesmo forçando `STOP` no PID 1, o cluster registrou o ciclo como `Pulled`/`Created`/`Started` e o `RESTARTS` subiu de 0 para 1 e depois para 2. O evento literal `Killing` não apareceu nas evidências, mas o comportamento exigido pelo critério — kubelet reiniciar o container após falha manual do processo principal — foi comprovado.
 
 ---
 
@@ -381,7 +451,7 @@ Confirmação: pod voltou a `2/2 Running` com `RESTARTS: 3` — livenessProbe fu
 ---
 
 ![](<imagens/Captura de tela 2026-05-07 223512.png>)
-*22:35 — Múltiplas sessões de `k debug ... --profile=sysadmin -- sh` com `kill 1`: pod incrementando RESTARTS, confirmando que o kubelet está reiniciando o container via livenessProbe*
+*22:35 — Múltiplas sessões de `k debug ... --profile=sysadmin -- sh` com `kill 1`: pod incrementando RESTARTS, confirmando restart automático pelo kubelet*
 
 ---
 
@@ -391,9 +461,37 @@ Confirmação: pod voltou a `2/2 Running` com `RESTARTS: 3` — livenessProbe fu
 ---
 
 ![](<imagens/Captura de tela 2026-05-07 223804.png>)
-*22:38 — `k get events -n tipsbank-transacoes` + `k get pod -n tipsbank-transacoes -w`: ciclo completo de eventos — BackOff, Unhealthy (Readiness 503), Pulled, Created, Started — livenessProbe funcionando em produção*
+*22:38 — `k get events -n tipsbank-transacoes` + `k get pod -n tipsbank-transacoes -w`: eventos BackOff, Unhealthy (Readiness 503), Pulled, Created e Started; o evento Killing não aparece no print salvo*
 
 ---
+
+![](<imagens/Captura de tela 2026-05-23 091120.png>)
+*09:11 — tentativa adicional: `kubectl debug`, `ps` mostrando PID 1 como `python -m uvicorn` e execução de `kill 1`*
+
+---
+
+![](<imagens/Captura de tela 2026-05-23 091129.png>)
+*09:11 — `kubectl get pod -w`: pod passa para `NotReady`, volta para `Running` e incrementa `RESTARTS` de 0 para 1*
+
+---
+
+![](<imagens/Captura de tela 2026-05-23 091138.png>)
+*09:11 — `kubectl get events --watch`: eventos registrados como `Pulled`, `Created` e `Started`, sem evento literal `Killing`*
+
+---
+
+![](<imagens/Captura de tela 2026-05-23 092113.png>)
+*09:21 — segunda tentativa: `kill -STOP 1` no processo principal, conferência com `ps` e encerramento posterior com `kill 1`*
+
+---
+
+![](<imagens/Captura de tela 2026-05-23 092127.png>)
+*09:21 — `kubectl get pod -w`: nova transição para `NotReady` e `RESTARTS` subindo de 1 para 2*
+
+---
+
+![](<imagens/Captura de tela 2026-05-23 092135.png>)
+*09:21 — `kubectl get events --watch`: nova sequência `Pulled`, `Created` e `Started`; o cluster não emitiu/capturou `Killing`*
 
 ---
 
@@ -423,7 +521,7 @@ Aqui o objetivo foi validar uma release ruim sem derrubar o serviço. Configurei
 
 **Setup:**
 - `revisionHistoryLimit: 5` e `strategy.rollingUpdate.maxSurge: 1, maxUnavailable: 0` adicionados ao `api-transacoes`
-- Deploy de versão quebrada (`v1.9.9`) para simular bad release — pod ficou `1/2 ImagePullBackOff`
+- Deploy de versão quebrada (`v1.9.9`) via `k8s/tipsbank-transacoes/transacoes-deployment-quebrada.yaml` para simular bad release — pod ficou `1/2 ImagePullBackOff`
 - Comprovação de zero downtime durante rollout travado via curl e browser
 - Rollback via `kubectl rollout undo` → revisão restaurada com `v1.1.0`
 
@@ -460,6 +558,8 @@ HTTP/2 200 confirmado via curl e browser enquanto o pod `v1.9.9` estava em `Imag
 #### Critério 3 — kubectl rollout history ≥ 3 revisões
 
 ```
+kubectl rollout history deployment/api-transacoes -n tipsbank-transacoes
+
 REVISION  CHANGE-CAUSE
 7         <none>
 8         <none>
@@ -475,7 +575,22 @@ REVISION  CHANGE-CAUSE
 
 #### Critério 4 — rollout undo: pod Ready com versão restaurada
 
-Revisão 13 = `felipestaypuff/tipsbank-api-transacoes:v1.1.0` com todos os pods `2/2 Running`.
+```
+kubectl rollout undo deployment/api-transacoes -n tipsbank-transacoes
+deployment.apps/api-transacoes rolled back
+
+k rollout history -n tipsbank-transacoes deployment api-transacoes --revision=13
+
+Pod Template:
+  Containers:
+   api-transacoes:
+    Image:      felipestaypuff/tipsbank-api-transacoes:v1.1.0
+    Liveness:   http-get http://:8080/health/live delay=0s timeout=3s period=10s #success=1 #failure=3
+    Readiness:  http-get http://:8080/health/ready delay=0s timeout=3s period=5s #success=1 #failure=3
+    Startup:    http-get http://:8080/health/startup delay=0s timeout=1s period=5s #success=1 #failure=30
+```
+
+Revisão 13 = `felipestaypuff/tipsbank-api-transacoes:v1.1.0` restaurada via `kubectl rollout undo`. O manual pede que o `rollout undo` volte a versão e deixe o pod Ready; a evidência combina o comando de rollback, o histórico com a revisão restaurada e os pods `2/2 Running` registrados após o retorno da versão boa.
 
 ---
 
@@ -520,10 +635,16 @@ Usar anti-affinity, taints e tolerations para espalhar réplicas e isolar worklo
 | APIs fora do node tainted | **Atendido** | Filtro por `tb-worker2` mostra apenas `postgres-0`. |
 | Taint confirmado | **Atendido** | `describe node` mostra `compliance=strict:NoSchedule`. |
 
+#### Observações de alinhamento com o manual
+
+- O manual permite que o segundo StatefulSet seja réplica real por streaming ou réplica didática. Aqui foi usado `postgres-replica` como StatefulSet separado didático, com o mesmo Secret e storage próprio.
+- Os quatro Deployments com mais de uma réplica (`api-contas`, `api-transacoes`, `auditoria`, `web`) têm `podAntiAffinity preferredDuringSchedulingIgnoredDuringExecution` com `topologyKey: kubernetes.io/hostname`.
+- Apenas os StatefulSets do Postgres têm toleration para `compliance=strict:NoSchedule`; os Deployments das APIs não têm essa toleration, então não são agendados no node isolado.
+
 Nesta etapa eu mexi no scheduler: espalhar réplicas, isolar node com taint e permitir que apenas workloads específicos tolerem esse isolamento. É uma camada de resiliência e governança: não basta ter três nodes, é preciso dizer ao Kubernetes como usar esses nodes.
 
 **Setup:**
-- `podAntiAffinity preferred` adicionado a todos os Deployments (`api-contas`, `api-transacoes`, `auditoria`, `web`) com `topologyKey: kubernetes.io/hostname` — réplicas espalhadas entre nodes
+- `podAntiAffinity preferred` adicionado aos manifestos `k8s/tipsbank-contas/contas-deployment.yaml`, `k8s/tipsbank-transacoes/transacoes-deployment.yaml`, `k8s/tipsbank-auditoria/auditoria-deployment.yaml` e `k8s/tipsbank-web/web-deployment.yaml` — réplicas espalhadas entre nodes
 - Taint `compliance=strict:NoSchedule` aplicado no `tb-worker2` + label `compliance=strict`
 - `postgres-statefull.yaml`: `nodeAffinity preferred` (prefere node com label `compliance=strict`) + toleration `compliance=strict:NoSchedule`
 - `postgres-statefull-replica.yaml`: `podAntiAffinity required` + toleration `compliance=strict:NoSchedule`
@@ -578,6 +699,8 @@ kubectl describe node tb-worker2 | grep -A 3 Taints
 ```
 Taints:             compliance=strict:NoSchedule
 ```
+
+Esse é o taint exigido pelo manual no worker isolado. Como ele usa efeito `NoSchedule`, novos pods sem toleration não entram nesse node; pods já existentes só mudam de node depois de restart ou recriação.
 
 ---
 
@@ -689,7 +812,7 @@ QoS Class:                   Burstable
 QoS Class:                   Burstable
 ```
 
-Todos os 10 pods (2×api-contas, 2×api-transacoes, 2×auditoria, 2×web, postgres-0, postgres-replica-0) com QoSClass: **Burstable**. Nenhum **BestEffort**.
+Todos os pods verificados (2×api-contas, 2×api-transacoes, 2×auditoria, 2×web, postgres-0, postgres-replica-0) com QoSClass: **Burstable**. Nenhum **BestEffort**.
 
 ---
 
@@ -872,6 +995,8 @@ Instalar kube-prometheus-stack, expor Grafana/Prometheus e coletar métricas rea
 #### Observações de alinhamento com o manual
 
 - O manual diz que ServiceMonitor para `web` é opcional; o documento foca nas três APIs, como pedido obrigatório.
+- O manual pede PodMonitor para o sidecar de log somente se ele expuser métricas. O `log-forwarder` é um BusyBox executando `tail -F /var/log/app/app.log`, sem porta HTTP e sem endpoint `/metrics`; por isso não foi criado PodMonitor para ele.
+- O print final do Prometheus mostra a tela de targets em scroll parcial. A comprovação completa das 3 APIs `UP` fica no output raw do Prometheus com 7 targets em `value: 1`.
 
 Para fechar a semana, instalei observabilidade de verdade com Prometheus, Alertmanager e Grafana. O foco não foi só abrir dashboard bonito: foi confirmar coleta real das APIs via `ServiceMonitor`, persistência dos componentes e liberação explícita nas NetworkPolicies para o scraping funcionar.
 
@@ -1033,6 +1158,8 @@ kubectl get --raw '/api/v1/namespaces/tipsbank-monitoring/services/http:kube-pro
 
 Com isso, o critério literal do manual fica atendido: Prometheus tem targets das 3 APIs e todos aparecem `UP`. O ponto legal aqui é que o problema não era observabilidade em si; era o zero-trust funcionando até demais, bloqueando a saída do Prometheus.
 
+Sobre o sidecar `log-forwarder`: ele não expõe métrica Prometheus. O container só acompanha o arquivo `/var/log/app/app.log` com `tail -F`, então não existe porta ou path para o Prometheus raspar via PodMonitor. A observabilidade do sidecar nesta entrega fica limitada ao log do container, enquanto as métricas HTTP ficam nas três APIs instrumentadas.
+
 ---
 
 #### Critério 4 — Grafana acessível com dados reais
@@ -1170,7 +1297,7 @@ Como o print do Alertmanager foi enviado diretamente no chat e não existe como 
 
 ### Etapa 3.6 — PrometheusRule com alertas de SLO
 
-**Status:** Parcialmente concluído (2026-05-17)
+**Status:** Concluído (2026-05-23)
 
 #### Objetivo segundo o MANUAL-ALUNO.md
 
@@ -1181,7 +1308,7 @@ Criar quatro alertas críticos via PrometheusRule e provocar cada condição par
 - Os 4 alertas aparecem em `kubectl get prometheusrule -A`.
 - Todos disparam quando a condição é provocada, com evidência no `EVIDENCIAS.md`.
 
-#### Resultado
+#### Status dos critérios
 
 | Critério | Status | Evidência neste arquivo |
 |---|---|---|
@@ -1190,7 +1317,13 @@ Criar quatro alertas críticos via PrometheusRule e provocar cada condição par
 | `TipsBankApiDown` disparando | **Atendido** | FIRING após `kubectl scale --replicas=0` + `for:2m`. Screenshots abaixo. |
 | `TipsBankPodCrashLoop` disparando | **Atendido** | FIRING imediato após 4 restarts via `kubectl debug` + `kill 1`. Screenshots abaixo. |
 | `TipsBankErroAltoApi` disparando | **Atendido** | FIRING (2 jobs) — api-contas 60% e api-transacoes 61% de 5xx. Screenshots abaixo. |
-| `TipsBankP99Alto` configurado | **Parcialmente atendido** | Regra configurada e carregada, mas não disparou porque o p99 medido ficou em ~110ms, abaixo do threshold de 500ms. |
+| `TipsBankP99Alto` disparando | **Atendido** | FIRING em 2 séries (`api-contas` e `api-transacoes`) após carga com Locust manter p99 acima de 500ms por mais de 5min. |
+
+#### Observações de alinhamento com o manual
+
+- O manual pede que os 4 alertas disparem quando a condição for provocada. A primeira tentativa não gerou latência suficiente para o `TipsBankP99Alto`, mas o teste posterior com Locust elevou o p99 por mais de 5 minutos e fechou o quarto alerta em **FIRING**.
+- O objetivo do manual fala em "4 alertas críticos", mas a própria tabela do manual define `TipsBankP99Alto` e `TipsBankPodCrashLoop` com severity `warning`. A implementação seguiu essa tabela: disponibilidade/erros como `critical`, latência/crashloop como `warning`.
+- A expressão de `TipsBankApiDown` foi ajustada de `up == 0` para `kube_deployment_status_replicas_available == 0`, porque `up` desaparece quando o Deployment fica sem Endpoints. Essa adaptação mantém o objetivo do alerta: detectar API sem réplicas disponíveis.
 
 ---
 
@@ -1473,7 +1606,7 @@ kubectl debug -it api-contas-64554bbd-d9m2m \
 
 ---
 
-#### Evidência 6 — `TipsBankP99Alto` — configurado e carregado
+#### Evidência 6 — Teste `TipsBankP99Alto`
 
 **Expressão:**
 ```promql
@@ -1486,7 +1619,7 @@ histogram_quantile(0.99,
 
 **Como `histogram_quantile` funciona:** A métrica `http_request_duration_seconds` é um Histogram — gera três séries: `_bucket` (contadores por faixa de latência com label `le`), `_count` e `_sum`. O `rate(...[5m])` converte os counters de bucket em taxa/segundo. O `sum by (le, job, namespace)` agrega por job preservando os buckets (`le` é obrigatório para `histogram_quantile`). O resultado é o percentil 99 da latência em segundos. `> 0.5` = mais de 500ms.
 
-**Resultado da tentativa de disparo:**
+**Tentativa inicial sem disparo:**
 ```
 {job="api-transacoes", namespace="tipsbank-transacoes"}   0.10975000000000092
 {job="api-contas", namespace="tipsbank-contas"}           0.10974997500027624
@@ -1494,7 +1627,30 @@ histogram_quantile(0.99,
 
 P99 medido: **~110ms** mesmo sob stress de 100 requisições paralelas. FastAPI em Distroless + PostgreSQL local + rede Calico interna não satura com esse volume. O alerta permaneceu **INACTIVE** — a condição `> 0.5` nunca foi verdadeira.
 
-**Por que isso não é um problema:** O critério do manual é que o alerta dispare "quando a condição é provocada". No homelab, a condição (p99 > 500ms) não é provocável com as ferramentas disponíveis sem o Locust (Etapa 3.7). O alerta está corretamente definido, carregado e verificável em `Status → Rules` no Prometheus UI.
+**Fechamento em 2026-05-23:** Para provocar a condição do manual, rodei nova carga via Locust contra `api-transacoes` e `api-contas`. A carga elevou o p99 para vários segundos e o Prometheus manteve o `TipsBankP99Alto` em **PENDING** até completar o `for: 5m`.
+
+![](<imagens/Captura de tela 2026-05-23 134510.png>)
+*13:45 — Prometheus Alerts: `TipsBankP99Alto` em PENDING para `api-transacoes` e `api-contas`, com valores acima de 9s e active por ~3m49s*
+
+Após completar o período de estabilização, o grupo `tipsbank.latency` passou para **FIRING**. O alerta disparou para duas séries:
+
+| Label | api-transacoes | api-contas |
+|---|---|---|
+| `alertname` | `TipsBankP99Alto` | `TipsBankP99Alto` |
+| `namespace` | `tipsbank-transacoes` | `tipsbank-contas` |
+| `severity` | `warning` | `warning` |
+| Active Since | ~5m10s | ~5m10s |
+| Value | 10 | 10 |
+
+![](<imagens/Captura de tela 2026-05-23 134633.png>)
+*13:46 — Prometheus Alerts: `TipsBankP99Alto` em FIRING para `api-transacoes` e `api-contas`, depois de passar o `for: 5m`*
+
+A tela do Locust confirma a causa do disparo: latências p99 muito acima do limite de 500ms.
+
+![](<imagens/Captura de tela 2026-05-23 134652.png>)
+*13:46 — Locust após o teste: p99 de 19s em `/contas`, 10s em `/transferencias`, 8.8s em `/extrato/:id` e p99 agregado de 11s*
+
+✅ **TipsBankP99Alto FIRING confirmado.**
 
 ---
 
@@ -1506,17 +1662,19 @@ P99 medido: **~110ms** mesmo sob stress de 100 requisições paralelas. FastAPI 
 | `TipsBankApiDown` dispara quando condição é provocada | ✅ FIRING após `scale --replicas=0` + 2min |
 | `TipsBankPodCrashLoop` dispara quando condição é provocada | ✅ FIRING imediato após 4 restarts em 10min |
 | `TipsBankErroAltoApi` dispara quando condição é provocada | ✅ FIRING (2 jobs) após taxa 5xx > 5% por 3min |
-| `TipsBankP99Alto` dispara quando condição é provocada | Parcial — configurado e carregado, mas sem evidência de FIRING; p99 ficou em ~110ms, abaixo de 500ms |
+| `TipsBankP99Alto` dispara quando condição é provocada | ✅ FIRING após carga com Locust manter p99 acima de 500ms por mais de 5min |
 
 ---
 
 ### Etapa 3.7 — HPA + Metrics Server + Locust stress test
 
-**Status:** Parcialmente concluído — 2026-05-17
+**Status:** Parcialmente concluído, com validação operacional em 60 usuários — 2026-05-23
 
 #### Objetivo segundo o MANUAL-ALUNO.md
 
 Instalar Metrics Server, configurar HPAs nas 3 APIs e gerar carga real com Locust para comprovar escala automática e scaleDown.
+
+O Manual pede um teste de 5 minutos com 200 usuários, erro do Locust abaixo de 1%, `api-transacoes` escalando para mais de 5 réplicas e scaleDown em até 10 minutos. A implementação de HPA funciona, mas o teste literal de 200 usuários saturou o hardware do homelab. Por isso, além do teste exigido, foram executados testes progressivos com 100, 80, 70 e 60 usuários para separar comportamento da aplicação de limitação física do cluster.
 
 #### Commits desta etapa
 
@@ -1773,44 +1931,101 @@ kubectl describe networkpolicy allow-from-monitoring -n tipsbank-transacoes
 
 ---
 
-#### Evidência 4 — ScaleUp: 7 réplicas durante stress test (18:22:06)
+#### Evidência 4 — Teste exigido pelo Manual: 200 usuários saturou o hardware
 
-```
-NAMESPACE             NAME                 TARGETS      MINPODS   MAXPODS   REPLICAS
-tipsbank-transacoes   hpa-api-transacoes   cpu: 3%/70%  3         15        7
-```
+Em 2026-05-22 e 2026-05-23, o teste com 200 usuários comprovou que o HPA reage, mas também mostrou que o hardware disponível não sustenta essa carga com o critério de erro do Manual.
 
-**Pods criados pelo HPA:**
-```
-api-transacoes-659558d96c-bpfqr   2/2   Running   0   4m52s   ← HPA
-api-transacoes-659558d96c-cnkcw   2/2   Running   0   6d1h
-api-transacoes-659558d96c-gwgjv   2/2   Running   0   3m22s   ← HPA
-api-transacoes-659558d96c-h7wfl   2/2   Running   0   6h46m
-api-transacoes-659558d96c-t8d64   2/2   Running   0   2m21s   ← HPA
-api-transacoes-659558d96c-tc8zr   2/2   Running   0   2m21s   ← HPA
-api-transacoes-659558d96c-wk5hg   2/2   Running   0   6d1h
-```
+Evidências principais:
 
-`stabilizationWindowSeconds: 0` no scaleUp garantiu reação imediata ao pico de CPU.
+| Tela | Leitura |
+|---|---|
+| `2026-05-22 084327` / `084336` | Proxmox com CPU geral em 94% e depois 99% dos 8 CPUs; nós `pve1` e `pve2` próximos de saturação. |
+| `2026-05-22 084623` | `api-contas` em 10 réplicas e `api-transacoes` em 15 réplicas; pods com `OOMKilled` e `CrashLoopBackOff`. |
+| `2026-05-22 084932` / `085953` | Locust parado com 7% de falhas, 746 falhas em 11187 requests e p99 agregado de 13s. |
+| `2026-05-23 134226` | Locust rodando com 200 usuários, 6% de falhas e p99 agregado de 14s. |
+| `2026-05-23 134301` / `134310` / `134441` | Proxmox entre 97% e 99% de CPU; `pve2` chegou a 100%. |
 
-![](<imagens/Captura de tela 2026-05-17 182114.png>)
+![](<imagens/Captura de tela 2026-05-22 084623.png>)
+![](<imagens/Captura de tela 2026-05-22 084932.png>)
+![](<imagens/Captura de tela 2026-05-23 134226.png>)
+![](<imagens/Captura de tela 2026-05-23 134310.png>)
+
+Conclusão: o teste de 200 usuários não atende o aceite de erro `< 1%`, mas é uma evidência importante de limite de capacidade do ambiente. O HPA escalou até o máximo configurado, porém a CPU física do homelab virou o gargalo.
 
 ---
 
-#### Evidência 5 — ScaleDown: 3 réplicas confirmado (18:33:35)
+#### Evidência 5 — Testes progressivos para encontrar carga compatível com o hardware
+
+Foram feitos testes adicionais reduzindo usuários para identificar uma carga operacional que preservasse o critério de erro do Manual.
+
+| Usuários | Requests | Falhas | Erro real | p99 agregado | Resultado |
+|---:|---:|---:|---:|---:|---|
+| 100 | 11978 | 133 | 1,11% | 3500 ms | Acima do limite de erro. |
+| 80 | 3230 | 33 | 1,02% | 3300 ms | Ainda acima do limite, por pouco. |
+| 70 | 3887 | 38 | 0,98% | 3100 ms | Abaixo de 1%, mas a UI arredonda para 1%. |
+| 60 | 3865 | 0 | 0,00% | 1700 ms | Melhor evidência operacional no hardware atual. |
+
+No teste com 60 usuários:
 
 ```
-NAMESPACE             NAME                 TARGETS      MINPODS   MAXPODS   REPLICAS
-tipsbank-transacoes   hpa-api-transacoes   cpu: 3%/70%  3         15        3
+USERS: 60
+RPS: 38.3
+FAILURES: 0%
+Aggregated: 3865 requests, 0 fails, p99 1700 ms
 ```
 
+Detalhe por rota:
+
+| Rota | Requests | Falhas | p99 |
+|---|---:|---:|---:|
+| `POST /contas (setup)` | 60 | 0 | 870 ms |
+| `GET /extrato/:id` | 945 | 0 | 370 ms |
+| `POST /transferencias` | 2860 | 0 | 1900 ms |
+
+![](<imagens/Captura de tela 2026-05-23 144555.png>)
+![](<imagens/Captura de tela 2026-05-23 145401.png>)
+
+---
+
+#### Evidência 6 — HPA escalando durante os testes
+
+Antes de iniciar nova rodada, o HPA voltou ao mínimo:
+
 ```
-api-transacoes-659558d96c-cnkcw   2/2   Running   0   6d1h
-api-transacoes-659558d96c-h7wfl   2/2   Running   0   6h58m
-api-transacoes-659558d96c-wk5hg   2/2   Running   0   6d1h
+tipsbank-auditoria    hpa-auditoria        memory: 41%/75%   2   6    2
+tipsbank-contas       hpa-api-contas       cpu: 7%/70%       2   10   2
+tipsbank-transacoes   hpa-api-transacoes   cpu: 1%/50%       3   15   3
 ```
 
-ScaleDown de 7→3 em ~11–13 minutos (300s stabilization + remoção de 2 pods a cada 120s). Esse comportamento bate com o `behavior.scaleDown` declarado, mas passa um pouco do critério literal do manual, que pede retorno em até 10 minutos.
+Durante o teste com 60 usuários, o HPA voltou a escalar:
+
+```
+tipsbank-contas       hpa-api-contas       cpu: 95%/70%   2   10   10
+tipsbank-transacoes   hpa-api-transacoes   cpu: 96%/50%   3   15   13
+```
+
+O critério "`api-transacoes` acima de 5 réplicas" foi atendido com folga. Em rodadas anteriores, `api-transacoes` chegou a 15 réplicas e `api-contas` a 10 réplicas.
+
+![](<imagens/Captura de tela 2026-05-23 142648.png>)
+![](<imagens/Captura de tela 2026-05-23 145333.png>)
+![](<imagens/Captura de tela 2026-05-23 145444.png>)
+
+---
+
+#### Evidência 7 — ScaleDown observado
+
+O teste original de 2026-05-17 registrou scaleDown de `api-transacoes` de 7 para 3 réplicas. O retorno ocorreu em aproximadamente 11-13 minutos, compatível com a configuração declarada:
+
+```yaml
+scaleDown:
+  stabilizationWindowSeconds: 300
+  policies:
+    - type: Pods
+      value: 2
+      periodSeconds: 120
+```
+
+Esse comportamento é tecnicamente coerente com a política aplicada, mas passa um pouco do limite literal do Manual, que pede retorno em até 10 minutos.
 
 ![](<imagens/Captura de tela 2026-05-17 183154.png>)
 
@@ -1820,17 +2035,25 @@ ScaleDown de 7→3 em ~11–13 minutos (300s stabilization + remoção de 2 pods
 
 | Critério | Status | Detalhe |
 |---|---|---|
-| `kubectl get hpa -A` mostra 3 HPAs com métricas ativas | ✅ | cpu: 3%/70%, cpu: 3%/70%, memory: 31%/75% |
-| Réplicas de `api-transacoes` sobem acima de 5 | ✅ | Pico de 7 réplicas durante stress test |
-| ScaleDown retorna réplicas em até 10 minutos | **Parcialmente atendido** | Voltou a 3 réplicas em ~11–13 min. Tecnicamente coerente com `stabilizationWindowSeconds: 300` + política de remoção, mas acima do limite literal de 10 min do manual. |
-| Locust acessível via Ingress | ✅ | `locust.tipsbank.staypuff.info` operacional |
-| Incidente DNS diagnosticado e resolvido | ✅ | 2 NetworkPolicies em tipsbank-monitoring aplicadas |
+| `kubectl get hpa -A` mostra 3 HPAs com métricas ativas | Atendido | HPAs de `api-contas`, `api-transacoes` e `auditoria` exibem CPU/memória reais. |
+| Réplicas de `api-transacoes` sobem acima de 5 | Atendido | `api-transacoes` chegou a 13 réplicas no teste de 60 usuários e a 15 réplicas nas cargas maiores. |
+| Erro rate no Locust abaixo de 1% | Atendido no teste operacional de 60 usuários; não atendido em 200 usuários | 60 usuários: 0 falhas em 3865 requests. 200 usuários: 6-9% de falhas por saturação do hardware. |
+| Teste de 5 min com 200 usuários | Parcialmente atendido | Executado, mas o homelab saturou CPU e o erro ficou acima de 1%. |
+| ScaleDown retorna réplicas em até 10 minutos | Parcialmente atendido | Retorno observado em ~11-13 min, coerente com `stabilizationWindowSeconds: 300` + remoção gradual, mas acima do limite literal. |
+| Locust acessível via Ingress | Atendido | `locust.tipsbank.staypuff.info` operacional. |
+| Incidente DNS diagnosticado e resolvido | Atendido | Egress DNS e egress Locust -> `api-transacoes` liberados via NetworkPolicy. |
 
 ---
 
 ### Etapa 3.8 — DaemonSet de coleta
 
 **Status:** ✅ Concluído — 2026-05-17 · commit `538bc70`
+
+---
+
+#### Objetivo segundo o MANUAL-ALUNO.md
+
+Criar um DaemonSet simples rodando em todos os workers, com finalidade didática de coleta ou registro de eventos do node, incluindo toleration para o taint `compliance=strict`. O aceite exige que `kubectl get ds -A` mostre `DESIRED == CURRENT == READY` igual ao número de workers.
 
 ---
 
@@ -1974,17 +2197,9 @@ Sun May 17 22:30:48 UTC 2026 node=node-collector-zgw7q disk=46%
 
 ![](<imagens/Captura de tela 2026-05-17 193446.png>)
 
-Dois pods distintos com discos diferentes (30% vs 46%) confirmam execução em nodes físicos distintos. Coleta a cada 30s via loop `sleep 30`. O campo `node=` exibe o nome do pod (não o node) — `hostname` em K8s resolve `Pod.metadata.name` via `/etc/hostname`. Para expor o node real seria necessário Downward API (`spec.nodeName` via `fieldRef`).
+Dois pods distintos com discos diferentes (30% vs 46%) confirmam o loop de coleta a cada 30s. A mesma tela mostra `kubectl get pods -o wide` com `node-collector-6pnc5` no `tb-worker2` e `node-collector-zgw7q` no `tb-worker1`, comprovando um pod em cada worker.
 
----
-
-#### Git commit
-
-```
-[main 538bc70] semana 3.8 - deploy do daemonSet do node-collector
- 2 files changed, 49 insertions(+), 1 deletion(-)
- create mode 100644 k8s/tipsbank-monitoring/node-collector-ds.yaml
-```
+O campo `node=` exibe o nome do pod (não o node) — `hostname` em K8s resolve `Pod.metadata.name` via `/etc/hostname`. Para expor o node real seria necessário Downward API (`spec.nodeName` via `fieldRef`). O manifesto também monta o host em `/host`, mas o comando usado na evidência executa `df -h /`; portanto a evidência deve ser lida como registro didático de uso de disco e identidade do pod por worker, suficiente para o aceite desta etapa.
 
 ---
 
@@ -1995,4 +2210,4 @@ Dois pods distintos com discos diferentes (30% vs 46%) confirmam execução em n
 | `kubectl get ds -A` mostra DS com `DESIRED == CURRENT == READY == 2` | ✅ | DESIRED=2, CURRENT=2, READY=2 — tb-worker1 e tb-worker2 |
 | DaemonSet não roda no control-plane | ✅ | Sem toleration para `node-role.kubernetes.io/control-plane:NoSchedule` |
 | Toleration para `compliance=strict:NoSchedule` | ✅ | `key=compliance, operator=Equal, value=strict, effect=NoSchedule` |
-| Pod coletando métricas do host | ✅ | Logs confirmam `df -h /` via `hostPath: /` em cada worker |
+| Pod registrando evento/métrica simples em cada worker | ✅ | Logs confirmam `hostname` e `df -h /` a cada 30s; `kubectl get pods -o wide` confirma um pod no `tb-worker1` e outro no `tb-worker2` |

@@ -53,6 +53,17 @@ prometheus:
         memory: 2Gi
 
 alertmanager:
+  ingress:
+    enabled: true
+    ingressClassName: nginx
+    annotations:
+      cert-manager.io/cluster-issuer: "prod-letsencrypt-cloudflare"
+    hosts:
+      - alertmanager.tipsbank.staypuff.info
+    tls:
+      - secretName: alertmanager-tipsbank-tls
+        hosts:
+          - alertmanager.tipsbank.staypuff.info
   alertmanagerSpec:
     storage:
       volumeClaimTemplate:

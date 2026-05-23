@@ -1,0 +1,17 @@
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: allow-prometheus-egress-to-kube-api
+  namespace: tipsbank-monitoring
+spec:
+  podSelector:
+    matchLabels:
+      prometheus: kube-prometheus-stack-prometheus
+  policyTypes:
+    - Egress
+  egress:
+    - ports:
+        - protocol: TCP
+          port: 443
+        - protocol: TCP
+          port: 6443

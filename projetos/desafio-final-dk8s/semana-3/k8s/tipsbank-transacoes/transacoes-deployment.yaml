@@ -46,8 +46,8 @@ spec:
             - -c
             - |
               until nc -z postgres-service.tipsbank-contas.svc.cluster.local 5432; do
-                echo "Verificando conexão com Postgres..."
-                sleep 3
+              echo "Verificando conexão com Postgres..."
+              sleep 3
               done
         - name: init-api-contas
           image: busybox:1.36
@@ -56,9 +56,9 @@ spec:
             - -c
             - |
               until wget -q --spider http://api-contas.tipsbank-contas.svc.cluster.local:8080/health/live; do
-                echo "Verificando se api-contas esta live..."
-                sleep 3
-                done
+              echo "Verificando se api-contas esta live..."
+              sleep 3
+              done
       containers:
         - name: api-transacoes
           image: felipestaypuff/tipsbank-api-transacoes:v2.0.0
@@ -96,11 +96,11 @@ spec:
               name: app-logs
           resources:
             limits:
-              memory: "256Mi"
-              cpu: "500m"
+              memory: "768Mi"
+              cpu: "1000m"
             requests:
-              memory: "128Mi"
-              cpu: "100m"
+              memory: "256Mi"
+              cpu: "250m"
           startupProbe:
             httpGet:
               path: /health/startup
@@ -111,23 +111,28 @@ spec:
             httpGet:
               path: /health/live
               port: 8080
-            initialDelaySeconds: 0
-            timeoutSeconds: 3
-            periodSeconds: 10
+            #initialDelaySeconds: 0
+            timeoutSeconds: 5
+            periodSeconds: 5
             successThreshold: 1
-            failureThreshold: 3
+            failureThreshold: 6
           readinessProbe:
             httpGet:
               path: /health/ready
               port: 8080
-            initialDelaySeconds: 0
-            timeoutSeconds: 3
+            #initialDelaySeconds: 0
+            timeoutSeconds: 5
             periodSeconds: 5
             successThreshold: 1
-            failureThreshold: 3
+            failureThreshold: 6
 
         - name: log-forwarder
           image: busybox:1.36
+          securityContext:
+            runAsUser: 65532
+            runAsNonRoot: true
+            readOnlyRootFilesystem: true
+            allowPrivilegeEscalation: false
           command:
             - sh
             - -c
@@ -137,10 +142,10 @@ spec:
           resources:
             requests:
               cpu: 10m
-              memory: 16Mi
+              memory: 32Mi
             limits:
               cpu: 50m
-              memory: 32Mi
+              memory: 64Mi
           volumeMounts:
             - mountPath: /var/log/app
               name: app-logs

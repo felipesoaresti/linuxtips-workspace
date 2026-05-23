@@ -1,0 +1,44 @@
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: allow-prometheus-egress-to-kube-state-metrics
+  namespace: tipsbank-monitoring
+spec:
+  podSelector:
+    matchLabels:
+      prometheus: kube-prometheus-stack-prometheus
+  policyTypes:
+    - Egress
+  egress:
+    - to:
+        - podSelector:
+            matchLabels:
+              app.kubernetes.io/name: kube-state-metrics
+      ports:
+        - protocol: TCP
+          port: 8080
+---
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: allow-prometheus-egress-to-nodes
+  namespace: tipsbank-monitoring
+spec:
+  podSelector:
+    matchLabels:
+      prometheus: kube-prometheus-stack-prometheus
+  policyTypes:
+    - Egress
+  egress:
+    - to:
+        - ipBlock:
+            cidr: 192.168.3.40/32
+        - ipBlock:
+            cidr: 192.168.3.41/32
+        - ipBlock:
+            cidr: 192.168.3.42/32
+      ports:
+        - protocol: TCP
+          port: 9100
+        - protocol: TCP
+          port: 10250
