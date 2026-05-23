@@ -1,0 +1,36 @@
+apiVersion: kyverno.io/v1
+kind: ClusterPolicy
+metadata:
+  name: allow-trusted-registry
+  labels:
+    rule: allow-trusted-registry
+    app.kubernetes.io/part-of: tipsbank
+  annotations:
+    policies.kyverno.io/title: Allow Trusted Registry Only
+    policies.kyverno.io/category: Security
+    policies.kyverno.io/severity: High
+    policies.kyverno.io/description: >
+      Rejeita pods com imagens fora dos registries confiáveis nos namespaces tipsbank.
+spec:
+  validationFailureAction: Enforce
+  background: true
+  rules:
+    - name: check-trusted-registry
+      match:
+        any:
+          - resources:
+              kinds:
+                - Pod
+              namespaces:
+                - tipsbank-contas
+                - tipsbank-transacoes
+                - tipsbank-auditoria
+                - tipsbank-web
+      validate:
+        message: "Imagem nao vem de registry confiavel. Use felipestaypuff/* ou busybox:*."
+        pattern:
+          spec:
+            containers:
+              - image: "felipestaypuff/* | busybox:*"
+            =(initContainers):
+              - image: "felipestaypuff/* | busybox:*"

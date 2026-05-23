@@ -1,0 +1,34 @@
+apiVersion: kyverno.io/v1
+kind: ClusterPolicy
+metadata:
+  name: generate-default-deny-netpol
+  labels:
+    rule: generate-default-deny-netpol
+    app.kubernetes.io/part-of: tipsbank
+  annotations:
+    policies.kyverno.io/title: Generate Default Deny NetworkPolicy
+    policies.kyverno.io/category: Security
+    policies.kyverno.io/severity: High
+    policies.kyverno.io/description: Gera automaticamente uma NetworkPolicy default-deny-ingress em todo namespace novo.
+spec:
+  rules:
+    - name: generate-netpol-default-deny
+      match:
+        any:
+          - resources:
+              kinds:
+                - Namespace
+      generate:
+        apiVersion: networking.k8s.io/v1
+        kind: NetworkPolicy
+        name: default-deny-ingress
+        namespace: "{{request.object.metadata.name}}"
+        synchronize: true
+        data:
+          metadata:
+            labels:
+              app.kubernetes.io/managed-by: kyverno
+          spec:
+            podSelector: {}
+            policyTypes:
+              - Ingress
