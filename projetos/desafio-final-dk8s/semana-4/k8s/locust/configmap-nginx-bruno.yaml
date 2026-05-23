@@ -1,0 +1,173 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: nginx-conf
+  namespace: tipsbank-web
+data:
+  nginx.conf: |
+    worker_processes auto;
+    pid /tmp/nginx.pid;
+
+    events {
+      worker_connections 1024;
+    }
+
+    http {
+      include /etc/nginx/mime.types;
+      default_type application/octet-stream;
+
+      access_log /dev/stdout;
+      error_log /dev/stderr warn;
+
+      client_body_temp_path /tmp/client_body;
+      proxy_temp_path       /tmp/proxy;
+      fastcgi_temp_path     /tmp/fastcgi;
+      uwsgi_temp_path       /tmp/uwsgi;
+      scgi_temp_path        /tmp/scgi;
+
+      upstream api_contas {
+        server api-contas.tipsbank-contas.svc.cluster.local:8080;
+      }
+
+      upstream api_transacoes {
+        server api-transacoes.tipsbank-transacoes.svc.cluster.local:8080;
+      }
+
+      upstream auditoria {
+        server auditoria.tipsbank-auditoria.svc.cluster.local:8080;
+      }
+
+      server {
+        listen 8080;
+        server_name _;
+
+        root /usr/share/nginx/html;
+        index index.html;
+
+        location = /healthz {
+          access_log off;
+          return 200 "ok\n";
+        }
+
+        location / {
+          try_files $uri $uri/ /index.html;
+        }
+
+        location /api/contas/ {
+          proxy_pass http://api_contas/;
+        }
+
+        location /api/transacoes/ {
+          proxy_pass http://api_transacoes/;
+        }
+
+        location /api/auditoria/ {
+          proxy_pass http://auditoria/;
+        }
+
+        location = /contas {
+          proxy_pass http://api_contas/contas;
+        }
+
+        location /transferencias {
+          proxy_pass http://api_transacoes/transferencias;
+        }
+
+        location /extrato/ {
+          proxy_pass http://api_transacoes/extrato/;
+        }
+      }
+    }
+
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: web
+  namespace: tipsbank-web
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      app: web
+  template:
+    metadata:
+      labels:
+        app: web
+    spec:
+      affinity:
+        podAntiAffinity:
+          preferredDuringSchedulingIgnoredDuringExecution:
+            - weight: 100
+              podAffinityTerm:
+                labelSelector:
+                  matchLabels:
+                    app: web
+                topologyKey: kubernetes.io/hostname
+
+      imagePullSecrets:
+        - name: registry-secret
+
+      containers:
+        - name: web
+          image: ghcr.io/brunosantostecinf-shell/tipsbank-web:v1.0.1
+          ports:
+            - containerPort: 8080
+
+          resources:
+            requests:
+              cpu: 100m
+              memory: 128Mi
+            limits:
+              cpu: 500m
+              memory: 256Mi
+
+          startupProbe:
+            httpGet:
+              path: /healthz
+              port: 8080
+            initialDelaySeconds: 20
+            periodSeconds: 5
+            failureThreshold: 30
+            timeoutSeconds: 2
+
+          livenessProbe:
+            httpGet:
+              path: /healthz
+              port: 8080
+            initialDelaySeconds: 15
+            periodSeconds: 10
+            timeoutSeconds: 2
+
+          readinessProbe:
+            httpGet:
+              path: /healthz
+              port: 8080
+            initialDelaySeconds: 10
+            periodSeconds: 5
+            timeoutSeconds: 2
+
+          volumeMounts:
+            - name: nginx-conf
+              mountPath: /etc/nginx/nginx.conf
+              subPath: nginx.conf
+
+      volumes:
+        - name: nginx-conf
+          configMap:
+            name: nginx-conf
+
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: web
+  namespace: tipsbank-web
+spec:
+  type: ClusterIP
+  selector:
+    app: web
+  ports:
+    - name: http
+      port: 8080
+      targetPort: 8080

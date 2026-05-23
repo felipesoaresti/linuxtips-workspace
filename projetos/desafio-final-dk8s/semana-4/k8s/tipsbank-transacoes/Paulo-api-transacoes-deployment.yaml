@@ -1,0 +1,166 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: api-transacoes
+  namespace: tipsbank-transacoes
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      app: api-transacoes
+  revisionHistoryLimit: 5
+  strategy:
+    type: RollingUpdate
+    rollingUpdate:
+      maxUnavailable: 0
+      maxSurge: 1
+  template:
+    metadata:
+      labels:
+        app: api-transacoes
+    spec:
+      # https://kubernetes.io/docs/tasks/configure-pod-container/security-context/
+      # A aplicação api-transacoes e o log-forwarder precisam rodar com um usuário não-root (uid 65532) para ter acesso ao volume de logs.
+      # Substitui o initContainers que prepara o volume de logs com as permissões corretas antes da api-transacoes subir.
+      securityContext:
+        runAsUser: 65532 
+        runAsGroup: 65532
+        fsGroup: 65532
+      affinity:
+        podAntiAffinity:
+          preferredDuringSchedulingIgnoredDuringExecution:
+            - weight: 100                 # prioridade da regra de anti-affinity (0-100), 100 é a mais alta, garantindo que o scheduler tente ao máximo evitar agendar pods da api-transacoes no mesmo nó.
+              podAffinityTerm:
+                labelSelector:
+                  matchLabels:
+                    app: api-transacoes
+                topologyKey: kubernetes.io/hostname   # Garante que os pods da api-transacoes sejam agendados em nós diferentes para maior disponibilidade
+      containers:
+        - name: api-transacoes
+          image: pauloneves/tipsbank-api-transacoes:v1.0.1
+          ports:
+            - containerPort: 8080
+          env:
+            - name: DB_URL
+              valueFrom:
+                secretKeyRef:
+                  name: transacoes-db-secret
+                  key: DB_URL
+            - name: CONTAS_URL
+              valueFrom:
+                configMapKeyRef:
+                  name: svc-url-endpoints
+                  key: CONTAS_URL
+            - name: AUDITORIA_URL
+              valueFrom:
+                configMapKeyRef:
+                  name: svc-url-endpoints
+                  key: AUDITORIA_URL
+            - name: LOG_LEVEL
+              value: "INFO"   
+          volumeMounts:
+            - name: transacoeslog
+              mountPath: /var/log/app         
+          resources:
+            requests:
+              cpu: "250m"
+              memory: "256Mi"
+            limits:
+              cpu: "1000m"
+              memory: "512Mi"
+          startupProbe:
+            httpGet:
+              path: /health/startup
+              port: 8080
+            initialDelaySeconds: 0
+            periodSeconds: 5
+            timeoutSeconds: 5
+            failureThreshold: 30          
+          livenessProbe:
+            httpGet:
+              path: /health/live
+              port: 8080
+            periodSeconds: 10
+            timeoutSeconds: 5
+            failureThreshold: 6   # tolerância aumentada: 6x10s=60s antes de reiniciar
+          readinessProbe:
+            httpGet:
+              path: /health/ready
+              port: 8080
+            periodSeconds: 5
+            timeoutSeconds: 5
+            successThreshold: 1
+            failureThreshold: 6   # tolerância aumentada: 6x5s=30s antes de remover do LB
+        - name: log-forwarder
+          image: pauloneves/tipsbank-log-forwarder:v1.0.0
+          volumeMounts:
+            - name: transacoeslog
+              mountPath: /var/log/app
+          resources:
+            requests:
+              cpu: "10m"
+              memory: "16Mi"
+            limits:
+              cpu: "50m"
+              memory: "32Mi"
+          startupProbe:
+              # Verifica se o arquivo de log existe para considerar a inicialização completa.
+              # A aplicacao api-transacoes é quem cria o arquivo de log, então isso garante que o forwarder só inicia 
+              # depois que a api-transacoes estiver pronta para logar.
+              # A api-transacoes cria o log abaixo logo no inicio da sua execução
+              # {"ts":"2026-04-27 09:57:17,766","level":"INFO","service":"api-transacoes","msg":"bootstrap versao=v1"}
+            exec:
+              command:
+                - sh
+                - -c
+                - "[ -f /var/log/app/app.log ]"
+            initialDelaySeconds: 10
+            periodSeconds: 5
+            timeoutSeconds: 2
+            failureThreshold: 10
+          livenessProbe:
+            exec:
+              command:
+                - sh
+                - -c
+                - "[ -f /var/log/app/app.log ]"
+            initialDelaySeconds: 2
+            periodSeconds: 10
+            timeoutSeconds: 2
+            failureThreshold: 3
+          readinessProbe:
+            exec:
+              command:
+                - sh
+                - -c
+                - "[ -f /var/log/app/app.log ]"
+            initialDelaySeconds: 2
+            periodSeconds: 10
+            timeoutSeconds: 2
+            failureThreshold: 5
+#      initContainers:
+#        - name: transacoes-init
+#          image: busybox:1.36.1-musl
+#          command: ["sh", "-c", "mkdir -p /var/log/app && chown -R 65532:65532 /var/log/app"]
+#          volumeMounts:
+#            - name: transacoeslog
+#              mountPath: /var/log/app
+      volumes:
+        - name: transacoeslog
+          emptyDir: {}  
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: api-transacoes
+  namespace: tipsbank-transacoes
+  labels:
+    app: api-transacoes
+spec:
+  type: ClusterIP
+  selector:
+    app: api-transacoes
+  ports:
+    - name: api
+      port: 8080
+      targetPort: 8080

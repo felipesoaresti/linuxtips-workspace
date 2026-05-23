@@ -19,7 +19,7 @@ spec:
         container: api-transacoes # exclui o sidecar log-forwarder
         target:
           type: Utilization
-          averageUtilization: 70 # 70% de 100m = 70m, só do container app
+          averageUtilization: 50 # Era 70  # 70% de 100m = 70m, só do container app
   behavior:
     scaleUp:
       stabilizationWindowSeconds: 0

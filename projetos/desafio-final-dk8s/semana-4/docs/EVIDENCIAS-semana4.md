@@ -209,7 +209,7 @@ kubectl run pod-ruim-root --image=nginx:1.27 --restart=Never -n tipsbank-contas 
 # Error: admission webhook denied [...] rule disallow-root-user
 
 # PERMITIDO — tag específica, sem root
-kubectl run teste-ok --image=nginx:1.27 --restart=Never -n default
+kubectl run teste-ok --image=nginx:1.27 --restart=Never -n tipsbank-contas
 # pod/teste-ok created
 ```
 
@@ -490,6 +490,8 @@ spec:
 | `+(campo): valor` | Anchor de adição condicional — insere o campo **apenas se ele não estiver declarado**; respeita valores já existentes no manifest |
 | `patchStrategicMerge` | Mecanismo de patch que entende a semântica do Kubernetes (arrays de containers têm chave `name`) |
 
+**Escopo técnico da policy:** a regra itera sobre `spec.containers[]`. Os `initContainers[]` não são mutados por esta policy; nesta etapa o aceite foi validado nos containers principais e no pod de teste criado sem `securityContext`.
+
 **Por que `+()` e não o campo direto?** `+(runAsNonRoot): true` adiciona se ausente; se o manifest já tiver `runAsNonRoot: false` (caso específico de um container que explicitamente precisa de comportamento diferente), o valor é preservado. `runAsNonRoot: true` sem `+` sobrescreveria sempre, podendo quebrar casos de uso legítimos.
 
 **Fluxo de admissão — por que Mutate roda antes de Validate:**
@@ -700,3 +702,281 @@ Isso tem implicações práticas importantes em produção:
 - Após criar uma policy de Mutate, os workloads existentes **não recebem** a injeção automaticamente
 - O `kyverno-background-controller` faz **background scan** nos recursos existentes e gera `PolicyReport`, mas é **read-only** — não modifica nem mata pods
 - Para garantir que todos os pods estejam com o securityContext injetado, é necessário `rollout restart` em cada deployment — o que recria os pods e faz cada novo pod passar pelo webhook de admissão
+
+---
+
+### Etapa 4.3 — Kyverno: Generate (NetworkPolicy automática por namespace)
+
+**Data de conclusão:** 2026-05-23
+
+#### Objetivo segundo o MANUAL-ALUNO.md
+
+Quando qualquer namespace novo é criado no cluster, o Kyverno cria automaticamente uma `NetworkPolicy` `default-deny-ingress` nele. Uma segunda policy garante que apenas imagens do registry confiável (`felipestaypuff/*`) sejam permitidas nos namespaces TipsBank.
+
+#### Critérios de aceite do manual
+
+- `kubectl create ns novo-teste` gera automaticamente uma NetPol lá dentro
+- Tentativa de usar imagem de registry externo (ex: `docker.io/nginx`) é rejeitada, mas `felipestaypuff/*` passa
+
+#### Status dos critérios
+
+| Critério | Status | Evidência |
+|---|---|---|
+| `create ns` gera NetPol automaticamente | **Atendido** | `kubectl get netpol -n teste-deny` → `default-deny-ingress` com 11s de AGE |
+| Registry externo bloqueado | **Atendido** | `kubectl run --image=nginx:1.27` → admission webhook negou com `check-trusted-registry` |
+| Registry próprio aceito | **Atendido** | `kubectl run --image=felipestaypuff/tipsbank-api-contas:v1.0.0` → `pod/teste-ok created` |
+| 6 ClusterPolicies `READY=True` | **Atendido** | `kubectl get cpol` mostra 6 policies com `True` |
+
+![[Captura de tela 2026-05-23 190213.png]]
+
+---
+
+#### Passo 1 — ClusterPolicy `generate-default-deny-netpol`
+
+**Arquivo:** `k8s/kyverno/generate-default-deny-netpol.yaml`
+
+```yaml
+apiVersion: kyverno.io/v1
+kind: ClusterPolicy
+metadata:
+  name: generate-default-deny-netpol
+  labels:
+    rule: generate-default-deny-netpol
+    app.kubernetes.io/part-of: tipsbank
+spec:
+  rules:
+    - name: generate-netpol-default-deny
+      match:
+        any:
+          - resources:
+              kinds:
+                - Namespace
+      generate:
+        apiVersion: networking.k8s.io/v1
+        kind: NetworkPolicy
+        name: default-deny-ingress
+        namespace: "{{request.object.metadata.name}}"
+        synchronize: true
+        data:
+          metadata:
+            labels:
+              app.kubernetes.io/managed-by: kyverno
+          spec:
+            podSelector: {}
+            policyTypes:
+              - Ingress
+```
+
+**Anatomia técnica:**
+
+| Campo | Significado |
+|---|---|
+| `kinds: Namespace` | Trigger: qualquer `CREATE Namespace` dispara esta rule |
+| `namespace: "{{request.object.metadata.name}}"` | JMESPath: o namespace target é o nome do Namespace recém-criado |
+| `synchronize: true` | Kyverno recria o recurso se deletado; atualiza se a policy mudar |
+| `podSelector: {}` + `policyTypes: Ingress` sem regras | Default-deny all ingress |
+
+**Por que `synchronize: true` importa em produção:** se alguém deletar a `NetworkPolicy` gerada, o Kyverno a recria automaticamente. Se a spec da policy for alterada (ex: adicionar Egress), todos os recursos gerados são atualizados em todos os namespaces. O recurso é "owned" pela policy — deletar a `cpol` remove todas as NetPols geradas.
+
+```bash
+kubectl apply -f k8s/kyverno/generate-default-deny-netpol.yaml
+# clusterpolicy.kyverno.io/generate-default-deny-netpol created
+```
+
+---
+
+#### Passo 2 — Teste da geração automática
+
+```bash
+kubectl create namespace teste-deny
+# namespace/teste-deny created
+
+kubectl get netpol -n teste-deny
+# NAME                   POD-SELECTOR   AGE
+# default-deny-ingress   <none>         11s
+
+kubectl describe netpol default-deny-ingress -n teste-deny
+# Name:         default-deny-ingress
+# Namespace:    teste-deny
+# Created on:   2026-05-23 16:43:13 -0300 -03
+# Labels:       app.kubernetes.io/managed-by=kyverno
+#               generate.kyverno.io/policy-name=generate-default-deny-netpol
+#               generate.kyverno.io/trigger-kind=Namespace
+#               generate.kyverno.io/trigger-uid=4dd93e42-ece9-406d-9465-470ab0030743
+# Spec:
+#   PodSelector:     <none> (isolates all pods)
+#   Allowing ingress traffic: <none> (Selected pods are isolated for ingress connectivity)
+#   Not affecting egress traffic
+#   Policy Types: Ingress
+
+kubectl delete namespace teste-deny
+# namespace "teste-deny" deleted
+```
+
+**Nota importante:** namespaces existentes (`tipsbank-contas`, etc.) não recebem a policy retroativamente. O Generate reage apenas a eventos `CREATE` novos — as NetPols manuais da Etapa 2.5 continuam válidas para os namespaces já existentes.
+
+---
+
+#### Passo 3 — ClusterPolicy `allow-trusted-registry`
+
+**Arquivo:** `k8s/kyverno/allow-trusted-registry.yaml`
+
+```yaml
+apiVersion: kyverno.io/v1
+kind: ClusterPolicy
+metadata:
+  name: allow-trusted-registry
+  labels:
+    rule: allow-trusted-registry
+    app.kubernetes.io/part-of: tipsbank
+spec:
+  validationFailureAction: Enforce
+  rules:
+    - name: check-trusted-registry
+      match:
+        any:
+          - resources:
+              kinds:
+                - Pod
+              namespaces:
+                - tipsbank-contas
+                - tipsbank-transacoes
+                - tipsbank-auditoria
+                - tipsbank-web
+      validate:
+        message: "Imagem nao vem de registry confiavel. Use felipestaypuff/* ou busybox:*."
+        foreach:
+          - list: "request.object.spec.containers[]"
+            deny:
+              conditions:
+                all:
+                  - key: "{{ element.image }}"
+                    operator: NotIn
+                    value:
+                      - "felipestaypuff/*"
+                      - "busybox:*"
+          - list: "request.object.spec.initContainers[]"
+            deny:
+              conditions:
+                all:
+                  - key: "{{ element.image }}"
+                    operator: NotIn
+                    value:
+                      - "felipestaypuff/*"
+                      - "busybox:*"
+```
+
+**Por que dois `foreach`:** `spec.containers[]` e `spec.initContainers[]` são listas independentes no Pod spec. Os deployments TipsBank usam `busybox:1.36` como initContainer — sem o segundo foreach, qualquer imagem passaria como initContainer sem validação.
+
+**Como o glob matching funciona:** `felipestaypuff/*` (com `/*`) é um glob que bate em qualquer imagem do usuário. `felipestaypuff` sem o `/*` é literal e não bate em nenhuma imagem com namespace. `busybox:*` cobre qualquer tag do busybox.
+
+```bash
+kubectl apply -f k8s/kyverno/allow-trusted-registry.yaml
+# clusterpolicy.kyverno.io/allow-trusted-registry created
+```
+
+---
+
+#### Passo 4 — Teste de bloqueio e permissão
+
+```bash
+# BLOQUEADO — nginx não está nos registries confiáveis
+kubectl run teste-registry \
+  --image=nginx:1.27 \
+  --restart=Never \
+  -n tipsbank-contas
+# Error from server: admission webhook "validate.kyverno.svc-fail" denied the request:
+# resource Pod/tipsbank-contas/teste-registry was blocked due to the following policies
+# allow-trusted-registry:
+#   check-trusted-registry: 'validation error: Imagem nao vem de registry confiavel.
+#     Use felipestaypuff/* ou busybox:*. rule check-trusted-registry failed at path
+#     /spec/containers/0/image/'
+
+# PERMITIDO — felipestaypuff/* está na lista
+kubectl run teste-ok \
+  --image=felipestaypuff/tipsbank-api-contas:v1.0.0 \
+  --restart=Never \
+  -n tipsbank-contas
+# pod/teste-ok created
+
+kubectl delete pod teste-ok -n tipsbank-contas
+# pod "teste-ok" deleted
+```
+
+---
+
+#### Verificação final — 6 ClusterPolicies ativas
+
+```bash
+kubectl get cpol
+# NAME                           ADMISSION   BACKGROUND   READY   AGE     MESSAGE
+# allow-trusted-registry         true        true         True    91s     Ready
+# disallow-latest-tag            true        true         True    3h35m   Ready
+# disallow-root-user             true        true         True    3h35m   Ready
+# generate-default-deny-netpol   true        true         True    137m    Ready
+# mutate-security-context        true        true         True    3h35m   Ready
+# require-labels                 true        true         True    3h35m   Ready
+
+# Confirmar que namespaces existentes NÃO receberam a NetPol gerada
+kubectl get netpol -n tipsbank-contas
+# NAME                               POD-SELECTOR     AGE
+# allow-api-contas-to-postgres       app=api-contas   18d
+# allow-dns-egress-contas            <none>           18d
+# allow-ingress-to-api-contas        app=api-contas   18d
+# allow-ingress-to-postgres          app=postgres     18d
+# allow-locust-ingress-to-contas     app=api-contas   2d
+# allow-prometheus-tipsbank-contas   app=api-contas   9d
+# default-deny-all                   <none>           18d
+# (sem default-deny-ingress gerada pelo Kyverno — namespace é pré-existente)
+
+# Confirmar que namespace novo recebe NetPol automática
+kubectl create ns teste-final-4-3
+kubectl get netpol -n teste-final-4-3
+# NAME                   POD-SELECTOR   AGE
+# default-deny-ingress   <none>         6s
+kubectl delete ns teste-final-4-3
+```
+
+---
+
+#### Problema encontrado no caminho
+
+##### Bug — `variable 'element.image' present outside of foreach` na validação da policy
+
+**Sintoma**: `kubectl apply -f k8s/kyverno/allow-trusted-registry.yaml` retornou erro de admission do próprio Kyverno (o webhook `validate-policy.kyverno.svc` valida as ClusterPolicies antes de persistir).
+
+```
+Error from server: admission webhook "validate-policy.kyverno.svc" denied the request:
+variable 'element.image' present outside of foreach at path /validate/message
+```
+
+**Causa raiz**: O campo `validate.message` estava usando `{{ element.image }}` como variável dinâmica. Mas `element` é uma variável de contexto que só existe **dentro** do bloco `foreach` — no nível da iteração de cada item da lista. O `message` fica no escopo da regra inteira, fora do foreach, onde `element` não existe.
+
+**Fix**: substituir `{{ element.image }}` por texto estático na `message`:
+```yaml
+# ERRADO
+message: "Imagem '{{ element.image }}' nao vem de registry confiavel."
+
+# CORRETO
+message: "Imagem nao vem de registry confiavel. Use felipestaypuff/* ou busybox:*."
+```
+
+`{{ element.image }}` dentro do bloco `conditions` (dentro do foreach) continua correto — lá ele tem o contexto da iteração.
+
+---
+
+#### Lição técnica: Generate vs Mutate vs Validate — onde cada um age
+
+```
+kubectl apply / kubectl create
+        ↓
+kube-apiserver
+        ↓
+[Mutating Webhooks]    ← Kyverno Mutate: modifica o recurso antes de gravar
+        ↓
+[Validating Webhooks]  ← Kyverno Validate: aceita ou rejeita o recurso
+        ↓
+etcd  ←————————  Kyverno Generate: lê o evento persistido e cria recursos novos
+```
+
+O Generate é o único que não age no pipeline de admissão. Ele é assíncrono — o Kyverno Background Controller observa eventos no etcd e reage a eles criando novos recursos. Por isso ele não pode rejeitar a criação do namespace (só pode criar coisas em resposta a ela).

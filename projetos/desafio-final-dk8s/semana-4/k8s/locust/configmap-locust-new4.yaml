@@ -1,0 +1,85 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: locustfile
+  namespace: tipsbank-monitoring
+data:
+  locustfile.py: |
+    import random
+    import uuid
+    from locust import HttpUser, task, between, events
+
+    CONTAS_CRIADAS: list[str] = []
+
+    class UsuarioBanco(HttpUser):
+        wait_time = between(0.5, 2)
+        minha_conta: str | None = None
+
+        def on_start(self):
+            documento = "".join(random.choices("0123456789", k=11))
+            payload = {
+                "titular": f"Aluno {uuid.uuid4().hex[:6]}",
+                "documento": documento,
+                "senha": documento,
+                "saldo_inicial": "10000.00",
+            }
+            with self.client.post(
+                "/api/contas/contas",
+                json=payload,
+                name="/api/contas/contas (setup)",
+                catch_response=True,
+            ) as r:
+                if r.status_code == 201:
+                    self.minha_conta = r.json()["id"]
+                    CONTAS_CRIADAS.append(self.minha_conta)
+                    r.success()
+                else:
+                    r.failure(f"falha criando conta: {r.status_code} {r.text[:100]}")
+
+        @task(3)
+        def transferir(self):
+            if self.minha_conta is None or len(CONTAS_CRIADAS) < 2:
+                return
+
+            destino = random.choice([c for c in CONTAS_CRIADAS if c != self.minha_conta])
+            valor = round(random.uniform(1, 50), 2)
+
+            try:
+                with self.client.post(
+                    "/api/transacoes/transferencias",
+                    json={
+                        "origem_id": self.minha_conta,
+                        "destino_id": destino,
+                        "valor": str(valor),
+                    },
+                    name="/api/transacoes/transferencias",
+                    catch_response=True,
+                ) as r:
+                    if r.status_code in (200, 201):
+                        r.success()
+                    else:
+                        r.failure(f"transferencia falhou: {r.status_code}")
+            except Exception:
+                pass
+
+        @task(1)
+        def consultar_extrato(self):
+            if self.minha_conta is None:
+                return
+
+            try:
+                with self.client.get(
+                    f"/api/transacoes/extrato/{self.minha_conta}",
+                    name="/api/transacoes/extrato/:id",
+                    catch_response=True,
+                ) as r:
+                    if r.status_code == 200:
+                        r.success()
+                    else:
+                        r.failure(f"extrato falhou: {r.status_code}")
+            except Exception:
+                pass
+
+    @events.test_stop.add_listener
+    def resumo(environment, **_):
+        print(f"\nContas criadas durante o teste: {len(CONTAS_CRIADAS)}")

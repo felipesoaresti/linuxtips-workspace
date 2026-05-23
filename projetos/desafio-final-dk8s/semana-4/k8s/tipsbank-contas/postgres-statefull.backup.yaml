@@ -22,8 +22,6 @@ spec:
         app.kubernetes.io/name: postgres
         app.kubernetes.io/part-of: tipsbank
     spec:
-      securityContext:
-        fsGroup: 70
       tolerations:
         - key: "compliance"
           operator: "Equal"
@@ -42,16 +40,6 @@ spec:
       containers:
         - name: postgres
           image: postgres:16-alpine
-          args:
-            - "postgres"
-            - "-c"
-            - "max_connections=300"
-            - "-c"
-            - "shared_buffers=256MB"
-          securityContext:
-            runAsUser: 70
-            runAsGroup: 70
-            runAsNonRoot: true
           ports:
             - containerPort: 5432
               name: postgres
@@ -64,10 +52,6 @@ spec:
               subPath: init.sql
             - name: postgres-data
               mountPath: /var/lib/postgresql/data
-            - name: tmp-dir
-              mountPath: /tmp
-            - name: run-dir
-              mountPath: /var/run/postgresql
           resources:
             requests:
               cpu: 250m
@@ -79,26 +63,22 @@ spec:
             exec:
               command: ["pg_isready", "-U", "tipsbank"]
             initialDelaySeconds: 30
-            timeoutSeconds: 10
-            periodSeconds: 15
+            timeoutSeconds: 3
+            periodSeconds: 10
             successThreshold: 1
-            failureThreshold: 5
+            failureThreshold: 3
           readinessProbe:
             exec:
               command: ["pg_isready", "-U", "tipsbank"]
             initialDelaySeconds: 5
-            timeoutSeconds: 10
-            periodSeconds: 10
+            timeoutSeconds: 3
+            periodSeconds: 5
             successThreshold: 1
             failureThreshold: 3
       volumes:
         - name: init-sql
           configMap:
             name: postgres-configmap
-        - name: tmp-dir
-          emptyDir: {}
-        - name: run-dir
-          emptyDir: {}
   volumeClaimTemplates:
     - metadata:
         name: postgres-data

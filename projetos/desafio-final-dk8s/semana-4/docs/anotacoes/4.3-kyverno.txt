@@ -1,0 +1,135 @@
+kubectl apply -f k8s/kyverno/generate-default-deny-netpol.yaml
+clusterpolicy.kyverno.io/generate-default-deny-netpol created
+❯ kubectl create namespace teste-deny
+namespace/teste-deny created
+❯ kubectl get netpol -n teste-deny
+NAME                   POD-SELECTOR   AGE
+default-deny-ingress   <none>         11s
+❯ kubectl describe netpol default-deny-ingress -n teste-deny
+Name:         default-deny-ingress
+Namespace:    teste-deny
+Created on:   2026-05-23 16:43:13 -0300 -03
+Labels:       app.kubernetes.io/managed-by=kyverno
+              generate.kyverno.io/policy-name=generate-default-deny-netpol
+              generate.kyverno.io/policy-namespace=
+              generate.kyverno.io/rule-name=generate-netpol-default-deny
+              generate.kyverno.io/trigger-group=
+              generate.kyverno.io/trigger-kind=Namespace
+              generate.kyverno.io/trigger-namespace=
+              generate.kyverno.io/trigger-uid=4dd93e42-ece9-406d-9465-470ab0030743
+              generate.kyverno.io/trigger-version=v1
+Annotations:  <none>
+Spec:
+  PodSelector:     <none> (Allowing the specific traffic to all pods in this namespace)
+  Allowing ingress traffic:
+    <none> (Selected pods are isolated for ingress connectivity)
+  Not affecting egress traffic
+  Policy Types: Ingress
+❯ kubectl delete namespace teste-deny
+namespace "teste-deny" deleted
+
+❯ kubectl apply -f k8s/tipsbank-web/web-deployment.yaml
+deployment.apps/web unchanged
+service/web unchanged
+❯ curl -sk https://tipsbank.staypuff.info/healthz
+❯ curl -sk https://tipsbank.staypuff.info/healthz
+❯ kubectl apply -f k8s/kyverno/generate-default-deny-netpol.yaml
+clusterpolicy.kyverno.io/generate-default-deny-netpol created
+❯ kubectl create namespace teste-deny
+namespace/teste-deny created
+❯ kubectl get netpol -n teste-deny
+NAME                   POD-SELECTOR   AGE
+default-deny-ingress   <none>         11s
+❯ kubectl describe netpol default-deny-ingress -n teste-deny
+Name:         default-deny-ingress
+Namespace:    teste-deny
+Created on:   2026-05-23 16:43:13 -0300 -03
+Labels:       app.kubernetes.io/managed-by=kyverno
+              generate.kyverno.io/policy-name=generate-default-deny-netpol
+              generate.kyverno.io/policy-namespace=
+              generate.kyverno.io/rule-name=generate-netpol-default-deny
+              generate.kyverno.io/trigger-group=
+              generate.kyverno.io/trigger-kind=Namespace
+              generate.kyverno.io/trigger-namespace=
+              generate.kyverno.io/trigger-uid=4dd93e42-ece9-406d-9465-470ab0030743
+              generate.kyverno.io/trigger-version=v1
+Annotations:  <none>
+Spec:
+  PodSelector:     <none> (Allowing the specific traffic to all pods in this namespace)
+  Allowing ingress traffic:
+    <none> (Selected pods are isolated for ingress connectivity)
+  Not affecting egress traffic
+  Policy Types: Ingress
+❯ kubectl delete namespace teste-deny
+namespace "teste-deny" deleted
+❯ kubectl apply -f k8s/kyverno/allow-trusted-registry.yaml
+Error from server: error when creating "k8s/kyverno/allow-trusted-registry.yaml": admission webhook "validate-policy.kyverno.svc" denied the request: variable 'element.image' present outside of foreach at path /validate/message
+❯ kubectl apply -f k8s/kyverno/allow-trusted-registry.yaml
+Error from server: error when creating "k8s/kyverno/allow-trusted-registry.yaml": admission webhook "validate-policy.kyverno.svc" denied the request: variable 'element.image' present outside of foreach at path /validate/message
+❯ kubectl apply -f k8s/kyverno/allow-trusted-registry.yaml
+Error from server: error when creating "k8s/kyverno/allow-trusted-registry.yaml": admission webhook "validate-policy.kyverno.svc" denied the request: variable 'element.image' present outside of foreach at path /validate/message
+❯ kubectl apply -f k8s/kyverno/allow-trusted-registry.yaml
+Error from server: error when creating "k8s/kyverno/allow-trusted-registry.yaml": admission webhook "validate-policy.kyverno.svc" denied the request: variable 'element.image' present outside of foreach at path /validate/message
+❯ kubectl apply -f k8s/kyverno/allow-trusted-registry.yaml
+clusterpolicy.kyverno.io/allow-trusted-registry created
+❯ kubectl run teste-registry \
+  --image=nginx:1.27 \
+  --restart=Never \
+  -n tipsbank-contas
+Error from server: admission webhook "validate.kyverno.svc-fail" denied the request: 
+
+resource Pod/tipsbank-contas/teste-registry was blocked due to the following policies 
+
+allow-trusted-registry:
+  check-trusted-registry: 'validation error: Imagem nao vem de registry confiavel.
+    Use felipestaypuff/* ou busybox:*. rule check-trusted-registry failed at path
+    /spec/containers/0/image/'
+❯ kubectl run teste-ok \
+  --image=felipestaypuff/tipsbank-api-contas:v1.0.0 \
+  --restart=Never \
+  -n tipsbank-contas
+pod/teste-ok created
+❯ kubectl delete pod teste-ok -n tipsbank-contas
+pod "teste-ok" deleted from tipsbank-contas namespace
+❯ kubectl get cpol
+NAME                           ADMISSION   BACKGROUND   READY   AGE     MESSAGE
+allow-trusted-registry         true        true         True    91s     Ready
+disallow-latest-tag            true        true         True    3h35m   Ready
+disallow-root-user             true        true         True    3h35m   Ready
+generate-default-deny-netpol   true        true         True    137m    Ready
+mutate-security-context        true        true         True    3h35m   Ready
+require-labels                 true        true         True    3h35m   Ready
+❯ kubectl get netpol -n tipsbank-contas
+NAME                               POD-SELECTOR     AGE
+allow-api-contas-to-postgres       app=api-contas   18d
+allow-dns-egress-contas            <none>           18d
+allow-ingress-to-api-contas        app=api-contas   18d
+allow-ingress-to-postgres          app=postgres     18d
+allow-locust-ingress-to-contas     app=api-contas   2d
+allow-prometheus-tipsbank-contas   app=api-contas   9d
+default-deny-all                   <none>           18d
+❯ kubectl create ns teste-final-4-3
+namespace/teste-final-4-3 created
+❯ kubectl get netpol -n teste-final-4-3
+NAME                   POD-SELECTOR   AGE
+default-deny-ingress   <none>         6s
+❯ kubectl delete ns teste-final-4-3
+namespace "teste-final-4-3" deleted
+❯ git status
+Found existing alias for "git status". You should use: "gst"
+On branch main
+Your branch is up to date with 'origin/main'.
+
+Changes not staged for commit:
+  (use "git add <file>..." to update what will be committed)
+  (use "git restore <file>..." to discard changes in working directory)
+        modified:   .obsidian/workspace.json
+
+Untracked files:
+  (use "git add <file>..." to include in what will be committed)
+        "docs/print-anota\303\247\303\265es/4.3-kyverno.txt"
+        k8s/kyverno/allow-trusted-registry-test1.yaml
+        k8s/kyverno/allow-trusted-registry.yaml
+        k8s/kyverno/generate-default-deny-netpol.yaml
+
+no changes added to commit (use "git add" and/or "git commit -a")
