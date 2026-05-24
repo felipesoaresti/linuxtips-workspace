@@ -1,7 +1,7 @@
 ---
-tags: [tipsbank, evidencias, semana-4, dk8s, kyverno]
+tags: [tipsbank, evidencias, semana-4, dk8s, kyverno, rbac, x509]
 created: 2026-05-18
-updated: 2026-05-18
+updated: 2026-05-24
 status: em-andamento
 semana: 4
 ---
@@ -980,3 +980,203 @@ etcd  ←————————  Kyverno Generate: lê o evento persistido e c
 ```
 
 O Generate é o único que não age no pipeline de admissão. Ele é assíncrono — o Kyverno Background Controller observa eventos no etcd e reage a eles criando novos recursos. Por isso ele não pode rejeitar a criação do namespace (só pode criar coisas em resposta a ela).
+
+---
+
+### Etapa 4.4 — RBAC: 4 perfis com certificados X.509
+
+**Data de conclusão:** 2026-05-24
+
+#### Objetivo segundo o MANUAL-ALUNO.md
+
+Criar 4 usuários humanos com certificado X.509 assinado pela CA do cluster, cada um com permissões distintas via Role/ClusterRole. Gerar um kubeconfig por usuário. Adicionar 2 ServiceAccounts (uma por API).
+
+#### Critérios de aceite do manual
+
+- `kubectl --kubeconfig=op-contas.kubeconfig get pods -n tipsbank-contas` → 200
+- `kubectl --kubeconfig=op-contas.kubeconfig get pods -n tipsbank-transacoes` → **Forbidden**
+- `kubectl --kubeconfig=auditor.kubeconfig get pods -A` → lista todos
+- `kubectl --kubeconfig=auditor.kubeconfig delete pod X` → **Forbidden** (readonly)
+
+#### Status dos critérios
+
+| Critério | Status | Evidência |
+|---|---|---|
+| operador-contas lista pods em tipsbank-contas | **Atendido** | Output 1 — 4 pods listados |
+| operador-contas bloqueado em tipsbank-transacoes | **Atendido** | Output 2 — Forbidden |
+| auditor-global lista todos os namespaces | **Atendido** | Output 3 — `get pods -A` retorna todos |
+| auditor-global bloqueado ao deletar pod | **Atendido** | Output 4 — Forbidden |
+| sre com acesso cluster-admin | **Atendido** | Output 5 — `get nodes` retorna os 3 nodes |
+| ServiceAccounts criadas | **Atendido** | Output 6 — `api-contas-sa` e `api-transacoes-sa` |
+| 4 kubeconfigs gerados em k8s/rbac/kubeconfigs/ | **Atendido** | Output 7 — `ll` mostra os 4 arquivos |
+
+---
+
+#### Output 1 — kubectl apply -f k8s/rbac (todos os recursos criados)
+
+```
+k apply -f k8s/rbac
+clusterrole.rbac.authorization.k8s.io/auditor-global created
+clusterrolebinding.rbac.authorization.k8s.io/auditor-global created
+role.rbac.authorization.k8s.io/operador-contas created
+role.rbac.authorization.k8s.io/operador-transacoes created
+rolebinding.rbac.authorization.k8s.io/operador-contas created
+rolebinding.rbac.authorization.k8s.io/operador-transacoes created
+serviceaccount/api-contas-sa created
+serviceaccount/api-transacoes-sa created
+error: error validating "k8s/rbac/clusterrolebinding-sre.yaml": error validating data: apiVersion not set
+```
+
+*(1ª aplicação falhou no sre — apiVersion faltando. Corrigido e reaplicado:)*
+
+```
+k apply -f k8s/rbac
+clusterrole.rbac.authorization.k8s.io/auditor-global unchanged
+clusterrolebinding.rbac.authorization.k8s.io/auditor-global unchanged
+clusterrolebinding.rbac.authorization.k8s.io/sre created
+role.rbac.authorization.k8s.io/operador-contas unchanged
+role.rbac.authorization.k8s.io/operador-transacoes unchanged
+rolebinding.rbac.authorization.k8s.io/operador-contas unchanged
+rolebinding.rbac.authorization.k8s.io/operador-transacoes unchanged
+serviceaccount/api-contas-sa unchanged
+serviceaccount/api-transacoes-sa unchanged
+```
+
+---
+
+#### Output 2 — operador-contas: acesso permitido em tipsbank-contas
+
+```
+k --kubeconfig=k8s/rbac/kubeconfigs/op-contas.kubeconfig get pods -n tipsbank-contas
+NAME                          READY   STATUS    RESTARTS       AGE
+api-contas-6f7f9d6c64-256ph   1/1     Running   1 (106m ago)   28h
+api-contas-6f7f9d6c64-9m765   1/1     Running   1 (103m ago)   28h
+postgres-0                    1/1     Running   1 (106m ago)   25h
+postgres-replica-0            1/1     Running   4 (103m ago)   3d22h
+```
+
+**Resultado:** 4 pods listados ✅ — Role `operador-contas` funcionando no namespace correto.
+
+---
+
+#### Output 3 — operador-contas: Forbidden em tipsbank-transacoes
+
+```
+k --kubeconfig=k8s/rbac/kubeconfigs/op-contas.kubeconfig get pods -n tipsbank-transacoes
+Error from server (Forbidden): pods is forbidden: User "operador-contas" cannot list resource "pods" in API group "" in the namespace "tipsbank-transacoes"
+```
+
+**Resultado:** Isolamento de namespace funcional ✅ — Role scoped apenas a `tipsbank-contas`.
+
+---
+
+#### Output 4 — auditor-global: get pods -A (acesso cluster-wide readonly)
+
+```
+k --kubeconfig=k8s/rbac/kubeconfigs/auditor.kubeconfig get pods -A
+NAMESPACE             NAME                                                       READY   STATUS    RESTARTS
+calico-system         calico-kube-controllers-597ff8fcc5-ttv4v                   1/1     Running   2
+calico-system         calico-node-b58jm                                          1/1     Running   16
+...
+tipsbank-contas       api-contas-6f7f9d6c64-256ph                                1/1     Running   1
+tipsbank-contas       api-contas-6f7f9d6c64-9m765                                1/1     Running   1
+tipsbank-contas       postgres-0                                                 1/1     Running   1
+tipsbank-contas       postgres-replica-0                                         1/1     Running   4
+tipsbank-transacoes   api-transacoes-776f74779b-422h4                            2/2     Running   2
+tipsbank-transacoes   api-transacoes-776f74779b-h5ntm                            2/2     Running   2
+tipsbank-transacoes   api-transacoes-776f74779b-ssdrb                            2/2     Running   7
+tipsbank-web          web-8584b5698b-pqnjf                                       1/1     Running   4
+tipsbank-web          web-8584b5698b-r54jp                                       1/1     Running   4
+[... todos os namespaces listados]
+```
+
+**Resultado:** ClusterRole `auditor-global` com acesso de leitura em todos os namespaces ✅
+
+---
+
+#### Output 5 — auditor-global: Forbidden ao tentar deletar
+
+```
+k --kubeconfig=k8s/rbac/kubeconfigs/auditor.kubeconfig delete pod -n tipsbank-contas postgres-0
+Error from server (Forbidden): pods "postgres-0" is forbidden: User "auditor-global" cannot delete resource "pods" in API group "" in the namespace "tipsbank-contas"
+```
+
+**Resultado:** ClusterRole readonly funcionando — `delete` não está nos verbos permitidos ✅
+
+---
+
+#### Output 6 — sre: acesso cluster-admin (get nodes)
+
+```
+k --kubeconfig=k8s/rbac/kubeconfigs/sre.kubeconfig get nodes
+NAME         STATUS   ROLES           AGE   VERSION
+tb-master1   Ready    control-plane   28d   v1.35.4
+tb-worker1   Ready    worker          28d   v1.35.4
+tb-worker2   Ready    worker          28d   v1.35.4
+```
+
+**Resultado:** ClusterRoleBinding `sre` → `cluster-admin` funcionando ✅
+
+---
+
+#### Output 7 — ServiceAccounts criadas
+
+```
+kubectl get sa -n tipsbank-contas api-contas-sa
+NAME            AGE
+api-contas-sa   59m
+
+kubectl get sa -n tipsbank-transacoes api-transacoes-sa
+NAME                AGE
+api-transacoes-sa   60m
+```
+
+**Resultado:** 2 ServiceAccounts criadas, uma por namespace de API ✅
+
+---
+
+#### Output 8 — kubeconfigs gerados (ls k8s/rbac/kubeconfigs/)
+
+```
+cd k8s/rbac/kubeconfigs && ll
+.rwxrwxrwx 5.6k felipe 24 May 17:34  auditor.kubeconfig
+.rwxrwxrwx 5.7k felipe 24 May 17:34  op-contas.kubeconfig
+.rwxrwxrwx 5.7k felipe 24 May 17:34  op-transacoes.kubeconfig
+.rwxrwxrwx 5.6k felipe 24 May 17:34  sre.kubeconfig
+```
+
+**Resultado:** 4 kubeconfigs com cert+chave embutidos (embed-certs=true), em `k8s/rbac/kubeconfigs/` ✅
+
+---
+
+#### Bug encontrado no caminho
+
+**Sintoma:** `k apply -f k8s/rbac` retornou erro somente no `clusterrolebinding-sre.yaml`:
+
+```
+error: error validating "k8s/rbac/clusterrolebinding-sre.yaml": error validating data: apiVersion not set
+```
+
+**Causa raiz:** O heredoc do `clusterrolebinding-sre.yaml` foi criado com `apiVersion` faltando no campo `apiVersion:` — provavelmente erro de digitação no `cat > ... << 'EOF'` onde o campo ficou vazio ou com espaço em branco.
+
+**Fix:** Corrigir o YAML adicionando `apiVersion: rbac.authorization.k8s.io/v1` e reaplicar. Os outros 8 recursos já existiam (`unchanged`) — somente o `sre` foi criado na segunda passagem.
+
+Git commit: `semana 4.4 correção ClusterRollingBind-sre`
+
+---
+
+#### Recursos criados na etapa
+
+| Tipo | Nome | Namespace |
+|---|---|---|
+| Role | `operador-contas` | `tipsbank-contas` |
+| Role | `operador-transacoes` | `tipsbank-transacoes` |
+| RoleBinding | `operador-contas` | `tipsbank-contas` |
+| RoleBinding | `operador-transacoes` | `tipsbank-transacoes` |
+| ClusterRole | `auditor-global` | cluster-wide |
+| ClusterRoleBinding | `auditor-global` | cluster-wide |
+| ClusterRoleBinding | `sre` → `cluster-admin` | cluster-wide |
+| ServiceAccount | `api-contas-sa` | `tipsbank-contas` |
+| ServiceAccount | `api-transacoes-sa` | `tipsbank-transacoes` |
+
+Arquivos em `k8s/rbac/` commitados em 4 commits separados por tipo de recurso.
