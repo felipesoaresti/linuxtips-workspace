@@ -1,0 +1,20 @@
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: allow-prometheus-egress-to-alertmanager
+  namespace: tipsbank-monitoring
+spec:
+  podSelector:
+    matchLabels:
+      prometheus: kube-prometheus-stack-prometheus
+  policyTypes:
+    - Egress
+  egress:
+    - to:
+        - podSelector:
+            matchLabels:
+              app.kubernetes.io/name: alertmanager
+              alertmanager: kube-prometheus-stack-alertmanager
+      ports:
+        - protocol: TCP
+          port: 9093

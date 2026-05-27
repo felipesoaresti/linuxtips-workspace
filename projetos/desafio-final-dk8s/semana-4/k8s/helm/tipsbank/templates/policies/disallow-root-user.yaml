@@ -1,0 +1,36 @@
+apiVersion: kyverno.io/v1
+kind: ClusterPolicy
+metadata:
+  name: disallow-root-user
+  labels:
+    rule: disallow-root-user
+    app.kubernetes.io/part-of: tipsbank
+  annotations:
+    policies.kyverno.io/title: Disallow Root User
+    policies.kyverno.io/category: Security
+    policies.kyverno.io/severity: High
+    policies.kyverno.io/description: Container/Pod não podem rodar como root (runAsUser=0)
+spec:
+  validationFailureAction: Enforce
+  background: true
+  rules:
+    - name: disallow-root-user
+      match:
+        any:
+          - resources:
+              kinds:
+                - Pod
+      validate:
+        message: "Container/Pod não podem rodar como root (runAsUser=0)"
+        pattern:
+          spec:
+            #            securityContext: (nginx Container sobe como root, mas o Pod não)
+            #              runAsUser: "!0"
+            =(securityContext):
+              =(runAsUser): ">0"
+            containers:
+              - =(securityContext):
+                  =(runAsUser): ">0"
+            =(initContainers):
+              - =(securityContext):
+                  =(runAsUser): ">0"

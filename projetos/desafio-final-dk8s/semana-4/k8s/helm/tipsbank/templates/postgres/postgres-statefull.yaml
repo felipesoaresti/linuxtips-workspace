@@ -1,0 +1,131 @@
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  name: postgres
+  namespace: tipsbank-contas
+  labels:
+    app: postgres
+    app.kubernetes.io/name: postgres
+    app.kubernetes.io/part-of: tipsbank
+    team: tipsbank
+    env: production
+spec:
+  serviceName: postgres-service
+  replicas: 1
+  selector:
+    matchLabels:
+      app: postgres
+  template:
+    metadata:
+      labels:
+        app: postgres
+        app.kubernetes.io/name: postgres
+        app.kubernetes.io/part-of: tipsbank
+    spec:
+      securityContext:
+        fsGroup: 70
+      tolerations:
+        - key: "compliance"
+          operator: "Equal"
+          value: "strict"
+          effect: "NoSchedule"
+      affinity:
+        nodeAffinity:
+          preferredDuringSchedulingIgnoredDuringExecution:
+            - weight: 100
+              preference:
+                matchExpressions:
+                  - key: compliance
+                    operator: In
+                    values:
+                      - strict
+      containers:
+        - name: postgres
+          image: postgres:16-alpine
+          args:
+            - "postgres"
+            - "-c"
+            - "max_connections=300"
+            - "-c"
+            - "shared_buffers=256MB"
+          securityContext:
+            runAsUser: 70
+            runAsGroup: 70
+            runAsNonRoot: true
+          ports:
+            - containerPort: 5432
+              name: postgres
+          envFrom:
+            - secretRef:
+                name: postgres-secret
+          volumeMounts:
+            - name: init-sql
+              mountPath: /docker-entrypoint-initdb.d/init.sql
+              subPath: init.sql
+            - name: postgres-data
+              mountPath: /var/lib/postgresql/data
+            - name: tmp-dir
+              mountPath: /tmp
+            - name: run-dir
+              mountPath: /var/run/postgresql
+          resources:
+            requests:
+              cpu: 250m
+              memory: 512Mi
+            limits:
+              cpu: 1000m
+              memory: 1024Mi
+          livenessProbe:
+            exec:
+              command: ["pg_isready", "-U", "tipsbank"]
+            initialDelaySeconds: 30
+            timeoutSeconds: 10
+            periodSeconds: 15
+            successThreshold: 1
+            failureThreshold: 5
+          readinessProbe:
+            exec:
+              command: ["pg_isready", "-U", "tipsbank"]
+            initialDelaySeconds: 5
+            timeoutSeconds: 10
+            periodSeconds: 10
+            successThreshold: 1
+            failureThreshold: 3
+      volumes:
+        - name: init-sql
+          configMap:
+            name: postgres-configmap
+        - name: tmp-dir
+          emptyDir: {}
+        - name: run-dir
+          emptyDir: {}
+  volumeClaimTemplates:
+    - metadata:
+        name: postgres-data
+      spec:
+        storageClassName: nfs-tp-data
+        accessModes:
+          - ReadWriteOnce
+        resources:
+          requests:
+            storage: 5Gi
+
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: postgres-service
+  namespace: tipsbank-contas
+  labels:
+    app.kubernetes.io/name: postgres
+    app.kubernetes.io/part-of: tipsbank
+spec:
+  type: ClusterIP
+  clusterIP: None
+  selector:
+    app.kubernetes.io/name: postgres
+  ports:
+    - protocol: TCP
+      name: postgres
+      port: 5432
+      targetPort: 5432

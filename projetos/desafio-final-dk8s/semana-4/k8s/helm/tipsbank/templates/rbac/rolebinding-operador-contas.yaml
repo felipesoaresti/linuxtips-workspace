@@ -1,0 +1,13 @@
+apiVersion: rbac.authorization.k8s.io/v1
+kind: RoleBinding
+metadata:
+  name: operador-contas
+  namespace: tipsbank-contas
+subjects:
+  - kind: User
+    name: operador-contas
+    apiGroup: rbac.authorization.k8s.io
+roleRef:
+  kind: Role
+  name: operador-contas
+  apiGroup: rbac.authorization.k8s.io

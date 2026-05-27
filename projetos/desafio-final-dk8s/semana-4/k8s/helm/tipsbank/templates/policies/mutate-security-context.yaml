@@ -1,0 +1,36 @@
+apiVersion: kyverno.io/v1
+kind: ClusterPolicy
+metadata:
+  name: mutate-security-context
+  labels:
+    rule: mutate-security-context
+    app.kubernetes.io/part-of: tipsbank
+  annotations:
+    policies.kyverno.io/title: Mutate Security Context
+    policies.kyverno.io/category: Security
+    policies.kyverno.io/severity: High
+    policies.kyverno.io/description: Injeta runAsNonRoot, readOnlyRootFilesystem e allowPrivilegeEscalation em tipsbank.
+spec:
+  rules:
+    - name: inject-security-context
+      match:
+        any:
+          - resources:
+              kinds:
+                - Pod
+              namespaces:
+                - tipsbank-contas
+                - tipsbank-transacoes
+                - tipsbank-auditoria
+                - tipsbank-web
+      mutate:
+        foreach:
+          - list: "request.object.spec.containers[]"
+            patchStrategicMerge:
+              spec:
+                containers:
+                  - (name): "{{ element.name }}"
+                    securityContext:
+                      +(runAsNonRoot): true
+                      +(readOnlyRootFilesystem): true
+                      +(allowPrivilegeEscalation): false

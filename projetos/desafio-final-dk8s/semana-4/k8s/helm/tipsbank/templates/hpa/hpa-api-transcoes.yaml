@@ -1,0 +1,35 @@
+apiVersion: autoscaling/v2
+kind: HorizontalPodAutoscaler
+metadata:
+  name: hpa-api-transacoes
+  namespace: tipsbank-transacoes
+  labels:
+    app.kubernetes.io/part-of: tipsbank
+spec:
+  scaleTargetRef:
+    apiVersion: apps/v1
+    kind: Deployment
+    name: api-transacoes
+  minReplicas: 3
+  maxReplicas: 15
+  metrics:
+    - type: ContainerResource
+      containerResource:
+        name: cpu
+        container: api-transacoes # exclui o sidecar log-forwarder
+        target:
+          type: Utilization
+          averageUtilization: 50 # Era 70  # 70% de 100m = 70m, só do container app
+  behavior:
+    scaleUp:
+      stabilizationWindowSeconds: 0
+      policies:
+        - type: Pods
+          value: 4
+          periodSeconds: 60
+    scaleDown:
+      stabilizationWindowSeconds: 300
+      policies:
+        - type: Pods
+          value: 2
+          periodSeconds: 120

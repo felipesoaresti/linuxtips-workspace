@@ -1,0 +1,54 @@
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: allow-prometheus-egress-to-tipsbank-apis
+  namespace: tipsbank-monitoring
+spec:
+  podSelector:
+    matchLabels:
+      prometheus: kube-prometheus-stack-prometheus
+  policyTypes:
+    - Egress
+  egress:
+    - to:
+        - namespaceSelector:
+            matchLabels:
+              kubernetes.io/metadata.name: tipsbank-contas
+          podSelector:
+            matchLabels:
+              app: api-contas
+      ports:
+        - protocol: TCP
+          port: 8080
+    - to:
+        - namespaceSelector:
+            matchLabels:
+              kubernetes.io/metadata.name: tipsbank-transacoes
+          podSelector:
+            matchLabels:
+              app: api-transacoes
+      ports:
+        - protocol: TCP
+          port: 8080
+    - to:
+        - namespaceSelector:
+            matchLabels:
+              kubernetes.io/metadata.name: tipsbank-auditoria
+          podSelector:
+            matchLabels:
+              app: auditoria
+      ports:
+        - protocol: TCP
+          port: 8080
+    - to:
+        - namespaceSelector:
+            matchLabels:
+              kubernetes.io/metadata.name: kube-system
+          podSelector:
+            matchLabels:
+              k8s-app: kube-dns
+      ports:
+        - protocol: UDP
+          port: 53
+        - protocol: TCP
+          port: 53

@@ -1,0 +1,68 @@
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: allow-locust-egress-to-transacoes
+  namespace: tipsbank-monitoring
+spec:
+  podSelector:
+    matchLabels:
+      app: locust
+  policyTypes:
+    - Egress
+  egress:
+    - to:
+        - namespaceSelector:
+            matchLabels:
+              kubernetes.io/metadata.name: tipsbank-transacoes
+          podSelector:
+            matchLabels:
+              app: api-transacoes
+      ports:
+        - port: 8080
+          protocol: TCP
+---
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: allow-locust-egress-to-contas
+  namespace: tipsbank-monitoring
+spec:
+  podSelector:
+    matchLabels:
+      app: locust
+  policyTypes:
+    - Egress
+  egress:
+    - to:
+        - namespaceSelector:
+            matchLabels:
+              kubernetes.io/metadata.name: tipsbank-contas
+          podSelector:
+            matchLabels:
+              app: api-contas
+      ports:
+        - port: 8080
+          protocol: TCP
+---
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: allow-locust-ingress-to-contas
+  namespace: tipsbank-contas
+spec:
+  podSelector:
+    matchLabels:
+      app: api-contas
+  policyTypes:
+    - Ingress
+  ingress:
+    - from:
+        - namespaceSelector:
+            matchLabels:
+              kubernetes.io/metadata.name: tipsbank-monitoring
+          podSelector:
+            matchLabels:
+              app: locust
+      ports:
+        - port: 8080
+          protocol: TCP

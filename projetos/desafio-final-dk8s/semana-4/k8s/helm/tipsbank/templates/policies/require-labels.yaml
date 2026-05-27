@@ -1,0 +1,35 @@
+apiVersion: kyverno.io/v1
+kind: ClusterPolicy
+metadata:
+  name: require-labels
+  labels:
+    rule: require-labels
+    app.kubernetes.io/part-of: tipsbank
+  annotations:
+    policies.kyverno.io/title: Require Labels
+    policies.kyverno.io/description: "Deploy, StatefulSet e DaemonSet deve ter as labels: app, team e env."
+spec:
+  validationFailureAction: Enforce
+  background: true
+  rules:
+    - name: require-app-team-env
+      match:
+        any:
+          - resources:
+              kinds:
+                - Deployment
+                - StatefulSet
+                - DaemonSet
+              namespaces:
+                - tipsbank-contas
+                - tipsbank-transacoes
+                - tipsbank-auditoria
+                - tipsbank-web
+      validate:
+        message: "Labels obrigatórios ausentes. Todo workload deve ter: app, team e env"
+        pattern:
+          metadata:
+            labels:
+              app: "?*"
+              team: "?*"
+              env: "?*"

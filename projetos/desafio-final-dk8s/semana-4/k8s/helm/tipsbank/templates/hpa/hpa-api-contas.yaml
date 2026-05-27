@@ -1,0 +1,34 @@
+apiVersion: autoscaling/v2
+kind: HorizontalPodAutoscaler
+metadata:
+  name: hpa-api-contas
+  namespace: tipsbank-contas
+  labels:
+    app.kubernetes.io/part-of: tipsbank
+spec:
+  scaleTargetRef:
+    apiVersion: apps/v1
+    kind: Deployment
+    name: api-contas
+  minReplicas: 2
+  maxReplicas: 10
+  metrics:
+    - type: Resource
+      resource:
+        name: cpu
+        target:
+          type: Utilization
+          averageUtilization: 70 # 70m por Pod - ajuste
+  behavior:
+    scaleUp:
+      stabilizationWindowSeconds: 0 # reage ao pico mediatamente ao pico
+      policies:
+        - type: Pods
+          value: 4 # adiciona 4 no maximoPods por vez
+          periodSeconds: 60
+    scaleDown:
+      stabilizationWindowSeconds: 300 # espera 5min antes de baixar
+      policies:
+        - type: Pods
+          value: 2 # remove até 2 Pods por vez
+          periodSeconds: 120

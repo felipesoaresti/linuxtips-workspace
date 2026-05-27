@@ -1,0 +1,20 @@
+apiVersion: monitoring.coreos.com/v1
+kind: ServiceMonitor
+metadata:
+  name: api-transacoes-monitor
+  namespace: tipsbank-transacoes
+  labels:
+    release: kube-prometheus-stack
+    app.kubernetes.io/name: api-transacoes
+    app.kubernetes.io/part-of: tipsbank
+spec:
+  selector:
+    matchLabels:
+      app: api-transacoes
+  endpoints:
+    - port: api-transacoes
+      path: /metrics
+      interval: 30s
+  namespaceSelector:
+    matchNames:
+      - tipsbank-transacoes

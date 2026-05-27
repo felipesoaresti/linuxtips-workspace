@@ -1,0 +1,31 @@
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: tipsbank-contas-ingress
+  namespace: tipsbank-contas
+  labels:
+    app: api-contas
+    kubernetes.io/name: api-contas
+    kubernetes.io/part-of: tipsbank
+  annotations:
+    nginx.ingress.kubernetes.io/use-regex: "true"
+    nginx.ingress.kubernetes.io/rewrite-target: /$2
+    cert-manager.io/cluster-issuer: "prod-letsencrypt-cloudflare"
+spec:
+  ingressClassName: nginx
+  spec:
+  tls:
+    - hosts:
+        - api.tipsbank.staypuff.info
+      secretName: api-tipsbank-tls
+  rules:
+    - host: api.tipsbank.staypuff.info
+      http:
+        paths:
+          - path: /contas(?!/admin)(/|$)(.*)
+            pathType: ImplementationSpecific
+            backend:
+              service:
+                name: api-contas
+                port:
+                  number: 8080

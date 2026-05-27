@@ -1,0 +1,30 @@
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: tipsbank-web-ingress
+  namespace: tipsbank-web
+  labels:
+    app: web
+    kubernetes.io/name: web
+    kubernetes.io/part-of: tipsbank
+  annotations:
+    nginx.ingress.kubernetes.io/proxy-body-size: "10m"
+    nginx.ingress.kubernetes.io/limit-rps: "50"
+    cert-manager.io/cluster-issuer: "prod-letsencrypt-cloudflare"
+spec:
+  tls:
+    - hosts:
+        - app.tipsbank.staypuff.info
+      secretName: app-tipsbank-tls
+  ingressClassName: nginx
+  rules:
+    - host: app.tipsbank.staypuff.info
+      http:
+        paths:
+          - path: /
+            pathType: Prefix
+            backend:
+              service:
+                name: web
+                port:
+                  number: 8080
