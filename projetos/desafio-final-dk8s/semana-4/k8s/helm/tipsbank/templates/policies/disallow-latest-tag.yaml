@@ -39,11 +39,11 @@ spec:
         deny:
           conditions:
             any:
-              - key: "{{ images.containers.*.tag }}"
+              - key: "{{ "{{" }} images.containers.*.tag {{ "}}" }}"
                 operator: AnyIn
                 value:
                   - latest
-              - key: "{{ images.initContainers.*.tag }}"
+              - key: "{{ "{{" }} images.initContainers.*.tag {{ "}}" }}"
                 operator: AnyIn
                 value:
                   - latest
