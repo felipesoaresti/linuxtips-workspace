@@ -10,7 +10,7 @@ metadata:
     team: tipsbank
     env: production
 spec:
-  replicas: { { .Values.contas.replicas } }
+  replicas: {{ .Values.contas.replicas }}
   selector:
     matchLabels:
       app: api-contas
