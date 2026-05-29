@@ -10,7 +10,7 @@ metadata:
     team: tipsbank
     env: production
 spec:
-  replicas: 2
+  replicas: { { .Values.contas.replicas } }
   selector:
     matchLabels:
       app: api-contas
@@ -45,7 +45,7 @@ spec:
               done
       containers:
         - name: api-contas
-          image: felipestaypuff/tipsbank-api-contas:v1.0.0
+          image: {{ .Values.global.registry }}/{{ .Values.contas.image.name }}:{{ .Values.contas.image.tag }}
           ports:
             - containerPort: 8080
               name: api-contas

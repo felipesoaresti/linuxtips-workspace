@@ -1,3 +1,7 @@
+global:
+  registry: docker.io/felipestaypuff
+  domain: tipsbank.staypuff.info
+
 contas:
   replicas: 2
   image:
@@ -32,7 +36,7 @@ auditoria:
     name: tipsbank-auditoria
     tag: v1.0.0
   pvc:
-    storageClass: nfs-homelab
+    storageClass: nfs-tp-data
     size: 1Gi
   resources:
     limits:

@@ -41,7 +41,7 @@ spec:
                       - strict
       containers:
         - name: postgres
-          image: postgres:16-alpine
+          image: { { .Values.postgres.image } }
           args:
             - "postgres"
             - "-c"
@@ -103,12 +103,12 @@ spec:
     - metadata:
         name: postgres-data
       spec:
-        storageClassName: nfs-tp-data
+        storageClassName: { { .Values.postgres.pvc.storageClass } }
         accessModes:
           - ReadWriteOnce
         resources:
           requests:
-            storage: 5Gi
+            storage: { { .Values.postgres.pvc.size } }
 
 ---
 apiVersion: v1
