@@ -10,7 +10,7 @@ metadata:
     team: tipsbank
     env: production
 spec:
-  replicas: { { .Values.transacoes.replicas } }
+  replicas: {{ .Values.transacoes.replicas }}
   revisionHistoryLimit: 5
   strategy:
     type: RollingUpdate
