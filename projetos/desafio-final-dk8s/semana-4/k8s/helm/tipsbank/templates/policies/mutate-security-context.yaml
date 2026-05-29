@@ -29,7 +29,7 @@ spec:
             patchStrategicMerge:
               spec:
                 containers:
-                  - (name): "{{ element.name }}"
+                  - (name): "{{ "{{" }} element.name {{ "}}" }}"
                     securityContext:
                       +(runAsNonRoot): true
                       +(readOnlyRootFilesystem): true
