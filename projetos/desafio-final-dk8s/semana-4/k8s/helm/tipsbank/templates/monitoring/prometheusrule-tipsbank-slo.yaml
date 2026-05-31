@@ -25,7 +25,7 @@ spec:
             team: tipsbank
           annotations:
             summary: "API TipsBank sem réplicas disponíveis"
-            description: "Deployment {{ $labels.deployment }} no namespace {{ $labels.namespace }} está com 0 réplicas disponíveis há mais de 2 minutos."
+            description: "Deployment {{ "{{" }} $labels.deployment {{ "}}" }} no namespace {{ "{{" }} $labels.namespace {{ "}}" }} está com 0 réplicas..."
 
     - name: tipsbank.latency
       interval: 30s
@@ -43,7 +43,7 @@ spec:
             team: tipsbank
           annotations:
             summary: "Latência p99 acima de 500ms"
-            description: "p99 de {{ $labels.job }} ({{ $labels.namespace }}) está em {{ $value | humanizeDuration }}. SLO violado."
+            description: "p99 de {{ "{{" }} $labels.job {{ "}}" }} ({{ "{{" }} $labels.namespace {{ "}}" }}) está em {{ "{{" }} $value | humanizeDuration {{ "}}" }}. SLO violado."
 
     - name: tipsbank.errors
       interval: 30s
@@ -65,7 +65,7 @@ spec:
             team: tipsbank
           annotations:
             summary: "Taxa de erros 5xx acima de 5%"
-            description: "{{ $labels.job }} com {{ $value | humanizePercentage }} de erros 5xx nos últimos 3 minutos."
+            description: "{{ "{{" }} $labels.job {{ "}}" }} com {{ "{{" }} $value | humanizePercentage {{ "}}" }} de erros 5xx..."
 
     - name: tipsbank.stability
       interval: 30s
@@ -84,4 +84,4 @@ spec:
             team: tipsbank
           annotations:
             summary: "Pod em CrashLoop"
-            description: "Container {{ $labels.container }} no pod {{ $labels.pod }} ({{ $labels.namespace }}) reiniciou mais de 3 vezes em 10 minutos."
+            description: "Container {{ "{{" }} $labels.container {{ "}}" }} no pod {{ "{{" }} $labels.pod {{ "}}" }} ({{ "{{" }} $labels.namespace {{ "}}" }}) reiniciou..."
