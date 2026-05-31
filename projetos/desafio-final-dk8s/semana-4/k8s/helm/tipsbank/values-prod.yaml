@@ -1,0 +1,12 @@
+contas:
+  image:
+    tag: v1.0.0
+transacoes:
+  image:
+    tag: v2.0.0
+auditoria:
+  image:
+    tag: v1.0.0
+web:
+  image:
+    tag: v1.0.0

@@ -1,0 +1,18 @@
+contas:
+  replicas: 1
+  image:
+    tag: dev
+transacoes:
+  replicas: 1
+  image:
+    tag: dev
+  logForwarder:
+    enabled: false
+auditoria:
+  replicas: 1
+  image:
+    tag: dev
+web:
+  replicas: 1
+  image:
+    tag: dev
