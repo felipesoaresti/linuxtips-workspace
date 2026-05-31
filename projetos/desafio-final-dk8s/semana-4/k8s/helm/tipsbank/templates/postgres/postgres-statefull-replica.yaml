@@ -1,0 +1,102 @@
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  name: postgres-replica
+  namespace: tipsbank-contas
+  labels:
+    app: postgres-replica
+    app.kubernetes.io/name: postgres-replica
+    app.kubernetes.io/part-of: tipsbank
+    team: tipsbank
+    env: production
+spec:
+  serviceName: postgres-replica-service
+  replicas: 1
+  selector:
+    matchLabels:
+      app: postgres-replica
+  template:
+    metadata:
+      labels:
+        app: postgres-replica
+        app.kubernetes.io/name: postgres-replica
+        app.kubernetes.io/part-of: tipsbank
+        role: postgres-replica
+    spec:
+      tolerations:
+        - key: "compliance"
+          operator: "Equal"
+          value: "strict"
+          effect: "NoSchedule"
+      affinity:
+        podAntiAffinity:
+          requiredDuringSchedulingIgnoredDuringExecution:
+            - labelSelector:
+                matchLabels:
+                  app: postgres
+              topologyKey: kubernetes.io/hostname
+      containers:
+        - name: postgres-replica
+          image: postgres:16-alpine
+          ports:
+            - containerPort: 5432
+              name: postgres
+          envFrom:
+            - secretRef:
+                name: postgres-secret
+          volumeMounts:
+            - name: postgres-replica-data
+              mountPath: /var/lib/postgresql/data
+          resources:
+            requests:
+              cpu: 200m
+              memory: 256Mi
+            limits:
+              cpu: 500m
+              memory: 512Mi
+          livenessProbe:
+            exec:
+              command: ["pg_isready", "-U", "tipsbank"]
+            initialDelaySeconds: 30
+            timeoutSeconds: 3
+            periodSeconds: 10
+            successThreshold: 1
+            failureThreshold: 3
+          readinessProbe:
+            exec:
+              command: ["pg_isready", "-U", "tipsbank"]
+            initialDelaySeconds: 5
+            timeoutSeconds: 3
+            periodSeconds: 5
+            successThreshold: 1
+            failureThreshold: 3
+  volumeClaimTemplates:
+    - metadata:
+        name: postgres-replica-data
+      spec:
+        storageClassName: nfs-tp-data
+        accessModes:
+          - ReadWriteOnce
+        resources:
+          requests:
+            storage: 5Gi
+
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: postgres-replica-service
+  namespace: tipsbank-contas
+  labels:
+    app.kubernetes.io/name: postgres
+    app.kubernetes.io/part-of: tipsbank
+spec:
+  type: ClusterIP
+  clusterIP: None
+  selector:
+    app.kubernetes.io/name: postgres-replica
+  ports:
+    - protocol: TCP
+      name: postgres
+      port: 5432
+      targetPort: 5432
