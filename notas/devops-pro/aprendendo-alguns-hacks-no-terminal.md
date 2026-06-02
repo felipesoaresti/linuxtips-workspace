@@ -1,23 +1,24 @@
 # Aprendendo alguns hacks no terminal
 
-_Exportado em 08/04/2026_
+_Atualizado em 02/06/2026_
 
-ctrl + l - clear - Limpa a tela
-ctrl + r - (search command)
-ctrl + w - remove a ultima palavra ultima palavra
-ctrl + u - remove a linha toda do cursor
+ctrl + w - ultima palavra
+ctrl + u - remove a linha 
 crtl + a - inicio da linha
 ctrl + e - final da linha 
-ctrl + d - fecha o terminal
+ctrl + l - limpa a tela
+ctrl + r - busca comando do historico 
+ctrl + d - loggout
+ctrl + c - parar a tarefa
 
-alias ll='ls - lha' / unalias / alias - mostra os alias
-cat /etc/os-release  - informção dso S.o / mais confiável rs....
-.bashrc  - configurações do bash inicial
-touch .ashrc && echo " alias update='apk update'" >> .ashrc
+Alias - apelidos para determinados comandos
+alias ll='ls -lha'
+unalias ll - remove o alias ll 
+echo > - apaga o conteudo e inclui o qeu o echo manda
+echo >> - inclui na ultima linha
 
 
-
-
+ 
 
 
 
