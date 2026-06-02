@@ -13,7 +13,7 @@ O FS tá caótico depois do incidente. Use find/grep/locate/wildcards pra achar 
 
 ## Suas missões
 
-1. **Ache o arquivo de payroll.csv** — sabe-se que está em algum lugar
+1. **Ache o arquivo de payroll-2026.csv** — sabe-se que está em algum lugar
    "escondido" dentro de `/var/spool/`.
 2. **Liste todos os arquivos modificados nas últimas 24h** em `/var/log/`.
 3. **Busque o conteúdo `JWT_SECRET=`** em qualquer arquivo do sistema (recursivo)
