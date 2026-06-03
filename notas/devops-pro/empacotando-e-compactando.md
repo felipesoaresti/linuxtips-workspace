@@ -1,5 +1,9 @@
 # Empacotando e compactando
 
+_Atualizado em 03/06/2026_
+
+# Empacotando e compactando
+
 _Exportado em 11/04/2026_
 
 TAR:
@@ -18,8 +22,8 @@ bzip2 --> igual gzip
 dd if=/dev/zero of=girus bs=1M count=5
 time --> qnt tempo demora
 
-
-
-
+-c - craindo o pacote
+-z - compactar gzip
+-f - file
 
 
