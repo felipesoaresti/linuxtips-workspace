@@ -27,10 +27,10 @@ spec:
                 - tipsbank-auditoria
                 - tipsbank-web
       validate:
-        message: "Imagem nao vem de registry confiavel. Use felipestaypuff/* ou busybox:*."
+        message: "Imagem nao vem de registry confiavel. Use felipestaypuff/*, postgres:* ou busybox:*."
         pattern:
           spec:
             containers:
-              - image: "felipestaypuff/* | busybox:*"
+              - image: "felipestaypuff/* | postgres:* | busybox:*"
             =(initContainers):
-              - image: "felipestaypuff/* | busybox:*"
+              - image: "felipestaypuff/* | postgres:* | busybox:*"
