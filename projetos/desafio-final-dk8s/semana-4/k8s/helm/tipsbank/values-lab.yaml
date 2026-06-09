@@ -1,0 +1,6 @@
+postgres:
+  pvc:
+    storageClass: nfs-retain
+  auditoria:
+    pvc:
+      storageClass: nfs-retain

@@ -41,7 +41,7 @@ spec:
                       - strict
       containers:
         - name: postgres
-          image: {{ .Values.postgres.image}}
+          image: {{ .Values.postgres.image }}
           args:
             - "postgres"
             - "-c"
@@ -58,6 +58,9 @@ spec:
           envFrom:
             - secretRef:
                 name: postgres-secret
+          env:
+            - name: PGDATA
+              value: /var/lib/postgresql/data/pgdata
           volumeMounts:
             - name: init-sql
               mountPath: /docker-entrypoint-initdb.d/init.sql
@@ -103,12 +106,12 @@ spec:
     - metadata:
         name: postgres-data
       spec:
-        storageClassName: {{ .Values.postgres.pvc.storageClass}}
+        storageClassName: {{ .Values.postgres.pvc.storageClass }}
         accessModes:
           - ReadWriteOnce
         resources:
           requests:
-            storage: {{ .Values.postgres.pvc.size}}
+            storage: {{ .Values.postgres.pvc.size }}
 
 ---
 apiVersion: v1

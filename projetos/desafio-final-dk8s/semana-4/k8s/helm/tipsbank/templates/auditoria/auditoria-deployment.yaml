@@ -93,7 +93,7 @@ metadata:
     app.kubernetes.io/name: auditoria
     app.kubernetes.io/part-of: tipsbank
 spec:
-  storageClassName: nfs-tp-data
+  storageClassName: {{ .Values.auditoria.pvc.storageClass }}
   accessModes:
     - ReadWriteMany
   resources:
