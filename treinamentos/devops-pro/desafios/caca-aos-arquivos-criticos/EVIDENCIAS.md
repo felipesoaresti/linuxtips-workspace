@@ -1,6 +1,6 @@
 # Evidências — Caça aos Arquivos Críticos
 
-> Submetido em 2026-06-09T16:37:38.999Z
+> Submetido em 2026-06-10T09:28:44.602Z
 
 ## ✅ Achou payroll-2026.csv com find (path completo) **(obrigatório)**
 
