@@ -1,8 +1,8 @@
 ---
 tags: [tipsbank, evidencias, semana-4, dk8s, kyverno, rbac, x509]
 created: 2026-05-18
-updated: 2026-05-24
-status: em-andamento
+updated: 2026-06-15
+status: pendente-video
 semana: 4
 ---
 
@@ -1180,3 +1180,467 @@ Git commit: `semana 4.4 correção ClusterRollingBind-sre`
 | ServiceAccount | `api-transacoes-sa` | `tipsbank-transacoes` |
 
 Arquivos em `k8s/rbac/` commitados em 4 commits separados por tipo de recurso.
+
+---
+
+### Etapa 4.5 — Helm Chart Umbrella
+
+**Data de conclusão:** 2026-06-01
+
+#### Objetivo segundo o MANUAL-ALUNO.md
+
+Um único `helm install tipsbank` sobe o banco inteiro (app + monitoring + policies + RBAC) num cluster vazio. Publicar o chart como OCI no ghcr.io.
+
+#### Critérios de aceite do manual
+
+- `helm lint` passa limpo
+- `helm template` renderiza todos os manifests corretamente
+- Instalação num cluster limpo sobe **tudo** em menos de 10 min
+- `helm upgrade` funciona sem derrubar tráfego (rolling update preservado)
+- `helm rollback` também
+- Chart publicado num repositório remoto acessível
+
+#### Status dos critérios
+
+| Critério | Status | Evidência |
+|---|---|---|
+| `helm lint` passa limpo | **Atendido** | `1 chart(s) linted, 0 chart(s) failed` |
+| `values.yaml` com registry, réplicas e tags parametrizados | **Atendido** | `helm template -f values-prod.yaml` → imagens com tag v1.0.0/v2.0.0 |
+| `values-dev.yaml` → replicas=1 e tags dev | **Atendido** | `helm template -f values-dev.yaml` → replicas: 1, tag: dev |
+| `values-prod.yaml` → replicas=2 e tags prod | **Atendido** | `helm template -f values-prod.yaml` → replicas: 2 |
+| log-forwarder condicional desabilitado em dev | **Atendido** | `grep "log-forwarder"` → não aparece como container |
+| Chart publicado OCI no ghcr.io | **Atendido** | `helm show chart oci://ghcr.io/felipesoaresti/helm-charts/tipsbank --version 1.0.0` |
+
+---
+
+#### Output 1 — helm lint limpo
+
+```
+helm lint .
+==> Linting .
+[INFO] Chart.yaml: icon is recommended
+
+1 chart(s) linted, 0 chart(s) failed
+```
+
+---
+
+#### Output 2 — helm template -f values-dev.yaml
+
+```
+helm template tipsbank . -f values-dev.yaml | grep -E "replicas:|image:"
+          image: busybox:1.36
+  replicas: 1
+          image: docker.io/felipestaypuff/tipsbank-auditoria:dev
+  replicas: 1
+          image: busybox:1.36
+          image: docker.io/felipestaypuff/tipsbank-api-contas:dev
+  replicas: 1
+          image: busybox:1.36
+          image: busybox:1.36
+          image: docker.io/felipestaypuff/tipsbank-api-transacoes:dev
+  replicas: 1
+          image: busybox:1.36
+          image: busybox:1.36
+          image: busybox:1.36
+          image: docker.io/felipestaypuff/tipsbank-web:dev
+  replicas: 1
+          image: postgres:16-alpine
+  replicas: 1
+          image: postgres:16-alpine
+```
+
+---
+
+#### Output 3 — helm template -f values-prod.yaml
+
+```
+helm template tipsbank . -f values-prod.yaml | grep -E "replicas:|image:"
+          image: busybox:1.36
+  replicas: 2
+          image: docker.io/felipestaypuff/tipsbank-auditoria:v1.0.0
+  replicas: 2
+          image: busybox:1.36
+          image: docker.io/felipestaypuff/tipsbank-api-contas:v1.0.0
+  replicas: 2
+          image: busybox:1.36
+          image: busybox:1.36
+          image: docker.io/felipestaypuff/tipsbank-api-transacoes:v2.0.0
+          image: busybox:1.36
+  replicas: 2
+          image: busybox:1.36
+          image: busybox:1.36
+          image: busybox:1.36
+          image: docker.io/felipestaypuff/tipsbank-web:v1.0.0
+  replicas: 1
+          image: postgres:16-alpine
+  replicas: 1
+          image: postgres:16-alpine
+```
+
+---
+
+#### Output 4 — sidecar log-forwarder condicional (desabilitado em dev)
+
+```
+helm template tipsbank . -f values-dev.yaml | grep "log-forwarder"
+        container: api-transacoes # exclui o sidecar log-forwarder
+                container!~"log-forwarder|init-.*"
+# → aparece apenas em comentários de PrometheusRule/Kyverno — NÃO como container
+```
+
+---
+
+#### Output 5 — Publicação OCI e verificação
+
+```
+helm push tipsbank-1.0.0.tgz oci://ghcr.io/felipesoaresti/helm-charts
+# Pushed: ghcr.io/felipesoaresti/helm-charts/tipsbank:1.0.0
+# Digest: sha256:7416d94e4bd99a7cb25e65028d08749eee04beb622263b33f41fc5b274c04c85
+
+helm show chart oci://ghcr.io/felipesoaresti/helm-charts/tipsbank --version 1.0.0
+Pulled: ghcr.io/felipesoaresti/helm-charts/tipsbank:1.0.0
+Digest: sha256:7416d94e4bd99a7cb25e65028d08749eee04beb622263b33f41fc5b274c04c85
+apiVersion: v2
+appVersion: 1.0.0
+description: TipsBank — Banco Digital da Linuxtips - Projeto Final DK8S
+name: tipsbank
+type: application
+version: 1.0.0
+```
+
+**Package público:** https://github.com/users/felipesoaresti/packages/container/helm-charts%2Ftipsbank
+
+---
+
+#### Bugs encontrados no caminho
+
+##### Bug 1 — `function "element" not defined` em mutate-security-context.yaml:32
+
+**Causa:** O Kyverno usa `{{ element.name }}` como JMESPath. O Helm processa tudo em `templates/` como Go template — tentou executar `element` como função Go, que não existe.
+
+**Fix:** Escapar com `{{ "{{" }} element.name {{ "}}" }}` — o Helm renderiza isso como o literal `{{ element.name }}` que o Kyverno lê corretamente.
+
+##### Bug 2 — `undefined variable "$labels"` em prometheusrule-tipsbank-slo.yaml
+
+**Causa:** PrometheusRule usa `{{ $labels.deployment }}` e `{{ $value | humanizeDuration }}` nas annotations — novamente o Helm tentando executar `$labels` como variável Go.
+
+**Fix:** Mesmo padrão de escape: `{{ "{{" }} $labels.deployment {{ "}}" }}`.
+
+##### Bug 3 — `nil pointer evaluating interface {}.enabled` em NOTES.txt:2
+
+**Causa:** O scaffold do `helm create` gerou um `NOTES.txt` referenciando `.Values.httpRoute.enabled`, `.Values.ingress.enabled`, `.Values.service.type` — todos removidos quando o `values.yaml` foi reescrito para TipsBank.
+
+**Fix:** Substituir todo o conteúdo do NOTES.txt por texto específico do TipsBank.
+
+##### Bug 4 — `invalid map key` em postgres-statefull.yaml (e 3 Deployments)
+
+**Causa:** `replicas: { { .Values.postgres.image } }` — espaços dentro das chaves. O Helm exige `{{` sem espaço. Com espaço, o YAML trata como mapa literal, não como template.
+
+**Fix:** `sed -i 's/{ { /{{ /g; s/ } }/}}/g'` nos 4 arquivos afetados.
+
+##### Bug 5 — 403 `owner not found` no `helm push` para ghcr.io
+
+**Causa:** `helm registry login ghcr.io -u felipestaypuff` — username errado. O Docker Hub usa `felipestaypuff`, mas o GitHub (ghcr.io) usa `felipesoaresti`. São registries completamente independentes.
+
+**Fix:** Re-login com `-u felipesoaresti` + push para `oci://ghcr.io/felipesoaresti/helm-charts`.
+
+---
+
+#### Lição técnica: Go template engine vs Kyverno/Prometheus templates
+
+O Helm renderiza TUDO dentro de `templates/` como Go template. Qualquer `{{ }}` é interpretado — seja Kyverno JMESPath, PrometheusRule annotation ou qualquer texto com chaves duplas.
+
+A solução é o padrão de escape:
+```
+{{ "{{" }} expressão {{ "}}" }}
+```
+O Helm avalia `{{ "{{" }}` como a string literal `{{`, e `{{ "}}" }}` como `}}`. O YAML resultante entregue ao Kubernetes contém `{{ expressão }}` exatamente como Kyverno/Prometheus esperam.
+
+Detalhes completos da estrutura e passos em [[Semana-4/Etapa-4.5-Helm-Umbrella]].
+
+---
+
+#### Complemento da Etapa 4.5 — Validação em cluster limpo (`tb-lab-master`) + correção para 1.0.1
+
+**Data:** 2026-06-09
+
+O manual não para em `helm lint` e `helm template`: ele pede install real em cluster limpo, upgrade sem derrubar tráfego, rollback e chart publicado. Então a versão `1.0.0`, que já passava nos testes estáticos, foi validada num cluster dedicado (`tb-lab-master`). Aí apareceram 5 bugs que só surgem quando o Kubernetes tenta criar os recursos de verdade. Foram corrigidos e publicados na versão `1.0.1`.
+
+##### Cluster de teste
+
+```
+$ ssh tb-lab-master 'kubectl get nodes -o wide'
+NAME             STATUS   ROLES           AGE   VERSION   INTERNAL-IP
+tp-lab-master    Ready    control-plane   ~4h   v1.35.5   192.168.3.44
+tp-lab-worker1   Ready    <none>          ~4h   v1.35.5   192.168.3.45
+tp-lab-worker2   Ready    <none>          ~4h   v1.35.5   192.168.3.46
+```
+
+Pré-requisitos já instalados via Helm (operators/CRDs que o chart consome): `kyverno`, `kube-prometheus-stack` (ns `tipsbank-monitoring`), `ingress-nginx`, `csi-driver-nfs`, `metallb`. StorageClasses do cluster: `nfs-retain`, `nfs-delete` (provisioner `nfs.csi.k8s.io`, server `192.168.3.11:/mnt/nfs-data/k8s`).
+
+> **Conclusão sobre "cluster limpo":** não pode ser literalmente vazio — o chart depende de CRDs externos (`ClusterPolicy` Kyverno, `ServiceMonitor`/`PrometheusRule` Prometheus) e de uma StorageClass NFS. "Limpo" = com os operators/CRDs presentes, **sem** o app TipsBank.
+
+##### Problemas encontrados no install limpo da 1.0.0 e soluções
+
+| # | Bug | Sintoma | Correção (1.0.1) |
+|---|---|---|---|
+| 1 | `allow-trusted-registry` (Enforce) não libera `postgres:*` e o glob `felipestaypuff/*` não casa `docker.io/felipestaypuff/*` | `FailedCreate ... validate.kyverno.svc-fail denied`; PolicyViolation em todas as imagens. Só não quebrou no install porque Helm aplica a policy **depois** dos workloads → qualquer restart/drain seria bloqueado | glob `"*felipestaypuff/* \| postgres:* \| busybox:*"` |
+| 2 | postgres sem `PGDATA` em subdir, PVC montado direto em `/var/lib/postgresql/data` | `initdb: could not change permissions of directory ... Operation not permitted` (chmod da raiz do mount NFS) → CrashLoopBackOff | `env: PGDATA=/var/lib/postgresql/data/pgdata` |
+| 3 | `auditoria.pvc.storageClass` era value morto (template hardcodava `nfs-tp-data`) | override ignorado | template fiado: `storageClassName: {{ .Values.auditoria.pvc.storageClass }}` |
+| 4 | `postgres-statefull-replica.yaml` (resíduo da 4.5) hardcodava `nfs-tp-data`, não parametrizado | PVC Pending | arquivo removido |
+| 5 | default `postgres.pvc.storageClass: nfs-homelab` não-portável | PVC Pending em cluster novo | `values-lab.yaml` por ambiente (override `nfs-retain`) |
+
+##### Ajustes de cluster necessários
+
+- **Webhook Kyverno em timeout no burst:** `validate-policy.kyverno.svc` com `timeoutSeconds=10` e `failurePolicy=Fail`; o burst de ~88 recursos satura o admission controller single-replica → a criação de uma das 6 ClusterPolicies estourava (`context deadline exceeded`), reproduzível. Mitigação: admission controller **2 réplicas** + webhook **30s**. (Config do cluster Kyverno, não do chart.)
+- StorageClass `nfs-tp-data` (que o chart espera para a auditoria) não existia → criada como clone do `nfs-retain`.
+
+##### Bug que travou o `helm package` da 1.0.1
+
+```
+$ helm lint .
+[ERROR] templates/postgres/postgres-statefull.yaml: unable to parse YAML:
+  yaml: invalid map key: map[interface {}]interface {}{".Values.postgres.image":...}
+```
+
+Causa: um editor com *format-on-save* (Prettier/extensão YAML) "embelezou" `{{ }}` para `{ { } }` nas linhas templated. O Helm deixou de enxergar Go template e o parser YAML passou a tratar aquilo como mapa inválido. Correção aplicada: restaurar `{{ }}` e evitar formatador YAML automático nesses manifests Helm.
+
+##### Evidência — install limpo 1.0.1
+
+```
+$ helm install tipsbank oci://ghcr.io/felipesoaresti/helm-charts/tipsbank --version 1.0.1 \
+    --set postgres.pvc.storageClass=nfs-retain
+NAME: tipsbank   STATUS: deployed   REVISION: 1     # 23s
+$ kubectl get cpol --no-headers | wc -l
+6
+
+# 10/10 pods Running em ~2m20s (install + ready ~3 min, dentro dos 10 min)
+tipsbank-contas       postgres-0                    1/1   Running
+tipsbank-contas       api-contas (x2)               1/1   Running
+tipsbank-transacoes   api-transacoes (x3)           2/2   Running   # c/ sidecar log-forwarder
+tipsbank-auditoria    auditoria (x2)                1/1   Running
+tipsbank-web          web (x2)                      1/1   Running
+```
+
+##### Evidência — compliance sem violações nos namespaces da aplicação
+
+```
+$ for ns in tipsbank-contas tipsbank-transacoes tipsbank-auditoria tipsbank-web; do
+    echo "$ns: fail=$(kubectl get policyreport -n $ns -o jsonpath='...summary.fail...')"; done
+tipsbank-contas: fail=0
+tipsbank-transacoes: fail=0
+tipsbank-auditoria: fail=0
+tipsbank-web: fail=0
+```
+
+##### Evidência — Postgres sobrevive a restart com policy ativa
+
+```
+$ kubectl delete pod -n tipsbank-contas postgres-0
+$ # recriado e READY em ~30s — NÃO bloqueado pelo allow-trusted-registry; PGDATA subdir reusa o data dir
+postgres-0   1/1   Running   0   37s
+```
+
+##### Evidência — `helm upgrade` rolling e `helm rollback`
+
+```
+$ helm upgrade tipsbank oci://.../tipsbank --version 1.0.1 \
+    --set postgres.pvc.storageClass=nfs-retain --set web.replicas=3
+STATUS: deployed   REVISION: 2        # web 2->3 rolling, sem derrubar tráfego
+
+$ helm rollback tipsbank 1
+Rollback was a success! Happy Helming!
+
+$ helm history tipsbank
+1   superseded   Install complete
+2   superseded   Upgrade complete
+3   deployed     Rollback to 1        # web volta a 2/2; tudo Running
+
+# estado final pós-rollback: api-contas 2/2, postgres 1/1, api-transacoes 3/3, web 2/2
+```
+
+##### Critérios de aceite da 4.5 — status final
+
+| Critério | Resultado |
+|---|---|
+| `helm lint` limpo | **Atendido** |
+| `helm template` renderiza todos os manifests | **Atendido** — 88 recursos renderizados |
+| Instala em cluster limpo em menos de 10 min | **Atendido** — cerca de 3 min |
+| `helm upgrade` sem derrubar tráfego | **Atendido** — rolling update preservado |
+| `helm rollback` funcional | **Atendido** — revision 3 voltou para a revision 1 |
+| Chart publicado em repositório remoto acessível | **Atendido** — `ghcr.io/felipesoaresti/helm-charts/tipsbank:1.0.1` |
+
+Conclusão técnica: a `1.0.0` provava que o chart renderizava; a `1.0.1` provou que ele instala, opera, faz upgrade e faz rollback num cluster sem TipsBank preexistente. É exatamente o tipo de evidência que o critério do manual queria pegar.
+
+---
+
+### Etapa 4.6 — Teste de Compliance Final
+
+**Data de conclusão:** 2026-06-09
+
+#### Objetivo segundo o MANUAL-ALUNO.md
+
+Rodar uma checklist de compliance como se fosse auditoria: imagem confiável, nenhum pod root, probes, resources, Kyverno ativo, NetworkPolicies presentes e imagens assinadas. Também registrar 3 manifestos ruins bloqueados pelo Kyverno e documentar a nuance do `web`.
+
+#### Critérios de aceite do manual
+
+- Os 7 comandos de compliance colados no `EVIDENCIAS.md` com saída esperada.
+- Registro de 3 tentativas de aplicar manifest ruim e ver o Kyverno bloqueando.
+- Nuance do `web` documentada: nonroot/minimal, mas não Distroless no sentido estrito.
+
+#### Status dos critérios
+
+Checklist rodada nos dois clusters: lab `tb-lab-master` (Helm `1.0.1`) e prod `tb-master1` (ambiente construído nas semanas anteriores). O foco foi nos namespaces da aplicação: `tipsbank-contas`, `tipsbank-transacoes`, `tipsbank-auditoria` e `tipsbank-web`.
+
+| Critério | Lab | Prod | Status |
+|---|---|---|---|
+| Imagens de registry confiável | nenhuma fora do padrão aceito | nenhuma fora do padrão aceito | **Atendido** |
+| Nenhum pod rodando como root | `[]` | `[]` | **Atendido** |
+| Probes nos containers principais | liveness presente | liveness presente | **Atendido** |
+| `resources.limits` | todos com limits | todos com limits | **Atendido** |
+| Kyverno ativo | 6 policies Ready | 6 policies Ready | **Atendido** |
+| NetworkPolicies | 7/6/5/5 | 7/7/5/5 | **Atendido** |
+| Cosign verify | OK | OK | **Atendido** |
+
+#### Evidência 1 — Nenhuma imagem fora do registry confiável
+
+```
+# imagens nos ns tipsbank-* (lab e prod):
+busybox:1.36
+felipestaypuff/tipsbank-api-contas:v1.0.0        (prod: forma curta | lab: docker.io/felipestaypuff/...)
+felipestaypuff/tipsbank-api-transacoes:v2.0.0
+felipestaypuff/tipsbank-auditoria:v1.0.0
+felipestaypuff/tipsbank-web:v1.0.0
+postgres:16-alpine
+# grep -vE "felipestaypuff/|busybox|postgres:"  → (nenhuma fora do confiavel)
+```
+
+#### Evidência 2 — Nenhum pod rodando como root
+
+```
+# lab e prod:
+[]
+```
+
+#### Evidência 3 — Cobertura de probes
+
+```
+# lab + prod — todos os containers PRINCIPAIS: liveness=true
+tipsbank-auditoria/auditoria [auditoria] liveness=true
+tipsbank-contas/api-contas [api-contas] liveness=true
+tipsbank-transacoes/api-transacoes [api-transacoes] liveness=true
+tipsbank-transacoes/api-transacoes [log-forwarder] liveness=false   # sidecar — não precisa
+tipsbank-web/web [web] liveness=true
+tipsbank-contas/postgres [postgres] liveness=true
+# (prod ainda tem tipsbank-contas/postgres-replica [postgres-replica] liveness=true)
+```
+
+Observação: o `log-forwarder` aparece sem liveness porque é sidecar simples de `tail -F`, não uma API. O critério foi aplicado aos containers principais dos workloads e ao Postgres.
+
+#### Evidência 4 — Cobertura de `resources.limits`
+
+```
+# lab + prod — todos os containers: limits=true (inclusive o sidecar log-forwarder)
+```
+
+#### Evidência 5 — Policies Kyverno ativas
+
+```
+# lab (3h) e prod (17d) — 6 policies, todas ADMISSION=true BACKGROUND=true READY=True:
+allow-trusted-registry  disallow-latest-tag  disallow-root-user
+generate-default-deny-netpol  mutate-security-context  require-labels
+```
+
+#### Evidência 6 — NetworkPolicies nos namespaces `tipsbank-*`
+
+```
+                contas  transacoes  auditoria  web
+lab           :   7         6          5        5
+prod          :   7         7          5        5
+```
+
+#### Evidência 7 — Imagens assinadas com Cosign
+
+```
+OK   docker.io/felipestaypuff/tipsbank-api-contas:v1.0.0
+OK   docker.io/felipestaypuff/tipsbank-api-transacoes:v2.0.0
+OK   docker.io/felipestaypuff/tipsbank-auditoria:v1.0.0
+OK   docker.io/felipestaypuff/tipsbank-web:v1.0.0
+# assinatura presente no registry, validada contra cosign.pub (claims + transparency log)
+```
+
+#### Evidência 8 — 3 manifestos ruins bloqueados pelo Kyverno
+
+```
+# A. Pod runAsUser=0  → admission webhook "validate.kyverno.svc-fail" denied:
+disallow-root-user: 'Container/Pod não podem rodar como root (runAsUser=0).'
+
+# B. Imagem :latest  → denied:
+disallow-latest-tag: "Tag ':latest' não é permitida"
+
+# C. Imagem nginx:1.25 (registry não-confiável)  → denied:
+allow-trusted-registry: 'Imagem nao vem de registry confiavel. Use felipestaypuff/*, postgres:* ou busybox:*'
+```
+
+#### Nuance do `web`
+
+O `web` usa `nginx-unprivileged` (Alpine, uid 101). Ele é nonroot e minimal, mas não é Distroless no sentido estrito, porque a base Alpine ainda possui componentes como shell. Portanto, a leitura correta do critério é:
+
+- APIs Python (`api-contas`, `api-transacoes`, `auditoria`): Distroless.
+- Frontend `web`: alternativa nonroot/minimal.
+- Controles de compliance aplicados integralmente ao `web`: não roda como root, não usa `:latest`, tem resources e tem probes.
+
+#### Divergências lab x prod — não são violações
+
+| Item | Lab (Helm 1.0.1) | Prod (mão) |
+|---|---|---|
+| Forma da imagem | `docker.io/felipestaypuff/*` | `felipestaypuff/*` (curta) |
+| `postgres-replica` | removido (1.0.1) | ainda presente (resíduo) |
+| StorageClass | nfs-retain / nfs-tp-data | nfs-homelab |
+| Origem dos recursos | 100% Helm | aplicados na mão |
+
+Conclusão técnica: as diferenças são de ambiente e forma de implantação, não de controle. O que o manual cobra — compliance final verificável — ficou verde nos dois clusters.
+
+---
+
+### Etapa 4.7 — Vídeo demo final
+
+**Status:** pendente de evidência do link público/unlisted.
+
+#### Objetivo segundo o MANUAL-ALUNO.md
+
+Gravar um vídeo de 10 a 15 minutos mostrando a entrega completa: install via Helm, pods subindo, Grafana, transferência, Locust/HPA, Kyverno bloqueando pod ruim, canary, RBAC negando ação indevida, rollback e uninstall.
+
+#### Critérios de aceite do manual
+
+- Vídeo acessível por link público ou unlisted.
+- Os 10 pontos do roteiro aparecem no vídeo.
+- Áudio audível e explicação clara do que está sendo mostrado.
+
+#### Status dos critérios
+
+| Critério | Status | Evidência |
+|---|---|---|
+| Link público/unlisted | **Pendente** | Não encontrei link de vídeo nos arquivos de `docs/` |
+| 10 pontos do roteiro | **Pendente** | Existe roteiro em `Semana-4/Etapa-4.7-Video-Demo.md`, mas falta evidência do vídeo publicado |
+| Áudio e explicação | **Pendente** | Depende do vídeo final |
+
+#### Comandos/dados para complementar depois
+
+Quando o vídeo estiver publicado, adicionar aqui:
+
+```text
+Link do vídeo:
+Timestamps dos 10 pontos do manual:
+1. helm install tipsbank:
+2. pods subindo:
+3. Grafana:
+4. transferencia:
+5. Locust + HPA:
+6. Kyverno bloqueando pod ruim:
+7. Canary:
+8. RBAC Forbidden:
+9. Rollback:
+10. helm uninstall:
+```

@@ -13,7 +13,6 @@ metadata:
     cert-manager.io/cluster-issuer: "prod-letsencrypt-cloudflare"
 spec:
   ingressClassName: nginx
-  spec:
   tls:
     - hosts:
         - api.tipsbank.staypuff.info
