@@ -7,8 +7,8 @@ metadata:
   labels:
     app: api-transacoes-v2
     version: v2
-    team: tipsbank # ← require-labels
-    env: lab # ← require-labels
+    team: tipsbank
+    env: lab
     app.kubernetes.io/name: api-transacoes-v2
     app.kubernetes.io/part-of: tipsbank
 spec:
@@ -28,22 +28,19 @@ spec:
         - name: init-postgres
           image: busybox:1.36
           command:
-            - sh
-            - -c
-            - |
-              until nc -z postgres-service.tipsbank-contas.svc.cluster.local 5432; do
-                echo "Verificando conexão com Postgres..."
-                sleep 3
-              done
+            [
+              "sh",
+              "-c",
+              "until nc -z postgres-service.tipsbank-contas.svc.cluster.local 5432; do echo 'aguardando postgres'; sleep 3; done",
+            ]
         - name: init-api-contas
           image: busybox:1.36
           command:
-            - sh
-            - -c
-            - |
-              until wget -q --spider http://api-contas.tipsbank-contas.svc.cluster.local:8080/health/live; do
-                echo "Verificando se api-contas esta live..."
-                sleep 3                                                                                                                                                                                                           done
+            [
+              "sh",
+              "-c",
+              "until wget -q --spider http://api-contas.tipsbank-contas.svc.cluster.local:8080/health/live; do echo 'aguardando api-contas'; sleep 3; done",
+            ]
       containers:
         - name: api-transacoes
           image: felipestaypuff/tipsbank-api-transacoes:v2.0.0
@@ -52,7 +49,7 @@ spec:
               name: api-transacoes
           env:
             - name: APP_VERSION
-              value: "v2" # ← value direto (não configMapKeyRef, senão puxa v1)
+              value: "v2"
             - name: DB_URL
               valueFrom:
                 secretKeyRef:
@@ -93,17 +90,17 @@ spec:
             failureThreshold: 5
         - name: log-forwarder
           image: busybox:1.36
-          securityContext: # ← sobrevive ao mutate-security-context
+          securityContext:
             runAsUser: 65532
             runAsNonRoot: true
             readOnlyRootFilesystem: true
             allowPrivilegeEscalation: false
           command:
-            - sh
-            - -c
-            - |
-              until [ -f /var/log/app/app.log ]; do echo "Aguardando o arquivo de log ser criado..."; sleep 1; done;
-              tail -F /var/log/app/app.log
+            [
+              "sh",
+              "-c",
+              "until [ -f /var/log/app/app.log ]; do sleep 1; done; tail -F /var/log/app/app.log",
+            ]
           resources:
             requests: { cpu: 50m, memory: 64Mi }
             limits: { cpu: 100m, memory: 128Mi }
@@ -113,6 +110,7 @@ spec:
       volumes:
         - name: app-logs
           emptyDir: {}
+
 ---
 apiVersion: v1
 kind: Service
