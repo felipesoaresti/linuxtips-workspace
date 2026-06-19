@@ -1,0 +1,95 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: locust
+  namespace: tipsbank-monitoring
+  labels:
+    app: locust
+    app.kubernetes.io/part-of: tipsbank
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: locust
+  template:
+    metadata:
+      labels:
+        app: locust
+    spec:
+      containers:
+        - name: locust
+          image: pauloneves/tipsbank-locust:v1.0.0 #felipestaypuff/tipsbank-locust:v1.0.0
+          env:
+            - name: LOCUST_HOST
+              value: "http://api-transacoes.tipsbank-transacoes.svc.cluster.local:8080"
+            - name: CONTAS_URL
+              value: "http://api-contas.tipsbank-contas.svc.cluster.local:8080"
+          ports:
+            - name: locust-ui
+              containerPort: 8089
+          resources:
+            requests:
+              cpu: 200m
+              memory: 256Mi
+            limits:
+              cpu: 1000m
+              memory: 512Mi
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: locust
+  namespace: tipsbank-monitoring
+  labels:
+    app: locust
+spec:
+  type: ClusterIP
+  selector:
+    app: locust
+  ports:
+    - name: locust-ui
+      port: 8089
+      targetPort: 8089
+---
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: locust
+  namespace: tipsbank-monitoring
+  annotations:
+    nginx.ingress.kubernetes.io/proxy-read-timeout: "3600"
+    nginx.ingress.kubernetes.io/proxy-send-timeout: "3600"
+spec:
+  ingressClassName: nginx
+  rules:
+    - host: locust.tp-lab.staypuff.info
+      http:
+        paths:
+          - path: /
+            pathType: Prefix
+            backend:
+              service:
+                name: locust
+                port:
+                  number: 8089
+
+---
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: allow-ingress-nginx-to-locust
+  namespace: tipsbank-monitoring
+spec:
+  podSelector:
+    matchLabels:
+      app: locust
+  policyTypes:
+    - Ingress
+  ingress:
+    - from:
+        - namespaceSelector:
+            matchLabels:
+              kubernetes.io/metadata.name: ingress-nginx
+      ports:
+        - protocol: TCP
+          port: 8089
