@@ -18,7 +18,7 @@ metadata:
 spec:
   ingressClassName: nginx
   rules:
-    - host: api.tipsbank.staypuff.info
+    - host: api.{{ .Values.global.domain }}
       http:
         paths:
           - path: /transacoes(/|$)(.*)

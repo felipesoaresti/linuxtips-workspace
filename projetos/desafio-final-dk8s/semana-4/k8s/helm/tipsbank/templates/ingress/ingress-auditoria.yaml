@@ -1,7 +1,7 @@
 apiVersion: networking.k8s.io/v1
 kind: Ingress
 metadata:
-  name: tipsbank-contas-ingress
+  name: tipsbank-auditoria-ingress
   namespace: tipsbank-auditoria
   labels:
     app: auditoria
@@ -15,10 +15,10 @@ spec:
   ingressClassName: nginx
   tls:
     - hosts:
-        - api.tipsbank.staypuff.info
+        - api.{{ .Values.global.domain }}
       secretName: api-tipsbank-tls
   rules:
-    - host: api.tipsbank.staypuff.info
+    - host: api.{{ .Values.global.domain }}
       http:
         paths:
           - path: /auditoria(/|$)(.*)

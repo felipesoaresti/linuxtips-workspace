@@ -14,11 +14,11 @@ metadata:
 spec:
   tls:
     - hosts:
-        - app.tipsbank.staypuff.info
+        - app.{{ .Values.global.domain }}
       secretName: app-tipsbank-tls
   ingressClassName: nginx
   rules:
-    - host: app.tipsbank.staypuff.info
+    - host: app.{{ .Values.global.domain }}
       http:
         paths:
           - path: /

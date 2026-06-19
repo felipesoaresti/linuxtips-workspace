@@ -16,9 +16,9 @@ spec:
   ingressClassName: nginx
   tls:
     - hosts:
-        - api.tipsbank.staypuff.info
+        - api.{{ .Values.global.domain }}
   rules:
-    - host: api.tipsbank.staypuff.info
+    - host: api.{{ .Values.global.domain }}
       http:
         paths:
           - path: /contas/admin(/|$)(.*)
