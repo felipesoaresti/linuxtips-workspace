@@ -20,10 +20,10 @@ spec:
   ingressClassName: nginx
   tls:
     - hosts:
-        - api.{{ .Values.global.domain }}
+        - api-{{ .Values.global.domain }}
       secretName: api-tipsbank-tls
   rules:
-    - host: api.{{ .Values.global.domain }}
+    - host: api-{{ .Values.global.domain }}
       http:
         paths:
           - path: /transacoes(/|$)(.*)

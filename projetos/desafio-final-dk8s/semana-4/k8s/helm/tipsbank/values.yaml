@@ -1,6 +1,6 @@
 global:
   registry: docker.io/felipestaypuff
-  domain: tipsbank.staypuff.info
+  domain: tb-lab.staypuff.info
 
 contas:
   replicas: 2

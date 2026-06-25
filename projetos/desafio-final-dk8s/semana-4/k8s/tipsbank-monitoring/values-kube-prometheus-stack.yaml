@@ -14,11 +14,11 @@ grafana:
     annotations:
       cert-manager.io/cluster-issuer: "prod-letsencrypt-cloudflare"
     hosts:
-      - grafana.tipsbank.staypuff.info
+      - grafana-tb-lab.staypuff.info
     tls:
       - secretName: grafana-tipsbank-tls
         hosts:
-          - grafana.tipsbank.staypuff.info
+          - grafana-tb-lab.staypuff.info
 
 prometheus:
   ingress:
@@ -27,11 +27,11 @@ prometheus:
     annotations:
       cert-manager.io/cluster-issuer: "prod-letsencrypt-cloudflare"
     hosts:
-      - prometheus.tipsbank.staypuff.info
+      - prometheus-tb-lab.staypuff.info
     tls:
       - secretName: prometheus-tipsbank-tls
         hosts:
-          - prometheus.tipsbank.staypuff.info
+          - prometheus-tb-lab.staypuff.info
   prometheusSpec:
     retention: 15d
     serviceMonitorSelectorNilUsesHelmValues: false
@@ -59,11 +59,11 @@ alertmanager:
     annotations:
       cert-manager.io/cluster-issuer: "prod-letsencrypt-cloudflare"
     hosts:
-      - alertmanager.tipsbank.staypuff.info
+      - alertmanager-tb-lab.staypuff.info
     tls:
       - secretName: alertmanager-tipsbank-tls
         hosts:
-          - alertmanager.tipsbank.staypuff.info
+          - alertmanager-tb-lab.staypuff.info
   alertmanagerSpec:
     storage:
       volumeClaimTemplate:

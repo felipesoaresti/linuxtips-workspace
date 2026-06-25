@@ -10,7 +10,9 @@ metadata:
     team: tipsbank
     env: production
 spec:
-  replicas: {{ .Values.contas.replicas }}
+  # replicas omitido de propósito: gerenciado pelo HPA hpa-api-contas.
+  # Templar replicas aqui conflita no server-side apply com o kube-controller-manager
+  # (dono de .spec.replicas via subresource /scale) e quebra o helm upgrade.
   selector:
     matchLabels:
       app: api-contas

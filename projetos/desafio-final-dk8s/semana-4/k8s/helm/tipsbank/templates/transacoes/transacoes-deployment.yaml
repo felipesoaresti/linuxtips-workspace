@@ -10,7 +10,9 @@ metadata:
     team: tipsbank
     env: production
 spec:
-  replicas: {{ .Values.transacoes.replicas }}
+  # replicas omitido de propósito: gerenciado pelo HPA hpa-api-transacoes.
+  # Templar replicas aqui conflita no server-side apply com o kube-controller-manager
+  # (dono de .spec.replicas via subresource /scale) e quebra o helm upgrade.
   revisionHistoryLimit: 5
   strategy:
     type: RollingUpdate

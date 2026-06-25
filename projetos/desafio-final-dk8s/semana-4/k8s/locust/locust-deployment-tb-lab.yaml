@@ -62,7 +62,7 @@ metadata:
 spec:
   ingressClassName: nginx
   rules:
-    - host: locust.tp-lab.staypuff.info
+    - host: locust-tb-lab.staypuff.info
       http:
         paths:
           - path: /
