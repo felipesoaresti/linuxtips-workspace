@@ -1209,7 +1209,7 @@ Um único `helm install tipsbank` sobe o banco inteiro (app + monitoring + polic
 | `values-dev.yaml` → replicas=1 e tags dev | **Atendido** | `helm template -f values-dev.yaml` → replicas: 1, tag: dev |
 | `values-prod.yaml` → replicas=2 e tags prod | **Atendido** | `helm template -f values-prod.yaml` → replicas: 2 |
 | log-forwarder condicional desabilitado em dev | **Atendido** | `grep "log-forwarder"` → não aparece como container |
-| Chart publicado OCI no ghcr.io | **Atendido** | `helm show chart oci://ghcr.io/felipesoaresti/helm-charts/tipsbank --version 1.0.0` |
+| Chart publicado OCI no ghcr.io | **Atendido** | Publicação inicial `1.0.0`; validação operacional registrada depois com `1.0.1` |
 
 ---
 
@@ -1291,7 +1291,7 @@ helm template tipsbank . -f values-dev.yaml | grep "log-forwarder"
 
 ---
 
-#### Output 5 — Publicação OCI e verificação
+#### Output 5 — Publicação OCI inicial e verificação
 
 ```
 helm push tipsbank-1.0.0.tgz oci://ghcr.io/felipesoaresti/helm-charts
@@ -1361,16 +1361,16 @@ Detalhes completos da estrutura e passos em [[Semana-4/Etapa-4.5-Helm-Umbrella]]
 
 ---
 
-#### Complemento da Etapa 4.5 — Validação em cluster limpo (`tb-lab-master`) + correção para 1.0.1
+#### Complemento da Etapa 4.5 — Validação em cluster limpo (`tp-lab`) + correção para 1.0.1
 
 **Data:** 2026-06-09
 
-O manual não para em `helm lint` e `helm template`: ele pede install real em cluster limpo, upgrade sem derrubar tráfego, rollback e chart publicado. Então a versão `1.0.0`, que já passava nos testes estáticos, foi validada num cluster dedicado (`tb-lab-master`). Aí apareceram 5 bugs que só surgem quando o Kubernetes tenta criar os recursos de verdade. Foram corrigidos e publicados na versão `1.0.1`.
+O manual não para em `helm lint` e `helm template`: ele pede install real em cluster limpo, upgrade sem derrubar tráfego, rollback e chart publicado. Então a versão `1.0.0`, que já passava nos testes estáticos, foi validada num cluster dedicado (`tp-lab`). Aí apareceram 5 bugs que só surgem quando o Kubernetes tenta criar os recursos de verdade. Foram corrigidos e publicados na versão `1.0.1`.
 
 ##### Cluster de teste
 
 ```
-$ ssh tb-lab-master 'kubectl get nodes -o wide'
+$ ssh tp-lab-master 'kubectl get nodes -o wide'
 NAME             STATUS   ROLES           AGE   VERSION   INTERNAL-IP
 tp-lab-master    Ready    control-plane   ~4h   v1.35.5   192.168.3.44
 tp-lab-worker1   Ready    <none>          ~4h   v1.35.5   192.168.3.45
@@ -1473,6 +1473,16 @@ $ helm history tipsbank
 
 Conclusão técnica: a `1.0.0` provava que o chart renderizava; a `1.0.1` provou que ele instala, opera, faz upgrade e faz rollback num cluster sem TipsBank preexistente. É exatamente o tipo de evidência que o critério do manual queria pegar.
 
+##### Complemento para a gravação — chart `1.0.2`
+
+O roteiro da Etapa 4.7 usa o chart `1.0.2` no lab `tp-lab`. Essa versão é a preparação da demo: corrige o nome do Ingress da auditoria, parametriza os hosts via `global.domain` e ajusta o values do lab para não depender de configuração hardcoded. Em termos de aceite da 4.5, a evidência forte continua sendo o install/upgrade/rollback já registrado com a `1.0.1`; a `1.0.2` é a versão operacional escolhida para gravar sem gambiarras de DNS ou nome de Ingress.
+
+Se for necessário anexar a prova atual do pacote publicado, rodar e colar a saída:
+
+```bash
+helm show chart oci://ghcr.io/felipesoaresti/helm-charts/tipsbank --version 1.0.2
+```
+
 ---
 
 ### Etapa 4.6 — Teste de Compliance Final
@@ -1491,7 +1501,7 @@ Rodar uma checklist de compliance como se fosse auditoria: imagem confiável, ne
 
 #### Status dos critérios
 
-Checklist rodada nos dois clusters: lab `tb-lab-master` (Helm `1.0.1`) e prod `tb-master1` (ambiente construído nas semanas anteriores). O foco foi nos namespaces da aplicação: `tipsbank-contas`, `tipsbank-transacoes`, `tipsbank-auditoria` e `tipsbank-web`.
+Checklist rodada nos dois clusters: lab `tp-lab` (Helm `1.0.1`) e prod `tb-master1` (ambiente construído nas semanas anteriores). O foco foi nos namespaces da aplicação: `tipsbank-contas`, `tipsbank-transacoes`, `tipsbank-auditoria` e `tipsbank-web`.
 
 | Critério | Lab | Prod | Status |
 |---|---|---|---|
@@ -1600,7 +1610,7 @@ O `web` usa `nginx-unprivileged` (Alpine, uid 101). Ele é nonroot e minimal, ma
 | StorageClass | nfs-retain / nfs-tp-data | nfs-homelab |
 | Origem dos recursos | 100% Helm | aplicados na mão |
 
-Conclusão técnica: as diferenças são de ambiente e forma de implantação, não de controle. O que o manual cobra — compliance final verificável — ficou verde nos dois clusters.
+Conclusão técnica: as diferenças são de ambiente e forma de implantação, não de controle. O que o manual cobra — compliance final verificável — ficou verde nos dois clusters. Esse é o ponto importante: auditoria não pede que os ambientes sejam clones perfeitos; ela pede que o controle seja demonstrável, repetível e explicado.
 
 ---
 
@@ -1623,8 +1633,42 @@ Gravar um vídeo de 10 a 15 minutos mostrando a entrega completa: install via He
 | Critério | Status | Evidência |
 |---|---|---|
 | Link público/unlisted | **Pendente** | Não encontrei link de vídeo nos arquivos de `docs/` |
-| 10 pontos do roteiro | **Pendente** | Existe roteiro em `Semana-4/Etapa-4.7-Video-Demo.md`, mas falta evidência do vídeo publicado |
+| 10 pontos do roteiro | **Preparado / pendente do vídeo** | Roteiro narrado em `Semana-4/Etapa-4.7-Roteiro-Ensaio.md` e roteiro detalhado em `Semana-4/Etapa-4.7-Video-Demo.md` |
 | Áudio e explicação | **Pendente** | Depende do vídeo final |
+
+#### Roteiro técnico da demonstração
+
+O vídeo precisa sintetizar as 4 semanas sem virar aula longa. A linha narrativa escolhida é: provisionar, instalar, provar que funciona, gerar carga, mostrar segurança/compliance, demonstrar deploy progressivo, provar menor privilégio e fechar com rollback/uninstall.
+
+| Cena | Manual cobra | O que mostrar | Fala técnica resumida |
+|---|---|---|---|
+| 0 | Contexto do projeto completo | Ansible criando o cluster lab | "A infra nasce por código: VMs, Kubernetes, rede, storage, ingress, monitoring e Kyverno." |
+| 1 | Helm install | `helm install tipsbank ... --version 1.0.2` | "Um comando sobe o banco inteiro, não só uma API solta." |
+| 2 | Pods subindo | `kubectl get pods -A` nos namespaces TipsBank | "Aqui eu provo que os workloads realmente ficaram Ready." |
+| 3 | Grafana | Dashboard com métricas reais | "Observabilidade não é enfeite: CPU, memória e targets estão vindo do cluster." |
+| 4 | Transferência/API funcionando | `curl` em health/saldo/transferência | "Antes de falar de compliance, a aplicação precisa funcionar." |
+| 5 | Locust + HPA | Locust gerando carga e HPA escalando | "O autoscaling reage a métrica real; se o hardware saturar, a evidência explica o limite." |
+| 6 | Kyverno | Pod ruim negado no admission | "O erro é bloqueado antes de virar problema em produção." |
+| 7 | Canary | Split 90/10 entre v1 e v2 | "Deploy progressivo reduz blast radius e permite validação gradual." |
+| 8 | RBAC | `Forbidden` para operador fora do namespace | "Menor privilégio funcionando: acesso permitido só onde faz sentido." |
+| 9 | Rollback | `helm rollback` e histórico | "Se a mudança falhar, eu volto para uma revisão boa." |
+| 10 | Uninstall | `helm uninstall` | "Fecha o ciclo de vida: instala, opera, valida e remove." |
+
+#### Checklist de gravação
+
+Antes de gravar, validar:
+
+```bash
+export KUBECONFIG=~/.kube/config-tp-lab
+kubectl get nodes -o wide
+kubectl top nodes
+kubectl get pods -A | grep -E "tipsbank-(contas|transacoes|auditoria|web|monitoring)"
+kubectl get cpol
+kubectl get hpa -A
+kubectl get ingress -A
+```
+
+Se faltar alguma saída durante a revisão final, usar esses comandos como fonte de evidência adicional. Não inventar status: se o cluster não responder, registrar a pendência e repetir a coleta.
 
 #### Comandos/dados para complementar depois
 
