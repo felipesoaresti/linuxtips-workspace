@@ -1,6 +1,6 @@
 # Brincando um pouco mais com o SSH, SCP e rsync
 
-_Atualizado em 07/07/2026_
+_Atualizado em 09/07/2026_
 
 ~/.ssh/config
 
