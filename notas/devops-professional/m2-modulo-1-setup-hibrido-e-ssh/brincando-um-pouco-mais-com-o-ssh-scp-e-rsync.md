@@ -9,7 +9,8 @@ Host nome-do-host
     User Puff
     IdentityFile ~/.ssh/id_ed25519
    
-
+ssh-copy-id -i  .ssh /id_eed255.pub nome-do-host
+scp -r --> recursivo
 
 
 rsync -avz (a guarda as permiões, v verbose , z compactar) --progress dir1 vm-lab-01
