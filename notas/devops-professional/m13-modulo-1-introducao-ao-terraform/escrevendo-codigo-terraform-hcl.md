@@ -1,6 +1,6 @@
 # Escrevendo código terraform (HCL)
 
-_Atualizado em 15/07/2026_
+_Atualizado em 17/07/2026_
 
 resource - Bloco de código terraform - Crie um recurso novo  ( ex: resource de VM )
 data - Bloco de código terraform - Busca a informação de recurso existente 
