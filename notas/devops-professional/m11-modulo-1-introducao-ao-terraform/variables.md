@@ -30,7 +30,28 @@ variavel "image_id" (nome-da-variavel) {
   Para usar o arquivo : 
     terraform plan -out plano -var-file teste.tfvar
 
-- 
+- Arquivo terraform.tfvars --> carregado automaticamente pelo terraform, se existir os valores dessas variaveis serão carregados automaticamente.
+    image_id = "ami-terraform-tfvars"
+  Outro arquivo carregado automaticamente é o:  .auto.tfvars
+    testing.auto.tfvars
+  Isso é útil para separar valores pot ambiente e contexto
+
+- Valores passados por variáveis de ambiente, usamos o prefixo: TF_VAR 
+    export TF_VAR_image_id="ami-env-var"
+  Funciona apenas no terminal onde foi definida
+
+- Precedência de valores:
+    Variáveis de ambiente;
+    Arquivo terraform.tfvars;
+    Arquivos *.auto.tfvars;
+    opção -var;
+    opção -var-file;
+
+ 
+
+
+  
+   
       
 
 
