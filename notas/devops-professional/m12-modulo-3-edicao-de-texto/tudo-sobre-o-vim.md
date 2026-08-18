@@ -28,6 +28,7 @@ ctrl + r - refaz o que vc fez
 :q - quit
 :wq - salvar e sair 
 !- confirma 
+e! - força 
 
 ZZ - salva e sai
 
@@ -50,6 +51,20 @@ N - next pra cima
 
 : set ignorecase - ignorar case sensitive
 : set noignorecase - não ignorar case sensitive (melhor)
+
+: set incsearch - modo de incrementar ao buscar
+
+: syntax on - modo sintaxe / coloração
+
+: set tabstop=2 - setar o tamanho do tab
+
+: split arquivo.txt - horizontal
+: vsplit - vertical 
+ctrl ww - para alternar entre arquivos
+
+.vimrc - arquivo de configuração do vim 
+
+  
 
 
 
