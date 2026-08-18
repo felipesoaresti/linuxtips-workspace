@@ -18,6 +18,7 @@ I - começa inserir no inicio da linha
 a - começa inserir um caracter depois 
 A - começa inserir no final da linha  
 
+ctrl v - visual bloco
 v - modo visual - para copiar é bem legal
 V - modo visual line - copia de linha em linha  
 
@@ -30,6 +31,10 @@ ctrl + r - refaz o que vc fez
 !- confirma 
 e! - força 
 
+:e giropops.txt - edita o giropops.txt
+:o arquivo.txt - edita o arquivo.txt
+:r giropops.txt - adiciona o conteúdo do arquivo no atual
+ 
 ZZ - salva e sai
 
 / - pesquisa  
