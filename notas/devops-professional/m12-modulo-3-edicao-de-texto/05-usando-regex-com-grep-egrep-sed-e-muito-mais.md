@@ -17,6 +17,8 @@ grep -v '^#' /etc/adduser.conf | grep -v '^$'
 sed 's/palavra-atual/palavra-antiga/g'
 sed 's/[0-9]/X/g' adduser.conf > outro-arquivo
 
+grep '^$' arquivo.txt
+
 
 .       → Qualquer caractere (um só)
 *       → Zero ou mais do caractere anterior
