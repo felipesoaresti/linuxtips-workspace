@@ -20,8 +20,11 @@ bashrc - arquivos de configuração bash
 Permissões Especiais 
 SUID - somente para executaveis / executado como dono do arquivo - 4 - 4644
 SGID - somente para executiveis - executado como grupo dono do arquivo - 2 - 2644
-em diretorio: 
-Stick bit - 1
+em diretorio:
+chmod 0755 - desabilitar - chmod g-s ou chmod u-s
+ 
+Stick bit - funciona em diretorio -  t habilitado somente o dono pode deletar - 1 - 4+2+1 = 7
+chmod 7777 limao 
 
 
 
