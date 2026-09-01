@@ -8,6 +8,9 @@ Faz parte do pacote acl
 getfacl - ver a acl do arquivo
   getfacl arquivo  
 setfacl - seta a acl do arquivo
-  setfacl -m u:joao:rx
+  setfacl -m u:joao:rx arquivo
+  setfacl -x u:giropops arquivo
+
+
 
 
